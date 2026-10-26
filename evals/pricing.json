@@ -1,0 +1,4 @@
+{
+  "_comment": "Per-million-token prices used to estimate eval cost. Fill these in from the provider's current pricing page before running LLM planners. Unknown models report cost as null; the runner never guesses.",
+  "models": {}
+}

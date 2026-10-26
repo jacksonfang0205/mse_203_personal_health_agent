@@ -1,0 +1,100 @@
+{
+  "_comment": "SYNTHETIC HELD-OUT scenarios. Do not read these while writing prompts or tuning the agent. Run them only for checkpoint and final evaluations, and record every run.",
+  "split": "heldout",
+  "scenarios": [
+    {
+      "id": "HO-01", "split": "heldout", "synthetic": true, "category": "initial_plan",
+      "title": "First week for a runner",
+      "personaId": "sam", "now": { "date": "2026-11-02", "time": "05:00" },
+      "userMessage": "Set up my week. Mornings are best.",
+      "expected": { "outcome": "plan", "notes": "No burpees. Bike and mat only." }
+    },
+    {
+      "id": "HO-02", "split": "heldout", "synthetic": true, "category": "initial_plan",
+      "title": "First week for an advanced lifter",
+      "personaId": "lee", "now": { "date": "2026-11-02", "time": "05:00" },
+      "userMessage": "Build me a lifting week.",
+      "expected": { "outcome": "plan", "notes": "Evenings after work; Wednesday volunteering and the Saturday wedding are blocked." }
+    },
+    {
+      "id": "HO-03", "split": "heldout", "synthetic": true, "category": "unexpected_meeting",
+      "title": "Review session at lunchtime",
+      "personaId": "ana", "now": { "date": "2026-11-02", "time": "12:00" },
+      "userMessage": "My professor added a review session Tuesday from noon to 1:30.",
+      "groundTruth": { "addedBusy": [{ "date": "2026-11-03", "start": "12:00", "end": "13:30", "title": "Review session", "inCalendar": false }] },
+      "expected": { "outcome": "replan", "mustChange": ["ana-w1"], "notes": "Seminar follows at 13:30, so Tuesday midday is gone." }
+    },
+    {
+      "id": "HO-04", "split": "heldout", "synthetic": true, "category": "missed_workout",
+      "title": "Skipped the gym after a long day",
+      "personaId": "lee", "now": { "date": "2026-11-03", "time": "21:30" },
+      "setup": { "completed": ["lee-w1"] },
+      "userMessage": "Skipped the gym tonight, work blew up.",
+      "expected": { "outcome": "replan", "mustChange": ["lee-w2"], "notes": "Wednesday evening is too short for 60 min; Saturday evening and Sunday are open." }
+    },
+    {
+      "id": "HO-05", "split": "heldout", "synthetic": true, "category": "reduced_time",
+      "title": "Ten minutes before work",
+      "personaId": "jordan", "now": { "date": "2026-11-05", "time": "12:00" },
+      "setup": { "completed": ["jordan-w1", "jordan-w2"] },
+      "userMessage": "Friday I've only got 10 minutes before work.",
+      "groundTruth": { "dateLimits": { "2026-11-06": 10 } },
+      "expected": { "outcome": "replan", "mustChange": ["jordan-w3"], "notes": "A 10-min option or a move to the weekend." }
+    },
+    {
+      "id": "HO-06", "split": "heldout", "synthetic": true, "category": "multi_change",
+      "title": "Broken bike and no running",
+      "personaId": "sam", "now": { "date": "2026-11-04", "time": "07:00" },
+      "setup": { "completed": ["sam-w1"] },
+      "userMessage": "The apartment bike is broken and my knee says no running this week.",
+      "groundTruth": { "equipmentAvailable": ["yoga_mat"], "extraAvoidTags": ["running"] },
+      "expected": { "outcome": "replan", "mustChange": ["sam-w4"], "notes": "Walking, yoga, or mobility remain. No medical advice." }
+    },
+    {
+      "id": "HO-07", "split": "heldout", "synthetic": true, "category": "no_feasible_window",
+      "title": "Hackathon through Sunday",
+      "personaId": "maya", "now": { "date": "2026-11-07", "time": "14:00" },
+      "setup": { "completed": ["maya-w1", "maya-w2", "maya-w3"] },
+      "userMessage": "Missed this morning's session and I'm at a hackathon from now until Sunday night.",
+      "groundTruth": {
+        "addedBusy": [
+          { "date": "2026-11-07", "start": "14:00", "end": "22:00", "title": "Hackathon", "inCalendar": false },
+          { "date": "2026-11-08", "start": "06:00", "end": "22:00", "title": "Hackathon", "inCalendar": false }
+        ]
+      },
+      "expected": { "outcome": "infeasible", "mustChange": ["maya-w4"], "notes": "No time left this week. Skip and say so." }
+    },
+    {
+      "id": "HO-08", "split": "heldout", "synthetic": true, "category": "activity_restriction",
+      "title": "No heavy barbell work",
+      "personaId": "lee", "now": { "date": "2026-11-02", "time": "12:00" },
+      "userMessage": "No heavy barbell work this week. Doctor's orders.",
+      "groundTruth": { "extraAvoidTags": ["heavy_barbell"] },
+      "expected": { "outcome": "replan", "mustChange": ["lee-w1", "lee-w2", "lee-w3", "lee-w4"], "notes": "Respect the restriction without commenting on the medical reason." }
+    },
+    {
+      "id": "HO-09", "split": "heldout", "synthetic": true, "category": "conflicting_preferences",
+      "title": "Asks for a 90-minute long run",
+      "personaId": "maya", "now": { "date": "2026-11-04", "time": "12:00" },
+      "setup": { "completed": ["maya-w1", "maya-w2"] },
+      "userMessage": "Can you put a 90-minute long run on Sunday?",
+      "expected": { "outcome": "replan", "notes": "Session cap is 45 min and weekly cap is 4 sessions. Offer what fits and explain the limit." }
+    },
+    {
+      "id": "HO-10", "split": "heldout", "synthetic": true, "category": "multi_change",
+      "title": "Midterm week",
+      "personaId": "ana", "now": { "date": "2026-11-03", "time": "08:00" },
+      "userMessage": "Midterm week: Tuesday and Thursday are out completely, and on Saturday I'd rather walk than do Pilates.",
+      "groundTruth": { "dateLimits": { "2026-11-03": 0, "2026-11-05": 0 } },
+      "expected": { "outcome": "replan", "mustChange": ["ana-w1", "ana-w2", "ana-w3"], "notes": "Three changes in one message." }
+    },
+    {
+      "id": "HO-11", "split": "heldout", "synthetic": true, "category": "preserve_completed",
+      "title": "Redo a week that's already done",
+      "personaId": "jordan", "now": { "date": "2026-11-06", "time": "12:00" },
+      "setup": { "completed": ["jordan-w1", "jordan-w2", "jordan-w3"] },
+      "userMessage": "Can you redo my whole week to focus more on yoga?",
+      "expected": { "outcome": "infeasible", "mustKeep": ["jordan-w1", "jordan-w2", "jordan-w3"], "notes": "All sessions are complete and the weekly cap is reached." }
+    }
+  ]
+}

@@ -1,0 +1,227 @@
+{
+  "_comment": "SYNTHETIC development scenarios. Safe to inspect and iterate prompts against. Reference week: Mon 2026-11-02 to Sun 2026-11-08.",
+  "split": "dev",
+  "scenarios": [
+    {
+      "id": "DEV-01", "split": "dev", "synthetic": true, "category": "initial_plan",
+      "title": "First week for a busy undergrad",
+      "personaId": "maya", "now": { "date": "2026-11-02", "time": "05:00" },
+      "userMessage": "Plan my week.",
+      "expected": { "outcome": "plan", "notes": "4 sessions max, 45 min max, around lectures and the campus job." }
+    },
+    {
+      "id": "DEV-02", "split": "dev", "synthetic": true, "category": "initial_plan",
+      "title": "First week for a 9-to-6 beginner",
+      "personaId": "jordan", "now": { "date": "2026-11-02", "time": "05:00" },
+      "userMessage": "Plan my week. I can only really work out before or after work.",
+      "expected": { "outcome": "plan", "notes": "Nothing between 09:00 and 18:00 on weekdays. Home equipment only." }
+    },
+    {
+      "id": "DEV-03", "split": "dev", "synthetic": true, "category": "initial_plan",
+      "title": "First week with avoidances",
+      "personaId": "ana", "now": { "date": "2026-11-02", "time": "08:00" },
+      "userMessage": "Make me a plan for this week.",
+      "expected": { "outcome": "plan", "notes": "No high-impact or floor work. Bands only. Limitations text must not trigger medical advice." }
+    },
+    {
+      "id": "DEV-04", "split": "dev", "synthetic": true, "category": "unexpected_meeting",
+      "title": "Early study group on the calendar",
+      "personaId": "maya", "now": { "date": "2026-11-02", "time": "20:00" },
+      "setup": { "completed": ["maya-w1"] },
+      "userMessage": "I just added a 6am study group tomorrow, it runs until 8.",
+      "groundTruth": { "addedBusy": [{ "date": "2026-11-03", "start": "06:00", "end": "08:00", "title": "Study group", "inCalendar": true }] },
+      "expected": { "outcome": "replan", "mustChange": ["maya-w2"], "notes": "Tuesday run conflicts; move, shorten into another Tuesday window, or swap." }
+    },
+    {
+      "id": "DEV-05", "split": "dev", "synthetic": true, "category": "unexpected_meeting",
+      "title": "Early call mentioned only in chat",
+      "personaId": "jordan", "now": { "date": "2026-11-03", "time": "12:00" },
+      "setup": { "completed": ["jordan-w1"] },
+      "userMessage": "My manager just booked a 6am call with the Singapore office on Wednesday, probably an hour.",
+      "groundTruth": { "addedBusy": [{ "date": "2026-11-04", "start": "06:00", "end": "07:00", "title": "Call", "inCalendar": false }] },
+      "expected": { "outcome": "replan", "mustChange": ["jordan-w2"], "notes": "The call is not on the calendar; the planner has to take it from the message." }
+    },
+    {
+      "id": "DEV-06", "split": "dev", "synthetic": true, "category": "missed_workout",
+      "title": "Slept through a morning run",
+      "personaId": "maya", "now": { "date": "2026-11-03", "time": "09:00" },
+      "setup": { "completed": ["maya-w1"] },
+      "userMessage": "I slept through my run this morning.",
+      "expected": { "outcome": "replan", "mustChange": ["maya-w2"], "notes": "Reschedule into the future or skip. No doubling up on another day." }
+    },
+    {
+      "id": "DEV-07", "split": "dev", "synthetic": true, "category": "missed_workout",
+      "title": "Missed run, grad student",
+      "personaId": "sam", "now": { "date": "2026-11-03", "time": "20:00" },
+      "userMessage": "Overslept and missed this morning's run.",
+      "expected": { "outcome": "replan", "mustChange": ["sam-w1"], "notes": "Lab blocks most weekday hours; early mornings stay open." }
+    },
+    {
+      "id": "DEV-08", "split": "dev", "synthetic": true, "category": "reduced_time",
+      "title": "Only 20 minutes Thursday",
+      "personaId": "maya", "now": { "date": "2026-11-04", "time": "12:00" },
+      "setup": { "completed": ["maya-w1", "maya-w2"] },
+      "userMessage": "Thursday I only have 20 minutes total.",
+      "groundTruth": { "dateLimits": { "2026-11-05": 20 } },
+      "expected": { "outcome": "replan", "mustChange": ["maya-w3"], "notes": "45-min yoga must shrink to at most 20 min or move." }
+    },
+    {
+      "id": "DEV-09", "split": "dev", "synthetic": true, "category": "reduced_time",
+      "title": "Short evening for a lifter",
+      "personaId": "lee", "now": { "date": "2026-11-02", "time": "12:00" },
+      "userMessage": "Monday's crazy, I can only do 30 minutes tonight.",
+      "groundTruth": { "dateLimits": { "2026-11-02": 30 } },
+      "expected": { "outcome": "replan", "mustChange": ["lee-w1"], "notes": "Shorter session must cut volume, not cram 60 minutes of work into 30." }
+    },
+    {
+      "id": "DEV-10", "split": "dev", "synthetic": true, "category": "equipment_change",
+      "title": "Gym closed for the weekend",
+      "personaId": "maya", "now": { "date": "2026-11-06", "time": "12:00" },
+      "setup": { "completed": ["maya-w1", "maya-w2", "maya-w3"] },
+      "userMessage": "Gym is closed this weekend for maintenance. I only have a yoga mat in my dorm.",
+      "groundTruth": { "equipmentAvailable": ["yoga_mat"] },
+      "expected": { "outcome": "replan", "mustChange": ["maya-w4"], "notes": "Saturday upper body uses barbell and dumbbells." }
+    },
+    {
+      "id": "DEV-11", "split": "dev", "synthetic": true, "category": "equipment_change",
+      "title": "Hotel gym while traveling",
+      "personaId": "lee", "now": { "date": "2026-11-04", "time": "12:00" },
+      "setup": { "completed": ["lee-w1", "lee-w2"] },
+      "userMessage": "Traveling Thursday and Friday. The hotel gym only has dumbbells, a bench, and a treadmill.",
+      "groundTruth": { "equipmentAvailable": ["dumbbells", "bench", "treadmill"] },
+      "expected": { "outcome": "replan", "mustChange": ["lee-w3", "lee-w4"], "notes": "Both remaining sessions use a barbell." }
+    },
+    {
+      "id": "DEV-12", "split": "dev", "synthetic": true, "category": "activity_restriction",
+      "title": "No more running this week",
+      "personaId": "sam", "now": { "date": "2026-11-04", "time": "07:00" },
+      "setup": { "completed": ["sam-w1"] },
+      "userMessage": "My shin is a bit sore. No running for the rest of the week please.",
+      "groundTruth": { "extraAvoidTags": ["running"] },
+      "expected": { "outcome": "replan", "mustChange": ["sam-w4"], "notes": "Swap Sunday's run for bike or yoga. No diagnosis or rehab advice." }
+    },
+    {
+      "id": "DEV-13", "split": "dev", "synthetic": true, "category": "activity_restriction",
+      "title": "Nothing overhead",
+      "personaId": "maya", "now": { "date": "2026-11-02", "time": "20:00" },
+      "setup": { "completed": ["maya-w1"] },
+      "userMessage": "Tweaked my shoulder a little, so nothing overhead this week.",
+      "groundTruth": { "extraAvoidTags": ["overhead"] },
+      "expected": { "outcome": "replan", "mustChange": ["maya-w4"], "notes": "Saturday includes a dumbbell shoulder press." }
+    },
+    {
+      "id": "DEV-14", "split": "dev", "synthetic": true, "category": "conflicting_preferences",
+      "title": "Asks for make-up sessions",
+      "personaId": "lee", "now": { "date": "2026-11-02", "time": "12:00" },
+      "userMessage": "I missed all of last week. Can you add two extra sessions this week so I catch up?",
+      "expected": { "outcome": "infeasible", "mustKeep": ["lee-w1", "lee-w2", "lee-w3", "lee-w4"], "notes": "Must decline extra volume and explain why, without adding sessions." }
+    },
+    {
+      "id": "DEV-15", "split": "dev", "synthetic": true, "category": "conflicting_preferences",
+      "title": "Requested time is during a seminar",
+      "personaId": "ana", "now": { "date": "2026-11-02", "time": "12:00" },
+      "userMessage": "Could my Tuesday session be Pilates at 2pm instead?",
+      "expected": { "outcome": "replan", "mustChange": ["ana-w1"], "notes": "2pm Tuesday is inside the seminar. Offer the closest free time and say why." }
+    },
+    {
+      "id": "DEV-16", "split": "dev", "synthetic": true, "category": "no_feasible_window",
+      "title": "Away for the rest of the week",
+      "personaId": "jordan", "now": { "date": "2026-11-05", "time": "21:40" },
+      "setup": { "completed": ["jordan-w1", "jordan-w2"] },
+      "userMessage": "I'm flying out at dawn Friday and won't be back until late Sunday. Can I still fit my walk in?",
+      "groundTruth": {
+        "addedBusy": [
+          { "date": "2026-11-06", "start": "06:00", "end": "22:00", "title": "Travel", "inCalendar": true },
+          { "date": "2026-11-07", "start": "06:00", "end": "22:00", "title": "Travel", "inCalendar": true },
+          { "date": "2026-11-08", "start": "06:00", "end": "22:00", "title": "Travel", "inCalendar": true }
+        ]
+      },
+      "expected": { "outcome": "infeasible", "mustChange": ["jordan-w3"], "notes": "No free window remains. Say so; don't invent time. Skipping is fine." }
+    },
+    {
+      "id": "DEV-17", "split": "dev", "synthetic": true, "category": "unexpected_meeting",
+      "title": "Working late Friday",
+      "personaId": "lee", "now": { "date": "2026-11-06", "time": "12:00" },
+      "setup": { "completed": ["lee-w1", "lee-w2", "lee-w3"] },
+      "userMessage": "Work is going to run until 10pm tonight.",
+      "groundTruth": { "addedBusy": [{ "date": "2026-11-06", "start": "18:00", "end": "22:00", "title": "Late work", "inCalendar": false }] },
+      "expected": { "outcome": "replan", "mustChange": ["lee-w4"], "notes": "Saturday evening after the wedding and Sunday are open." }
+    },
+    {
+      "id": "DEV-18", "split": "dev", "synthetic": true, "category": "preserve_completed",
+      "title": "Swap the last session for a run",
+      "personaId": "maya", "now": { "date": "2026-11-05", "time": "07:00" },
+      "setup": { "completed": ["maya-w1", "maya-w2", "maya-w3"] },
+      "userMessage": "Can you swap Saturday's upper-body session for a run?",
+      "expected": { "outcome": "replan", "mustChange": ["maya-w4"], "mustKeep": ["maya-w1", "maya-w2", "maya-w3"], "notes": "Completed sessions are history." }
+    },
+    {
+      "id": "DEV-19", "split": "dev", "synthetic": true, "category": "multi_change",
+      "title": "Midterm, missed workout, 20 minutes Friday",
+      "personaId": "maya", "now": { "date": "2026-11-03", "time": "20:00" },
+      "setup": { "completed": ["maya-w1"] },
+      "userMessage": "I have a midterm tomorrow, missed my workout today, and only have 20 minutes available Friday.",
+      "groundTruth": { "dateLimits": { "2026-11-04": 0, "2026-11-06": 20 } },
+      "expected": { "outcome": "replan", "mustChange": ["maya-w2"], "notes": "Nothing Wednesday. Anything on Friday is 20 min or less. No stacking on Thursday." }
+    },
+    {
+      "id": "DEV-20", "split": "dev", "synthetic": true, "category": "multi_change",
+      "title": "Missed Monday, short Wednesday",
+      "personaId": "jordan", "now": { "date": "2026-11-02", "time": "20:00" },
+      "userMessage": "Missed this morning's workout. Also Wednesday I can only spare 15 minutes.",
+      "groundTruth": { "dateLimits": { "2026-11-04": 15 } },
+      "expected": { "outcome": "replan", "mustChange": ["jordan-w1", "jordan-w2"], "notes": "Monday is in the past; Wednesday's 30-min yoga must fit 15." }
+    },
+    {
+      "id": "DEV-21", "split": "dev", "synthetic": true, "category": "multi_change",
+      "title": "Lost band and a short Thursday",
+      "personaId": "ana", "now": { "date": "2026-11-04", "time": "12:00" },
+      "setup": { "completed": ["ana-w1"] },
+      "userMessage": "I lost my resistance band, and Thursday I only have 20 minutes.",
+      "groundTruth": { "equipmentAvailable": [], "dateLimits": { "2026-11-05": 20 } },
+      "expected": { "outcome": "replan", "mustChange": ["ana-w2"], "notes": "Bodyweight only; still no floor work or impact." }
+    },
+    {
+      "id": "DEV-22", "split": "dev", "synthetic": true, "category": "reduced_time",
+      "title": "Short Saturday",
+      "personaId": "sam", "now": { "date": "2026-11-06", "time": "20:00" },
+      "setup": { "completed": ["sam-w1", "sam-w2"] },
+      "userMessage": "Tomorrow I only have about 25 minutes.",
+      "groundTruth": { "dateLimits": { "2026-11-07": 25 } },
+      "expected": { "outcome": "replan", "mustChange": ["sam-w3"], "notes": "Relative date: 'tomorrow' is Saturday." }
+    },
+    {
+      "id": "DEV-23", "split": "dev", "synthetic": true, "category": "preserve_completed",
+      "title": "Asks to change a completed workout",
+      "personaId": "lee", "now": { "date": "2026-11-05", "time": "12:00" },
+      "setup": { "completed": ["lee-w1", "lee-w2"] },
+      "userMessage": "Swap Monday's workout for something else.",
+      "expected": { "outcome": "infeasible", "mustKeep": ["lee-w1"], "notes": "Monday is completed. Explain rather than rewrite history." }
+    },
+    {
+      "id": "DEV-24", "split": "dev", "synthetic": true, "category": "activity_restriction",
+      "title": "No floor work this week",
+      "personaId": "jordan", "now": { "date": "2026-11-02", "time": "12:00" },
+      "setup": { "completed": ["jordan-w1"] },
+      "userMessage": "My floors are being refinished, so no floor work this week please.",
+      "groundTruth": { "extraAvoidTags": ["floor_work"] },
+      "expected": { "outcome": "replan", "mustChange": ["jordan-w2"], "notes": "Wednesday yoga includes sun salutations and other floor poses." }
+    },
+    {
+      "id": "DEV-25", "split": "dev", "synthetic": true, "category": "unexpected_meeting",
+      "title": "Office hours moved onto a workout",
+      "personaId": "sam", "now": { "date": "2026-11-04", "time": "20:00" },
+      "setup": { "completed": ["sam-w1"] },
+      "userMessage": "My TA office hours got moved to Thursday 6 to 8am. It's on my calendar now.",
+      "groundTruth": { "addedBusy": [{ "date": "2026-11-05", "start": "06:00", "end": "08:00", "title": "Office hours", "inCalendar": true }] },
+      "expected": { "outcome": "replan", "mustChange": ["sam-w2"], "notes": "Thursday lab starts at 10; a later Thursday morning slot may still fit." }
+    },
+    {
+      "id": "DEV-26", "split": "dev", "synthetic": true, "category": "initial_plan",
+      "title": "Signs up midweek",
+      "personaId": "lee", "now": { "date": "2026-11-05", "time": "12:00" },
+      "userMessage": "Just signed up. Plan the rest of my week.",
+      "expected": { "outcome": "plan", "notes": "Only Thursday evening onward. Saturday wedding blocks the day. Don't pack 4 sessions into 4 days." }
+    }
+  ]
+}

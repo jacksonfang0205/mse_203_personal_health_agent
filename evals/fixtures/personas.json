@@ -1,0 +1,170 @@
+{
+  "_comment": "SYNTHETIC personas for evaluation. Not real people. Reference week: Mon 2026-11-02 to Sun 2026-11-08.",
+  "referenceWeek": { "start": "2026-11-02", "end": "2026-11-08" },
+  "personas": [
+    {
+      "id": "maya",
+      "synthetic": true,
+      "summary": "Undergrad, intermediate, gym + running + yoga, busy class schedule",
+      "profile": {
+        "version": 1,
+        "name": "Maya",
+        "goals": ["strength", "endurance"],
+        "targetMuscles": [],
+        "experience": "intermediate",
+        "workoutTypes": ["gym", "running", "yoga"],
+        "equipment": ["dumbbells", "kettlebell", "barbell", "bench", "squat_rack", "cable_machine", "pull_up_bar", "yoga_mat", "treadmill", "stationary_bike", "rower"],
+        "sessionMinutes": 45,
+        "frequencyPerWeek": 4,
+        "preferredDays": ["mon", "tue", "thu", "sat"],
+        "preferredTimes": ["early_morning", "evening"],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": "",
+        "updatedAt": "2026-11-01T12:00:00.000Z"
+      },
+      "calendar": [
+        { "weekday": "mon", "start": "10:30", "end": "11:50", "title": "Lecture" },
+        { "weekday": "wed", "start": "10:30", "end": "11:50", "title": "Lecture" },
+        { "weekday": "fri", "start": "10:30", "end": "11:50", "title": "Lecture" },
+        { "weekday": "tue", "start": "13:30", "end": "15:20", "title": "Seminar" },
+        { "weekday": "thu", "start": "13:30", "end": "15:20", "title": "Seminar" },
+        { "weekday": "mon", "start": "15:00", "end": "16:30", "title": "Section" },
+        { "weekday": "wed", "start": "17:00", "end": "19:00", "title": "Campus job" },
+        { "weekday": "thu", "start": "18:00", "end": "19:30", "title": "Club meeting" },
+        { "weekday": "fri", "start": "19:00", "end": "22:00", "title": "Dinner with friends" },
+        { "weekday": "sat", "start": "11:00", "end": "13:00", "title": "Brunch" },
+        { "weekday": "sun", "start": "14:00", "end": "18:00", "title": "Study block" }
+      ]
+    },
+    {
+      "id": "jordan",
+      "synthetic": true,
+      "summary": "Young professional, beginner, home workouts + walking + yoga, 9-to-6 job",
+      "profile": {
+        "version": 1,
+        "name": "Jordan",
+        "goals": ["general_fitness", "stress_relief"],
+        "targetMuscles": [],
+        "experience": "beginner",
+        "workoutTypes": ["home", "walking", "yoga"],
+        "equipment": ["dumbbells", "resistance_bands", "yoga_mat"],
+        "sessionMinutes": 30,
+        "frequencyPerWeek": 3,
+        "preferredDays": ["mon", "wed", "fri", "sun"],
+        "preferredTimes": ["early_morning", "evening"],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "Not a fan of crowded gyms.",
+        "limitations": "",
+        "updatedAt": "2026-11-01T12:00:00.000Z"
+      },
+      "calendar": [
+        { "weekday": "mon", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "tue", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "wed", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "thu", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "fri", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "tue", "start": "07:30", "end": "08:15", "title": "Team sync (early)" },
+        { "weekday": "thu", "start": "19:00", "end": "21:00", "title": "Dinner" },
+        { "weekday": "sat", "start": "10:00", "end": "12:00", "title": "Errands" }
+      ]
+    },
+    {
+      "id": "sam",
+      "synthetic": true,
+      "summary": "Grad student and runner, endurance + mobility, minimal equipment",
+      "profile": {
+        "version": 1,
+        "name": "Sam",
+        "goals": ["endurance", "mobility"],
+        "targetMuscles": ["legs", "core"],
+        "experience": "intermediate",
+        "workoutTypes": ["running", "cycling", "yoga"],
+        "equipment": ["yoga_mat", "stationary_bike"],
+        "sessionMinutes": 40,
+        "frequencyPerWeek": 4,
+        "preferredDays": ["tue", "thu", "sat", "sun"],
+        "preferredTimes": ["early_morning", "morning"],
+        "avoidTags": [],
+        "avoidExerciseIds": ["burpee"],
+        "avoidNotes": "",
+        "limitations": "",
+        "updatedAt": "2026-11-01T12:00:00.000Z"
+      },
+      "calendar": [
+        { "weekday": "mon", "start": "08:00", "end": "12:00", "title": "Lab" },
+        { "weekday": "tue", "start": "10:00", "end": "17:00", "title": "Lab" },
+        { "weekday": "wed", "start": "08:00", "end": "12:00", "title": "Lab" },
+        { "weekday": "thu", "start": "10:00", "end": "17:00", "title": "Lab" },
+        { "weekday": "fri", "start": "09:00", "end": "11:00", "title": "Group meeting" },
+        { "weekday": "sat", "start": "10:00", "end": "11:00", "title": "Farmers market" },
+        { "weekday": "sun", "start": "11:00", "end": "13:00", "title": "Call home" }
+      ]
+    },
+    {
+      "id": "lee",
+      "synthetic": true,
+      "summary": "Advanced lifter, strength only, evenings after work",
+      "profile": {
+        "version": 1,
+        "name": "Lee",
+        "goals": ["strength"],
+        "targetMuscles": [],
+        "experience": "advanced",
+        "workoutTypes": ["gym"],
+        "equipment": ["dumbbells", "kettlebell", "barbell", "bench", "squat_rack", "cable_machine", "pull_up_bar", "yoga_mat", "treadmill", "stationary_bike", "rower"],
+        "sessionMinutes": 60,
+        "frequencyPerWeek": 4,
+        "preferredDays": ["mon", "tue", "thu", "fri"],
+        "preferredTimes": ["evening"],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": "",
+        "updatedAt": "2026-11-01T12:00:00.000Z"
+      },
+      "calendar": [
+        { "weekday": "mon", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "tue", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "wed", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "thu", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "fri", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "wed", "start": "19:00", "end": "21:00", "title": "Volunteering" },
+        { "weekday": "sat", "start": "09:00", "end": "17:00", "title": "Wedding" }
+      ]
+    },
+    {
+      "id": "ana",
+      "synthetic": true,
+      "summary": "Beginner, mobility + general fitness, avoids high impact and floor work",
+      "profile": {
+        "version": 1,
+        "name": "Ana",
+        "goals": ["mobility", "general_fitness"],
+        "targetMuscles": ["glutes", "core"],
+        "experience": "beginner",
+        "workoutTypes": ["pilates", "yoga", "walking"],
+        "equipment": ["resistance_bands"],
+        "sessionMinutes": 30,
+        "frequencyPerWeek": 3,
+        "preferredDays": ["tue", "thu", "sat"],
+        "preferredTimes": ["midday", "afternoon"],
+        "avoidTags": ["high_impact", "floor_work"],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": "Knees get sore when I jump or kneel.",
+        "updatedAt": "2026-11-01T12:00:00.000Z"
+      },
+      "calendar": [
+        { "weekday": "mon", "start": "10:30", "end": "11:50", "title": "Lecture" },
+        { "weekday": "wed", "start": "10:30", "end": "11:50", "title": "Lecture" },
+        { "weekday": "fri", "start": "10:30", "end": "11:50", "title": "Lecture" },
+        { "weekday": "tue", "start": "13:30", "end": "15:20", "title": "Seminar" },
+        { "weekday": "thu", "start": "13:30", "end": "15:20", "title": "Seminar" },
+        { "weekday": "sat", "start": "11:00", "end": "13:00", "title": "Brunch" }
+      ]
+    }
+  ]
+}

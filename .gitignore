@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+!.env.example
+
+# eval run outputs (commit selected runs to evals/results/archive/)
+/evals/results/runs/

@@ -1,0 +1,768 @@
+{
+  "generatedWith": "mock_template planner (src/lib/planner/generate.ts)",
+  "plans": {
+    "maya": {
+      "id": "baseline-maya",
+      "weekStart": "2026-11-02",
+      "workouts": [
+        {
+          "id": "maya-w1",
+          "title": "Lower body strength",
+          "date": "2026-11-02",
+          "start": "06:00",
+          "durationMin": 45,
+          "category": "strength",
+          "muscles": [
+            "legs",
+            "glutes",
+            "core",
+            "back",
+            "chest",
+            "arms"
+          ],
+          "equipment": [
+            "barbell",
+            "squat_rack",
+            "kettlebell"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "back_squat",
+              "sets": 4,
+              "reps": "5–8"
+            },
+            {
+              "exerciseId": "kb_swing",
+              "sets": 4,
+              "reps": "12"
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "reps": "5"
+            },
+            {
+              "exerciseId": "push_up",
+              "sets": 3,
+              "reps": "8–12"
+            },
+            {
+              "exerciseId": "plank",
+              "sets": 3,
+              "seconds": 30
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free early morning on Monday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "maya-w2",
+          "title": "Easy run",
+          "date": "2026-11-03",
+          "start": "06:00",
+          "durationMin": 45,
+          "category": "cardio",
+          "muscles": [
+            "legs",
+            "full_body"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "easy_run",
+              "minutes": 45
+            }
+          ],
+          "rationale": "Cardio work toward your goal to build endurance. Placed in your free early morning on Tuesday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "maya-w3",
+          "title": "Yoga flow",
+          "date": "2026-11-05",
+          "start": "06:00",
+          "durationMin": 45,
+          "category": "yoga",
+          "muscles": [
+            "glutes",
+            "full_body",
+            "legs",
+            "back",
+            "shoulders",
+            "core"
+          ],
+          "equipment": [
+            "yoga_mat"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "pigeon_pose",
+              "sets": 2,
+              "seconds": 60
+            },
+            {
+              "exerciseId": "sun_salutation",
+              "minutes": 8
+            },
+            {
+              "exerciseId": "low_lunge",
+              "sets": 2,
+              "seconds": 45
+            },
+            {
+              "exerciseId": "yoga_wind_down",
+              "minutes": 6
+            },
+            {
+              "exerciseId": "warrior_flow",
+              "minutes": 10
+            },
+            {
+              "exerciseId": "balance_series",
+              "minutes": 6
+            }
+          ],
+          "rationale": "Yoga work toward your goal to get stronger. Placed in your free early morning on Thursday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "maya-w4",
+          "title": "Upper body strength",
+          "date": "2026-11-07",
+          "start": "06:00",
+          "durationMin": 45,
+          "category": "strength",
+          "muscles": [
+            "chest",
+            "arms",
+            "shoulders",
+            "back",
+            "glutes",
+            "legs"
+          ],
+          "equipment": [
+            "barbell",
+            "bench",
+            "dumbbells",
+            "kettlebell"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "bench_press",
+              "sets": 4,
+              "reps": "6–8"
+            },
+            {
+              "exerciseId": "db_row",
+              "sets": 3,
+              "reps": "10 / side"
+            },
+            {
+              "exerciseId": "db_shoulder_press",
+              "sets": 3,
+              "reps": "8–10"
+            },
+            {
+              "exerciseId": "kb_swing",
+              "sets": 4,
+              "reps": "12"
+            },
+            {
+              "exerciseId": "db_curl",
+              "sets": 3,
+              "reps": "10–12"
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free early morning on Saturday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        }
+      ],
+      "generatedBy": "fixture",
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "notes": []
+    },
+    "jordan": {
+      "id": "baseline-jordan",
+      "weekStart": "2026-11-02",
+      "workouts": [
+        {
+          "id": "jordan-w1",
+          "title": "Lower body strength",
+          "date": "2026-11-02",
+          "start": "06:00",
+          "durationMin": 30,
+          "category": "strength",
+          "muscles": [
+            "legs",
+            "glutes",
+            "core",
+            "back"
+          ],
+          "equipment": [
+            "dumbbells"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "goblet_squat",
+              "sets": 3,
+              "reps": "8–12"
+            },
+            {
+              "exerciseId": "db_rdl",
+              "sets": 3,
+              "reps": "8–10"
+            },
+            {
+              "exerciseId": "plank",
+              "sets": 3,
+              "seconds": 30
+            }
+          ],
+          "rationale": "Strength work toward your goal to feel fit overall. Placed in your free early morning on Monday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "jordan-w2",
+          "title": "Yoga flow",
+          "date": "2026-11-04",
+          "start": "06:00",
+          "durationMin": 30,
+          "category": "yoga",
+          "muscles": [
+            "full_body",
+            "legs",
+            "glutes",
+            "back",
+            "shoulders"
+          ],
+          "equipment": [
+            "yoga_mat"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "sun_salutation",
+              "minutes": 8
+            },
+            {
+              "exerciseId": "low_lunge",
+              "sets": 2,
+              "seconds": 45
+            },
+            {
+              "exerciseId": "yoga_wind_down",
+              "minutes": 6
+            },
+            {
+              "exerciseId": "warrior_flow",
+              "minutes": 10
+            }
+          ],
+          "rationale": "Yoga work toward your goal to de-stress. Placed in your free early morning on Wednesday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "jordan-w3",
+          "title": "Brisk walk",
+          "date": "2026-11-06",
+          "start": "06:00",
+          "durationMin": 30,
+          "category": "cardio",
+          "muscles": [
+            "legs",
+            "full_body"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "brisk_walk",
+              "minutes": 30
+            }
+          ],
+          "rationale": "Cardio work toward your goal to feel fit overall. Placed in your free early morning on Friday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        }
+      ],
+      "generatedBy": "fixture",
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "notes": []
+    },
+    "sam": {
+      "id": "baseline-sam",
+      "weekStart": "2026-11-02",
+      "workouts": [
+        {
+          "id": "sam-w1",
+          "title": "Easy run",
+          "date": "2026-11-03",
+          "start": "06:00",
+          "durationMin": 40,
+          "category": "cardio",
+          "muscles": [
+            "legs",
+            "full_body"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "easy_run",
+              "minutes": 40
+            }
+          ],
+          "rationale": "Cardio work toward your goal to build endurance. Placed in your free early morning on Tuesday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sam-w2",
+          "title": "Yoga flow",
+          "date": "2026-11-05",
+          "start": "06:00",
+          "durationMin": 40,
+          "category": "yoga",
+          "muscles": [
+            "legs",
+            "core",
+            "glutes",
+            "back",
+            "shoulders",
+            "full_body"
+          ],
+          "equipment": [
+            "yoga_mat"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "balance_series",
+              "minutes": 6
+            },
+            {
+              "exerciseId": "low_lunge",
+              "sets": 2,
+              "seconds": 45
+            },
+            {
+              "exerciseId": "yoga_wind_down",
+              "minutes": 6
+            },
+            {
+              "exerciseId": "warrior_flow",
+              "minutes": 10
+            },
+            {
+              "exerciseId": "pigeon_pose",
+              "sets": 2,
+              "seconds": 60
+            },
+            {
+              "exerciseId": "sun_salutation",
+              "minutes": 8
+            }
+          ],
+          "rationale": "Yoga work toward your goal to move better. Placed in your free early morning on Thursday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sam-w3",
+          "title": "Mobility reset",
+          "date": "2026-11-07",
+          "start": "06:00",
+          "durationMin": 40,
+          "category": "mobility",
+          "muscles": [
+            "legs",
+            "glutes",
+            "back",
+            "core",
+            "shoulders"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "worlds_greatest_stretch",
+              "sets": 2,
+              "reps": "5 / side"
+            },
+            {
+              "exerciseId": "cat_cow",
+              "sets": 2,
+              "reps": "10"
+            },
+            {
+              "exerciseId": "hip_90_90",
+              "sets": 2,
+              "reps": "8 / side"
+            },
+            {
+              "exerciseId": "hip_circles",
+              "sets": 2,
+              "reps": "8 / direction"
+            },
+            {
+              "exerciseId": "standing_hamstring",
+              "sets": 2,
+              "seconds": 30
+            },
+            {
+              "exerciseId": "open_books",
+              "sets": 2,
+              "reps": "8 / side"
+            }
+          ],
+          "rationale": "Mobility work toward your goal to move better. Placed in your free early morning on Saturday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sam-w4",
+          "title": "Easy run",
+          "date": "2026-11-08",
+          "start": "06:00",
+          "durationMin": 40,
+          "category": "cardio",
+          "muscles": [
+            "legs",
+            "full_body"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "easy_run",
+              "minutes": 40
+            }
+          ],
+          "rationale": "Cardio work toward your goal to build endurance. Placed in your free early morning on Sunday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        }
+      ],
+      "generatedBy": "fixture",
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "notes": []
+    },
+    "lee": {
+      "id": "baseline-lee",
+      "weekStart": "2026-11-02",
+      "workouts": [
+        {
+          "id": "lee-w1",
+          "title": "Lower body strength",
+          "date": "2026-11-02",
+          "start": "18:15",
+          "durationMin": 60,
+          "category": "strength",
+          "muscles": [
+            "legs",
+            "glutes",
+            "core",
+            "back",
+            "shoulders",
+            "arms",
+            "chest"
+          ],
+          "equipment": [
+            "barbell",
+            "squat_rack",
+            "kettlebell"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "back_squat",
+              "sets": 4,
+              "reps": "5–8"
+            },
+            {
+              "exerciseId": "kb_swing",
+              "sets": 4,
+              "reps": "12"
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "reps": "5"
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 4,
+              "reps": "5–6"
+            },
+            {
+              "exerciseId": "push_up",
+              "sets": 3,
+              "reps": "8–12"
+            },
+            {
+              "exerciseId": "plank",
+              "sets": 3,
+              "seconds": 30
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free evening on Monday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "lee-w2",
+          "title": "Upper body strength",
+          "date": "2026-11-03",
+          "start": "18:15",
+          "durationMin": 60,
+          "category": "strength",
+          "muscles": [
+            "chest",
+            "arms",
+            "shoulders",
+            "core",
+            "back",
+            "glutes",
+            "legs"
+          ],
+          "equipment": [
+            "barbell",
+            "bench",
+            "squat_rack",
+            "pull_up_bar",
+            "kettlebell",
+            "dumbbells"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "bench_press",
+              "sets": 4,
+              "reps": "6–8"
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 4,
+              "reps": "5–6"
+            },
+            {
+              "exerciseId": "pull_up",
+              "sets": 4,
+              "reps": "4–8"
+            },
+            {
+              "exerciseId": "kb_swing",
+              "sets": 4,
+              "reps": "12"
+            },
+            {
+              "exerciseId": "db_curl",
+              "sets": 3,
+              "reps": "10–12"
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free evening on Tuesday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "lee-w3",
+          "title": "Full body strength",
+          "date": "2026-11-05",
+          "start": "18:15",
+          "durationMin": 60,
+          "category": "strength",
+          "muscles": [
+            "legs",
+            "glutes",
+            "core",
+            "back",
+            "chest",
+            "arms",
+            "shoulders"
+          ],
+          "equipment": [
+            "barbell",
+            "squat_rack",
+            "kettlebell"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "back_squat",
+              "sets": 4,
+              "reps": "5–8"
+            },
+            {
+              "exerciseId": "kb_swing",
+              "sets": 4,
+              "reps": "12"
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "reps": "5"
+            },
+            {
+              "exerciseId": "push_up",
+              "sets": 3,
+              "reps": "8–12"
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 4,
+              "reps": "5–6"
+            },
+            {
+              "exerciseId": "plank",
+              "sets": 3,
+              "seconds": 30
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free evening on Thursday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "lee-w4",
+          "title": "Lower body strength",
+          "date": "2026-11-06",
+          "start": "18:15",
+          "durationMin": 60,
+          "category": "strength",
+          "muscles": [
+            "legs",
+            "glutes",
+            "core",
+            "back",
+            "shoulders",
+            "arms",
+            "chest"
+          ],
+          "equipment": [
+            "barbell",
+            "squat_rack",
+            "kettlebell"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "back_squat",
+              "sets": 4,
+              "reps": "5–8"
+            },
+            {
+              "exerciseId": "kb_swing",
+              "sets": 4,
+              "reps": "12"
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "reps": "5"
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 4,
+              "reps": "5–6"
+            },
+            {
+              "exerciseId": "push_up",
+              "sets": 3,
+              "reps": "8–12"
+            },
+            {
+              "exerciseId": "plank",
+              "sets": 3,
+              "seconds": 30
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free evening on Friday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        }
+      ],
+      "generatedBy": "fixture",
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "notes": []
+    },
+    "ana": {
+      "id": "baseline-ana",
+      "weekStart": "2026-11-02",
+      "workouts": [
+        {
+          "id": "ana-w1",
+          "title": "Yoga flow",
+          "date": "2026-11-03",
+          "start": "12:00",
+          "durationMin": 30,
+          "category": "yoga",
+          "muscles": [
+            "legs",
+            "glutes",
+            "shoulders",
+            "core"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "warrior_flow",
+              "minutes": 10
+            },
+            {
+              "exerciseId": "balance_series",
+              "minutes": 6
+            }
+          ],
+          "rationale": "Yoga work toward your goal to move better. Placed in your free midday on Tuesday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "ana-w2",
+          "title": "Brisk walk",
+          "date": "2026-11-05",
+          "start": "12:00",
+          "durationMin": 30,
+          "category": "cardio",
+          "muscles": [
+            "legs",
+            "full_body"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "brisk_walk",
+              "minutes": 30
+            }
+          ],
+          "rationale": "Cardio work toward your goal to feel fit overall. Placed in your free midday on Thursday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "ana-w3",
+          "title": "Standing Pilates",
+          "date": "2026-11-07",
+          "start": "13:15",
+          "durationMin": 30,
+          "category": "pilates",
+          "muscles": [
+            "core",
+            "glutes",
+            "legs"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "standing_pilates",
+              "minutes": 12
+            }
+          ],
+          "rationale": "Pilates work toward your goal to move better. Placed in your free midday on Saturday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        }
+      ],
+      "generatedBy": "fixture",
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "notes": []
+    }
+  }
+}
