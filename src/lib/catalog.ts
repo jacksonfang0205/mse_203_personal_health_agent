@@ -101,3 +101,12 @@ export const EXERCISES_BY_ID: Record<string, Exercise> = Object.fromEntries(
 export function getExercise(id: string): Exercise | undefined {
   return EXERCISES_BY_ID[id];
 }
+
+/**
+ * A form-demo link for an exercise. This is a YouTube search, not a specific
+ * video, so it can never point at a dead or made-up URL.
+ */
+export function demoVideoUrl(ex: Pick<Exercise, "name" | "category">): string {
+  const suffix = ex.category === "cardio" ? "beginner guide" : "exercise proper form";
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${ex.name} ${suffix}`)}`;
+}

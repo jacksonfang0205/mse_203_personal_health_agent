@@ -221,7 +221,7 @@ export const BusyBlock = z.object({
   start: ClockTime,
   end: ClockTime,
   title: z.string(),
-  source: z.enum(["simulated", "google", "user_message"]),
+  source: z.enum(["simulated", "google", "user_message", "blocked"]),
 });
 export type BusyBlock = z.infer<typeof BusyBlock>;
 
@@ -275,3 +275,42 @@ export const ChangeRecord = z.object({
   offeredKinds: z.array(AlternativeKind),
 });
 export type ChangeRecord = z.infer<typeof ChangeRecord>;
+
+// ---------- Memory ----------
+
+/**
+ * A time the user can't work out. Pivot treats it as busy, exactly like a
+ * calendar event. Recurring on `days`, or a one-off when `date` is set.
+ */
+export const BlockedTime = z.object({
+  id: z.string(),
+  days: z.array(Weekday),
+  date: IsoDate.optional(),
+  start: ClockTime,
+  end: ClockTime,
+  label: z.string().trim().max(80),
+  source: z.enum(["user", "agent"]),
+  createdAt: z.string(),
+});
+export type BlockedTime = z.infer<typeof BlockedTime>;
+
+/** A durable preference in the user's own words, passed to the agent as context. */
+export const MemoryNote = z.object({
+  id: z.string(),
+  text: z.string().trim().min(1).max(300),
+  source: z.enum(["user", "agent"]),
+  createdAt: z.string(),
+});
+export type MemoryNote = z.infer<typeof MemoryNote>;
+
+/** What actually happened to a workout. Survives across weeks so Pivot can learn from it. */
+export const WorkoutLogEntry = z.object({
+  workoutId: z.string(),
+  date: IsoDate,
+  start: ClockTime,
+  durationMin: z.number().int(),
+  category: WorkoutCategory,
+  status: z.enum(["completed", "skipped"]),
+  at: z.string(),
+});
+export type WorkoutLogEntry = z.infer<typeof WorkoutLogEntry>;

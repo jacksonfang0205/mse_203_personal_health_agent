@@ -11,7 +11,15 @@
 import { useSyncExternalStore } from "react";
 import { z } from "zod";
 import { CALENDAR_PRESET_IDS, type CalendarPresetId } from "./calendar";
-import { ChangeRecord, FitnessProfile, WeeklyPlan, type WorkoutStatus } from "./schemas";
+import {
+  BlockedTime,
+  ChangeRecord,
+  FitnessProfile,
+  MemoryNote,
+  WeeklyPlan,
+  WorkoutLogEntry,
+  type WorkoutStatus,
+} from "./schemas";
 import { localNow } from "./time";
 
 const AppState = z.object({
@@ -20,10 +28,23 @@ const AppState = z.object({
   plan: WeeklyPlan.nullable(),
   history: z.array(ChangeRecord),
   calendarPreset: z.enum(CALENDAR_PRESET_IDS as [CalendarPresetId, ...CalendarPresetId[]]),
+  // Memory. Defaults keep state saved before these fields existed valid.
+  blocked: z.array(BlockedTime).default([]),
+  notes: z.array(MemoryNote).default([]),
+  log: z.array(WorkoutLogEntry).default([]),
 });
 export type AppState = z.infer<typeof AppState>;
 
-const EMPTY: AppState = { version: 1, profile: null, plan: null, history: [], calendarPreset: "student" };
+const EMPTY: AppState = {
+  version: 1,
+  profile: null,
+  plan: null,
+  history: [],
+  calendarPreset: "student",
+  blocked: [],
+  notes: [],
+  log: [],
+};
 
 export interface PivotRepository {
   load(): AppState;
@@ -107,17 +128,46 @@ export const pivot = {
     update((s) => ({ ...s, plan }));
   },
   setWorkoutStatus(workoutId: string, status: WorkoutStatus) {
-    update((s) =>
-      s.plan
-        ? { ...s, plan: { ...s.plan, workouts: s.plan.workouts.map((w) => (w.id === workoutId ? { ...w, status } : w)) } }
-        : s,
-    );
+    update((s) => {
+      if (!s.plan) return s;
+      const w = s.plan.workouts.find((x) => x.id === workoutId);
+      // The log outlives the weekly plan, so later weeks can learn from this one.
+      const log = s.log.filter((e) => e.workoutId !== workoutId);
+      if (w && status !== "planned") {
+        log.unshift({
+          workoutId,
+          date: w.date,
+          start: w.start,
+          durationMin: w.durationMin,
+          category: w.category,
+          status,
+          at: new Date().toISOString(),
+        });
+      }
+      return {
+        ...s,
+        plan: { ...s.plan, workouts: s.plan.workouts.map((x) => (x.id === workoutId ? { ...x, status } : x)) },
+        log: log.slice(0, 300),
+      };
+    });
   },
   recordChange(record: ChangeRecord) {
     update((s) => ({ ...s, history: [record, ...s.history].slice(0, 100) }));
   },
   setCalendarPreset(calendarPreset: CalendarPresetId) {
     update((s) => ({ ...s, calendarPreset }));
+  },
+  addBlocked(items: BlockedTime[]) {
+    update((s) => ({ ...s, blocked: [...s.blocked, ...items] }));
+  },
+  removeBlocked(id: string) {
+    update((s) => ({ ...s, blocked: s.blocked.filter((b) => b.id !== id) }));
+  },
+  addNotes(items: MemoryNote[]) {
+    update((s) => ({ ...s, notes: [...s.notes, ...items].slice(-50) }));
+  },
+  removeNote(id: string) {
+    update((s) => ({ ...s, notes: s.notes.filter((n) => n.id !== id) }));
   },
   reset() {
     update(() => EMPTY);
