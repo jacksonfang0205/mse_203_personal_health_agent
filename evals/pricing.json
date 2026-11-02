@@ -1,4 +1,6 @@
 {
-  "_comment": "Per-million-token prices used to estimate eval cost. Fill these in from the provider's current pricing page before running LLM planners. Unknown models report cost as null; the runner never guesses.",
-  "models": {}
+  "_comment": "Per-million-token prices used to estimate eval cost. gpt-5.4-mini is the Stanford AI API Gateway education rate, derived from the gateway's usage report on 2026-11-02 (13,889 in + 1,103 out = $0.007690). Add other models before comparing them; unknown models report cost as null and the runner never guesses.",
+  "models": {
+    "gpt-5.4-mini": { "inputPerMTok": 0.375, "outputPerMTok": 2.25 }
+  }
 }
