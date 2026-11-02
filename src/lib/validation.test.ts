@@ -24,7 +24,6 @@ const workout = (over: Partial<Workout> = {}): Workout => ({
   id: "w1",
   title: "Lower body",
   date: "2026-11-02",
-  start: "18:00",
   durationMin: 30,
   category: "strength",
   muscles: ["legs"],
@@ -50,6 +49,8 @@ const plan = (workouts: Workout[]): WeeklyPlan => ({
 
 const busy: BusyBlock[] = [
   { id: "b1", date: "2026-11-02", start: "19:00", end: "20:00", title: "Class", source: "simulated" },
+  // A packed Thursday: the longest free stretch is 21:45–22:00.
+  { id: "b2", date: "2026-11-05", start: "06:00", end: "21:30", title: "Conference", source: "simulated" },
 ];
 
 const ctx = (over: Partial<ValidationContext> = {}): ValidationContext => ({
@@ -76,14 +77,24 @@ describe("validatePlan", () => {
     expect(constraintsOf(plan([workout({ exercises: [{ exerciseId: "made_up_move" }] })]))).toContain("catalog_grounded");
   });
 
-  it("flags calendar conflicts and overlapping workouts", () => {
-    expect(constraintsOf(plan([workout({ start: "18:45" })]))).toContain("calendar_conflict");
-    const overlapping = plan([workout(), workout({ id: "w2", start: "18:15", date: "2026-11-02" })]);
-    expect(constraintsOf(overlapping)).toContain("calendar_conflict");
+  it("flags workouts on days without a long enough free stretch", () => {
+    expect(constraintsOf(plan([workout({ date: "2026-11-05" })]))).toContain("calendar_conflict");
+    expect(constraintsOf(plan([workout({ date: "2026-11-02" })]))).not.toContain("calendar_conflict");
+  });
+
+  it("only counts the rest of today for workouts a change touches", () => {
+    const late = { date: "2026-11-02", time: "21:40" };
+    const today = workout({ date: "2026-11-04" });
+    const previousPlan = plan([today]);
+    const movedToTonight = plan([workout({ date: "2026-11-02" })]);
+    expect(constraintsOf(movedToTonight, ctx({ now: late, previousPlan }))).toContain("calendar_conflict");
+    // An untouched workout later today isn't this change's problem.
+    const untouched = plan([workout({ date: "2026-11-02" })]);
+    expect(constraintsOf(untouched, ctx({ now: late, previousPlan: untouched }))).not.toContain("calendar_conflict");
   });
 
   it("ignores conflicts for completed and skipped workouts", () => {
-    expect(constraintsOf(plan([workout({ start: "18:45", status: "skipped" })]))).not.toContain("calendar_conflict");
+    expect(constraintsOf(plan([workout({ date: "2026-11-05", status: "skipped" })]))).not.toContain("calendar_conflict");
   });
 
   it("enforces session length, per-date limits, and realistic exercise volume", () => {
@@ -114,15 +125,14 @@ describe("validatePlan", () => {
   it("requires completed workouts to be preserved exactly", () => {
     const done = workout({ status: "completed" });
     const previousPlan = plan([done]);
-    expect(constraintsOf(plan([{ ...done, start: "07:00" }]), ctx({ previousPlan }))).toContain("completed_preserved");
+    expect(constraintsOf(plan([{ ...done, date: "2026-11-03" }]), ctx({ previousPlan }))).toContain("completed_preserved");
     expect(constraintsOf(plan([]), ctx({ previousPlan }))).toContain("completed_preserved");
     expect(constraintsOf(plan([done]), ctx({ previousPlan }))).not.toContain("completed_preserved");
   });
 
-  it("only allows known, waking-hours availability", () => {
+  it("only plans inside the calendar range Pivot can see", () => {
     expect(constraintsOf(plan([workout({ date: "2026-11-12" })]))).toContain("grounded_availability");
-    expect(constraintsOf(plan([workout({ start: "05:00" })]))).toContain("grounded_availability");
-    expect(constraintsOf(plan([workout({ start: "21:45" })]))).toContain("grounded_availability");
+    expect(constraintsOf(plan([workout({ date: "2026-11-08" })]))).not.toContain("grounded_availability");
   });
 
   it("blocks make-up overload", () => {
@@ -130,7 +140,7 @@ describe("validatePlan", () => {
       workout({ id: `w${i}`, date }),
     );
     expect(constraintsOf(plan(four))).toContain("no_volume_spike");
-    const stacked = plan([workout(), workout({ id: "w2", start: "07:00" })]);
+    const stacked = plan([workout(), workout({ id: "w2" })]);
     expect(constraintsOf(stacked)).toContain("no_volume_spike");
     const extraSets = workout({ exercises: [{ exerciseId: "goblet_squat", sets: 6 }] });
     expect(constraintsOf(plan([extraSets]))).toContain("no_volume_spike");
@@ -148,8 +158,8 @@ describe("validatePlan", () => {
   });
 
   it("reports soft preferences as warnings, not violations", () => {
-    const r = validatePlan(plan([workout({ date: "2026-11-03", start: "07:00" })]), ctx());
+    const r = validatePlan(plan([workout({ date: "2026-11-03" })]), ctx());
     expect(r.ok).toBe(true);
-    expect(r.warnings.map((w) => w.constraint)).toEqual(expect.arrayContaining(["preferred_day", "preferred_time"]));
+    expect(r.warnings.map((w) => w.constraint)).toEqual(["preferred_day"]);
   });
 });

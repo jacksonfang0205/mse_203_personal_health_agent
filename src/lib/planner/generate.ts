@@ -5,8 +5,9 @@
  * realistic, constraint-respecting plans to work with before the LLM is wired
  * in, and it doubles as a rule-based baseline in evals.
  */
+import { dayCapacity, fitMinutes } from "../capacity";
 import { EXERCISES } from "../catalog";
-import { CATEGORY_STYLE, GOAL_LABELS, MUSCLE_LABELS, TIME_OF_DAY } from "../labels";
+import { CATEGORY_STYLE, GOAL_LABELS, MUSCLE_LABELS } from "../labels";
 import type {
   AvoidTag,
   BusyBlock,
@@ -17,23 +18,16 @@ import type {
   Goal,
   IsoDate,
   MuscleGroup,
-  TimeOfDay,
   WeeklyPlan,
   Workout,
   WorkoutCategory,
   WorkoutOrigin,
   WorkoutType,
 } from "../schemas";
-import { TIMES_OF_DAY } from "../schemas";
-import { dayLong, fromMinutes, overlaps, toMinutes, weekDates, weekdayOf } from "../time";
+import { dayLong, weekDates, weekdayOf } from "../time";
 
 const LEVEL_RANK = { beginner: 0, intermediate: 1, advanced: 2 } as const;
-const SLOT_STEP = 15;
 const MAX_EXERCISES = 6;
-/** Breathing room kept around calendar events when picking slots. */
-const BUFFER_MIN = 15;
-const DAY_START = "06:00";
-const DAY_END = "22:00";
 
 const TYPE_CATEGORIES: Record<WorkoutType, WorkoutCategory[]> = {
   gym: ["strength"],
@@ -127,7 +121,6 @@ export interface BuildArgs {
   workoutTypes: WorkoutType[];
   id: string;
   date: IsoDate;
-  start: ClockTime;
   origin: WorkoutOrigin;
   rationale: string;
   title?: string;
@@ -185,7 +178,6 @@ export function buildWorkout(a: BuildArgs): Workout | null {
     id: a.id,
     title: a.title ?? defaultTitle(a.category, a.focus, picked[0].ex),
     date: a.date,
-    start: a.start,
     durationMin: a.minutes,
     category: a.category,
     muscles,
@@ -225,64 +217,12 @@ function defaultTitle(category: WorkoutCategory, focus: MuscleGroup[], first: Ex
   }
 }
 
-// ---------- Slot finding ----------
+// ---------- Day capacity ----------
 
-export interface SlotQuery {
-  date: IsoDate;
-  minutes: number;
-  busy: BusyBlock[];
-  /** Other workouts already placed; treated as busy. */
-  taken: Pick<Workout, "date" | "start" | "durationMin">[];
-  /** Preferred windows to search, in order. Omit to search the whole day. */
-  windows?: TimeOfDay[];
-  /** Earliest allowed start (e.g. now). */
-  notBefore?: { date: IsoDate; time: ClockTime };
-}
-
-export function findSlot(q: SlotQuery): ClockTime | null {
-  const ranges = (q.windows ?? [null]).map((w) =>
-    w ? [toMinutes(TIME_OF_DAY[w].start), toMinutes(TIME_OF_DAY[w].end)] : [toMinutes(DAY_START), toMinutes(DAY_END)],
-  );
-  const dayEnd = toMinutes(DAY_END);
-  let earliest = 0;
-  if (q.notBefore) {
-    if (q.date < q.notBefore.date) return null;
-    if (q.date === q.notBefore.date) {
-      earliest = Math.ceil((toMinutes(q.notBefore.time) + 30) / SLOT_STEP) * SLOT_STEP;
-    }
-  }
-  const blocks = [
-    ...q.busy
-      .filter((b) => b.date === q.date)
-      .map((b) => [toMinutes(b.start) - BUFFER_MIN, toMinutes(b.end) + BUFFER_MIN]),
-    ...q.taken.filter((t) => t.date === q.date).map((t) => [toMinutes(t.start), toMinutes(t.start) + t.durationMin]),
-  ];
-  for (const [from, to] of ranges) {
-    for (let s = Math.max(from, earliest); s < to; s += SLOT_STEP) {
-      const e = s + q.minutes;
-      if (e > dayEnd) break;
-      if (!blocks.some(([bs, be]) => overlaps(s, e, bs, be))) return fromMinutes(s);
-    }
-  }
-  return null;
-}
-
-/**
- * Try preferred windows first, then anywhere in the day. Windows are searched
- * earliest first unless `keepOrder` is set (e.g. ordered by past completion).
- */
-export function findSlotWithFallback(q: Omit<SlotQuery, "windows">, preferred: TimeOfDay[], keepOrder = false) {
-  const ordered = keepOrder ? preferred : TIMES_OF_DAY.filter((t) => preferred.includes(t));
-  const inPreferred = findSlot({ ...q, windows: ordered });
-  if (inPreferred) return { start: inPreferred, preferred: true };
-  const any = findSlot(q);
-  return any ? { start: any, preferred: false } : null;
-}
-
-function windowLabelFor(start: ClockTime): string {
-  const m = toMinutes(start);
-  const hit = TIMES_OF_DAY.find((t) => m >= toMinutes(TIME_OF_DAY[t].start) && m < toMinutes(TIME_OF_DAY[t].end));
-  return hit ? TIME_OF_DAY[hit].label.toLowerCase() : "open";
+/** Free minutes on a date; for today only what's left from now. */
+export function capacityOn(date: IsoDate, busy: BusyBlock[], now?: { date: IsoDate; time: ClockTime }): number {
+  if (now && date < now.date) return 0;
+  return dayCapacity(date, busy, now && date === now.date ? now.time : undefined);
 }
 
 // ---------- Mock week ----------
@@ -295,8 +235,6 @@ export interface MockWeekArgs {
   /** Workouts to carry over unchanged (e.g. completed ones when preferences change). */
   keep?: Workout[];
   createdAt: string;
-  /** Preferred windows, best first. Defaults to the profile's, earliest first. */
-  timeOrder?: TimeOfDay[];
 }
 
 /** Spread `n` picks across `items` as evenly as possible. */
@@ -334,26 +272,22 @@ export function generateMockWeek(args: MockWeekArgs): WeeklyPlan {
           ? profile.targetMuscles
           : STRENGTH_FOCI[strengthIdx % STRENGTH_FOCI.length].muscles
         : profile.targetMuscles;
-    const slot = findSlotWithFallback(
-      { date, minutes: profile.sessionMinutes, busy, taken: workouts, notBefore: now },
-      args.timeOrder ?? profile.preferredTimes,
-      !!args.timeOrder,
-    );
-    if (!slot) return false;
+    const minutes = fitMinutes(profile.sessionMinutes, capacityOn(date, busy, now));
+    if (!minutes) return false;
     const goal = profile.goals.find((g) => GOAL_CATEGORIES[g].includes(category)) ?? profile.goals[0];
     const rationale =
       `${CATEGORY_STYLE[category].label} work toward your goal to ${GOAL_LABELS[goal].label.toLowerCase()}. ` +
-      `Placed in your free ${windowLabelFor(slot.start)} on ${dayLong(date)}` +
-      (slot.preferred ? ", clear of your calendar." : " — outside your preferred times, but it's the open slot that day.");
+      (minutes < profile.sessionMinutes
+        ? `${dayLong(date)} is busy, so it's a shorter ${minutes}-minute session. Do it whenever you have a gap.`
+        : `Do it any time on ${dayLong(date)} that suits you.`);
     const w = buildWorkout({
       category,
       focus,
-      minutes: profile.sessionMinutes,
+      minutes,
       filter,
       workoutTypes: profile.workoutTypes,
       id: `wk-${weekStart}-${sessionIdx}`,
       date,
-      start: slot.start,
       origin: "mock_template",
       rationale,
     });
@@ -385,7 +319,7 @@ export function generateMockWeek(args: MockWeekArgs): WeeklyPlan {
     notes.push("You asked for more workouts than preferred days, so some land on other days.");
   }
 
-  workouts.sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  workouts.sort((a, b) => a.date.localeCompare(b.date));
   return {
     id: `plan-${weekStart}`,
     weekStart,

@@ -32,6 +32,8 @@ const AppState = z.object({
   blocked: z.array(BlockedTime).default([]),
   notes: z.array(MemoryNote).default([]),
   log: z.array(WorkoutLogEntry).default([]),
+  /** Per-workout checklist: indexes of exercises ticked off. */
+  steps: z.record(z.string(), z.array(z.number().int())).default({}),
 });
 export type AppState = z.infer<typeof AppState>;
 
@@ -44,6 +46,7 @@ const EMPTY: AppState = {
   blocked: [],
   notes: [],
   log: [],
+  steps: {},
 };
 
 export interface PivotRepository {
@@ -125,7 +128,16 @@ export const pivot = {
     update((s) => ({ ...s, profile }));
   },
   setPlan(plan: WeeklyPlan) {
-    update((s) => ({ ...s, plan }));
+    update((s) => {
+      // Keep ticks only for workouts whose exercise list didn't change.
+      const prev = new Map(s.plan?.workouts.map((w) => [w.id, JSON.stringify(w.exercises)]));
+      const steps = Object.fromEntries(
+        plan.workouts
+          .filter((w) => s.steps[w.id] && prev.get(w.id) === JSON.stringify(w.exercises))
+          .map((w) => [w.id, s.steps[w.id]]),
+      );
+      return { ...s, plan, steps };
+    });
   },
   setWorkoutStatus(workoutId: string, status: WorkoutStatus) {
     update((s) => {
@@ -137,17 +149,21 @@ export const pivot = {
         log.unshift({
           workoutId,
           date: w.date,
-          start: w.start,
           durationMin: w.durationMin,
           category: w.category,
           status,
+          time: localNow(new Date()).time,
           at: new Date().toISOString(),
         });
       }
+      // Un-doing a fully ticked workout clears its ticks so the checklist starts over.
+      const steps = { ...s.steps };
+      if (w && status === "planned" && (steps[workoutId]?.length ?? 0) >= w.exercises.length) delete steps[workoutId];
       return {
         ...s,
         plan: { ...s.plan, workouts: s.plan.workouts.map((x) => (x.id === workoutId ? { ...x, status } : x)) },
         log: log.slice(0, 300),
+        steps,
       };
     });
   },
@@ -156,6 +172,19 @@ export const pivot = {
   },
   setCalendarPreset(calendarPreset: CalendarPresetId) {
     update((s) => ({ ...s, calendarPreset }));
+  },
+  /** Tick an exercise on or off. Ticking the last one completes the workout. */
+  toggleStep(workoutId: string, index: number) {
+    const s = snapshot();
+    const w = s.plan?.workouts.find((x) => x.id === workoutId);
+    if (!w) return;
+    const done = new Set(s.steps[workoutId] ?? []);
+    if (done.has(index)) done.delete(index);
+    else done.add(index);
+    update((st) => ({ ...st, steps: { ...st.steps, [workoutId]: [...done].sort((a, b) => a - b) } }));
+    const all = done.size === w.exercises.length;
+    if (all && w.status !== "completed") pivot.setWorkoutStatus(workoutId, "completed");
+    if (!all && w.status === "completed") pivot.setWorkoutStatus(workoutId, "planned");
   },
   addBlocked(items: BlockedTime[]) {
     update((s) => ({ ...s, blocked: [...s.blocked, ...items] }));

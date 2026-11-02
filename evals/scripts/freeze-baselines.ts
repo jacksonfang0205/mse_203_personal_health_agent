@@ -36,7 +36,7 @@ for (const persona of personas) {
   }
   plans[persona.id] = frozen;
   console.log(
-    `${persona.id}: ${frozen.workouts.map((w) => `${w.id} ${w.date} ${w.start} ${w.durationMin}m ${w.title}`).join(" | ")}`,
+    `${persona.id}: ${frozen.workouts.map((w) => `${w.id} ${w.date} ${w.durationMin}m ${w.title}`).join(" | ")}`,
   );
 }
 

@@ -1,13 +1,13 @@
 /**
- * Agent weekly planning: the model picks days, times, formats and exercises
- * from the user's free windows and memory; deterministic code rebuilds every
- * workout from the catalog, repairs start times that don't fit, and keeps only
- * what passes the validation gate.
+ * Agent weekly planning: the model picks days, lengths, formats and exercises
+ * from each day's free time and the user's memory. Workouts have no clock time;
+ * the user does them whenever suits them. Deterministic code rebuilds every
+ * workout from the catalog, caps it at the day's free time, and keeps only what
+ * passes the validation gate.
  */
 import { z } from "zod";
-import { learnedTimeOrder, computeInsights } from "../insights";
-import { filterFromProfile } from "../planner/generate";
-import { ClockTime, IsoDate, MuscleGroup, WorkoutCategory, type WeeklyPlan, type Workout } from "../schemas";
+import { capacityOn, filterFromProfile } from "../planner/generate";
+import { IsoDate, MuscleGroup, WorkoutCategory, type WeeklyPlan, type Workout } from "../schemas";
 import { buildSamplePlan } from "../session";
 import { validatePlan } from "../validation";
 import {
@@ -17,7 +17,6 @@ import {
   memoryContext,
   profileContext,
   remainingDates,
-  repairStart,
   weekContext,
   type AgentRequest,
 } from "./context";
@@ -28,29 +27,34 @@ const PlanOutput = z.object({
     .array(
       z.object({
         date: IsoDate,
-        start: ClockTime,
         category: WorkoutCategory,
-        minutes: z.number(),
+        minutes: z.number().describe("at most the day's free_minutes and max_session_minutes"),
         focus: z.array(MuscleGroup),
         title: z.string().describe("2-4 words, e.g. 'Lower body strength'"),
         exerciseIds: z.array(z.string()).describe("ids from <catalog>, in order"),
-        rationale: z.string().describe("one sentence, at most 25 words: which goal it serves and why this slot"),
+        rationale: z.string().describe("one sentence, at most 25 words: which goal it serves and why this day"),
       }),
     )
     .max(7),
-  notes: z.array(z.string()).max(3).describe("only goals or constraints the plan could not meet; empty if none"),
+  notes: z
+    .array(z.string())
+    .max(2)
+    .describe(
+      "addressed to the user ('you'), plain language: only goals or preferences this week's plan can't meet. Never mention dates provided, inputs or data, and never count sessions or days left (the app does). Usually empty.",
+    ),
 });
 
 const SYSTEM = `You are Pivot's planning agent. You plan a week of workouts for one person.
+Workouts are assigned to days, not times: the user does each one whenever suits them that day and checks it off.
 
 Rules:
-- Schedule exactly the number of sessions asked for, one per day at most, on the dates listed.
-- A session's start and start+minutes must fit inside one of that day's "free" windows. Never use busy time or times the user can't work out.
-- Prefer the user's preferred days and times. Where learned_from_history shows a time or day the user usually misses, avoid it; favour windows they actually complete.
-- minutes must be at most max_session_minutes. Pick exercise ids only from <catalog>, matching the session's category, so their "min" values add up to about the session length. Cardio sessions use one cardio exercise.
+- Schedule exactly the number of sessions asked for, one per day at most, on the dates listed. Skip days that already have a workout.
+- minutes must be at most that day's free_minutes (its longest free stretch) and at most max_session_minutes. On a busy day, plan a shorter session rather than none. Skip days with under 15 free minutes.
+- Prefer the user's preferred days. Where learned_from_history shows a day or format the user usually misses, avoid it.
+- Pick exercise ids only from <catalog>, matching the session's category, so their "min" values add up to about the session length. Cardio sessions use one cardio exercise.
 - Balance the week across the user's goals and enjoyed formats. Don't put two strength sessions with the same focus on back-to-back days.
 - Respect avoid, avoid_notes, limitations and memory notes. Never give medical or rehab advice.
-- Be concise: short titles, one-sentence rationales. No filler.`;
+- Be concise: short titles, one-sentence rationales. Never mention clock times. No filler.`;
 
 export interface PlanResult {
   plan: WeeklyPlan;
@@ -83,8 +87,12 @@ export async function agentPlanWeek(req: AgentRequest): Promise<PlanResult> {
   for (const [i, s] of res.output.sessions.entries()) {
     if (workouts.length - keep.length >= target) break;
     if (!allowed.has(s.date) || workouts.some((w) => w.date === s.date)) continue;
-    const built = assembleWorkout(s, { id: `ai-${weekStart}-${i}-${createdAt.slice(11, 19).replaceAll(":", "")}`, profile: req.profile, filter });
-    const placed = built && repairStart(built, busy, workouts, req.profile, req.now);
+    const placed = assembleWorkout(s, {
+      id: `ai-${weekStart}-${i}-${createdAt.slice(11, 19).replaceAll(":", "")}`,
+      profile: req.profile,
+      filter,
+      maxMinutes: capacityOn(s.date, busy, req.now),
+    });
     if (!placed) continue;
     // Gate each addition so one bad session can't sink the whole plan.
     const trial: WeeklyPlan = { id: "trial", weekStart, workouts: [...workouts, placed], generatedBy: "agent", createdAt, notes: [] };
@@ -94,20 +102,24 @@ export async function agentPlanWeek(req: AgentRequest): Promise<PlanResult> {
   const notes = [...res.output.notes];
   const planned = workouts.length - keep.length;
   if (planned < target) {
-    notes.push(`Found time for ${planned + keep.length} of your ${req.profile.frequencyPerWeek} workouts this week.`);
+    const total = planned + keep.length;
+    notes.unshift(
+      dates.length < target
+        ? `Only ${dates.length} day${dates.length === 1 ? "" : "s"} left this week, so this plan has ${total} of your ${req.profile.frequencyPerWeek} workouts.`
+        : `Found room for ${total} of your ${req.profile.frequencyPerWeek} workouts this week. The other days are too full.`,
+    );
   }
 
-  workouts.sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  workouts.sort((a, b) => a.date.localeCompare(b.date));
   return {
     plan: { id: `plan-${weekStart}`, weekStart, workouts, generatedBy: "agent", createdAt, notes },
     usage: res.usage,
   };
 }
 
-/** The template planner, ordered by what past weeks show. Used when AI is off or fails. */
+/** The template planner. Used when AI is off or fails. */
 export function templatePlanWeek(req: AgentRequest, reason?: string): PlanResult {
   const weekStart = weekContext(req).weekStart;
-  const insights = computeInsights({ log: req.log, history: req.history, plan: req.plan, now: req.now });
   const plan = buildSamplePlan({
     profile: req.profile,
     preset: req.calendarPreset,
@@ -115,7 +127,6 @@ export function templatePlanWeek(req: AgentRequest, reason?: string): PlanResult
     createdAt: new Date().toISOString(),
     keep: req.plan?.weekStart === weekStart ? req.plan.workouts.filter((w) => w.status === "completed") : [],
     blocked: req.blocked,
-    timeOrder: learnedTimeOrder(req.profile.preferredTimes, insights),
   });
   return { plan, fallback: reason };
 }

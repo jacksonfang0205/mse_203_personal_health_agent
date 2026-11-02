@@ -3,7 +3,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { agentSnapshot, requestPlan, useAiStatus, type AiStatus } from "@/lib/agentClient";
 import { CALENDAR_PRESETS } from "@/lib/calendar";
-import { computeInsights, learnedTimeOrder } from "@/lib/insights";
+import { dayCapacity, formatFree } from "@/lib/capacity";
 import type { BusyBlock, ChangeRecord, IsoDate, WeeklyPlan, WorkoutStatus } from "@/lib/schemas";
 import { buildSamplePlan, calendarForWeek } from "@/lib/session";
 import { pivot, useNow, usePivotState } from "@/lib/store";
@@ -13,6 +13,7 @@ import { CONSTRAINT_LABELS, validatePlan, type ValidationResult } from "@/lib/va
 import { CalendarIcon, Shield, Sparkle } from "../icons";
 import { Button, ButtonLink, Card, Eyebrow, MockBadge, Skeleton, cx } from "../ui";
 import { LifeHappens } from "./LifeHappens";
+import { Today, streakOf } from "./Today";
 import { WorkoutCard } from "./WorkoutCard";
 import { WorkoutDialog } from "./WorkoutDialog";
 
@@ -25,7 +26,7 @@ export function WeekView() {
   const state = usePivotState();
   const now = useNow();
   const [openId, setOpenId] = useState<string | null>(null);
-  const [showCalendar, setShowCalendar] = useState(true);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [planning, setPlanning] = useState(false);
   const [planNote, setPlanNote] = useState<string | null>(null);
   const ai = useAiStatus();
@@ -75,9 +76,8 @@ export function WeekView() {
         setPlanning(false);
       }
     }
-    // Template planner, still aware of blocked times and past completion.
+    // Template planner, still aware of blocked times.
     const now = localNow(at);
-    const insights = computeInsights({ log: state.log, history: state.history, plan: state.plan, now });
     const keep = state.plan?.weekStart === weekStart ? state.plan.workouts.filter((w) => w.status === "completed") : [];
     const next = buildSamplePlan({
       profile,
@@ -86,7 +86,6 @@ export function WeekView() {
       createdAt: at.toISOString(),
       keep,
       blocked: state.blocked,
-      timeOrder: learnedTimeOrder(profile.preferredTimes, insights),
     });
     pivot.setPlan(next);
     track("plan_generated", { source: "mock_template", workouts: next.workouts.length });
@@ -96,7 +95,7 @@ export function WeekView() {
     return (
       <EmptyState
         title="A fresh week."
-        body="Pivot will plan the rest of this week around your simulated calendar and the times you can't make."
+        body="Pivot picks which days get a workout, based on how much free time each day has. You do each one whenever suits you."
         action={
           <div className="flex flex-col items-center gap-3">
             <Button onClick={buildPlan} disabled={planning || !ai}>
@@ -144,6 +143,15 @@ export function WeekView() {
         <Card className="border-coral/30 bg-coral-soft p-4 text-sm text-coral-ink shadow-none">{planNote}</Card>
       )}
 
+      <Today
+        plan={plan}
+        today={now.date}
+        steps={state.steps}
+        freeToday={dayCapacity(now.date, calendar.busy, now.time)}
+        streak={streakOf(plan, state.log, now.date)}
+        onOpen={setOpenId}
+      />
+
       <LifeHappens
         plan={plan}
         profile={profile}
@@ -171,7 +179,7 @@ export function WeekView() {
             className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-card px-3.5 py-1.5 text-xs font-medium text-ink-soft hover:text-ink"
           >
             <CalendarIcon width={14} height={14} />
-            {showCalendar ? "Hide" : "Show"} calendar · {CALENDAR_PRESETS[state.calendarPreset].label} (simulated)
+            {showCalendar ? "Hide" : "Show"} events · {CALENDAR_PRESETS[state.calendarPreset].label} (simulated)
           </button>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
@@ -183,7 +191,9 @@ export function WeekView() {
               isToday={date === now.date}
               isPast={date < now.date}
               plan={plan}
-              busy={showCalendar ? calendar.busy.filter((b) => b.date === date) : []}
+              busy={calendar.busy.filter((b) => b.date === date)}
+              showEvents={showCalendar}
+              free={date < now.date ? 0 : dayCapacity(date, calendar.busy, date === now.date ? now.time : undefined)}
               onOpen={setOpenId}
             />
           ))}
@@ -204,51 +214,57 @@ function DayColumn(props: {
   isPast: boolean;
   plan: WeeklyPlan;
   busy: BusyBlock[];
+  showEvents: boolean;
+  /** Longest free stretch, in minutes. */
+  free: number;
   onOpen: (id: string) => void;
 }) {
   const workouts = props.plan.workouts.filter((w) => w.date === props.date);
-  const items: { start: string; el: ReactNode }[] = [
-    ...props.busy.map((b) => ({
-      start: b.start,
-      el: (
-        <div
-          key={b.id}
-          title={b.source === "blocked" ? "You told Pivot you can't work out now" : undefined}
-          className={cx(
-            "rounded-xl border px-3 py-2 text-[11px]",
-            b.source === "blocked"
-              ? "border-dashed border-coral/40 bg-coral-soft/40 text-coral-ink"
-              : "border-line bg-paper-deep/60 text-ink-faint",
-          )}
-        >
-          <span className="font-semibold">{formatTime(b.start)}</span> {b.source === "blocked" ? "⊘ " : ""}
-          {b.title}
-        </div>
-      ),
-    })),
-    ...workouts.map((w) => ({
-      start: w.start,
-      el: <WorkoutCard key={w.id} workout={w} onOpen={() => props.onOpen(w.id)} />,
-    })),
-  ].sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
-
+  // 16 waking hours; the bar shows how open the day is at a glance.
+  const openness = Math.min(1, props.free / (16 * 60));
   return (
     <div
       style={{ animationDelay: `${props.index * 40}ms` }}
       className={cx(
-        "animate-rise flex flex-col gap-2 rounded-2xl p-2.5 lg:min-h-64",
+        "animate-rise flex flex-col gap-2 rounded-2xl p-2.5 lg:min-h-56",
         props.isToday ? "bg-card ring-2 ring-coral/60" : "bg-paper-deep/50",
         props.isPast && "opacity-70",
       )}
     >
-      <div className="flex items-baseline justify-between px-1.5 pt-1 pb-1">
+      <div className="flex items-baseline justify-between px-1.5 pt-1">
         <span className={cx("text-xs font-semibold uppercase tracking-wider", props.isToday ? "text-coral-deep" : "text-ink-faint")}>
           {props.isToday ? "Today" : dayShort(props.date)}
         </span>
         <span className="font-display text-xl font-medium">{dayOfMonth(props.date)}</span>
       </div>
-      {items.map((it) => it.el)}
-      {workouts.length === 0 && <p className="px-1.5 pb-2 text-xs text-ink-faint italic">Rest day</p>}
+      {!props.isPast && (
+        <div className="px-1.5" title={`Longest free stretch: ${props.free} min`}>
+          <div className="h-1.5 overflow-hidden rounded-full bg-line">
+            <div className="h-full rounded-full bg-sage/70" style={{ width: `${openness * 100}%` }} />
+          </div>
+          <p className="mt-1 text-[11px] text-ink-faint">{formatFree(props.free)}</p>
+        </div>
+      )}
+      {workouts.map((w) => (
+        <WorkoutCard key={w.id} workout={w} onOpen={() => props.onOpen(w.id)} />
+      ))}
+      {workouts.length === 0 && <p className="px-1.5 text-xs text-ink-faint italic">Rest day</p>}
+      {props.showEvents &&
+        props.busy.map((b) => (
+          <div
+            key={b.id}
+            title={b.source === "blocked" ? "You told Pivot you can't work out now" : undefined}
+            className={cx(
+              "rounded-xl border px-2.5 py-1.5 text-[11px]",
+              b.source === "blocked"
+                ? "border-dashed border-coral/40 bg-coral-soft/40 text-coral-ink"
+                : "border-line bg-paper-deep/60 text-ink-faint",
+            )}
+          >
+            {b.source === "blocked" ? "⊘ " : ""}
+            {b.start === "00:00" && b.end >= "23:00" ? "All day" : formatTime(b.start)} {b.title}
+          </div>
+        ))}
     </div>
   );
 }

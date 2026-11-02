@@ -5,15 +5,15 @@ import { CATEGORY_STYLE } from "@/lib/labels";
 import type { WorkoutCategory } from "@/lib/schemas";
 
 const PREVIEW: { day: string; title: string; time: string; category: WorkoutCategory; tilt: string }[] = [
-  { day: "Tue", title: "Lower body strength", time: "7:00 am · 45 min", category: "strength", tilt: "-rotate-2" },
-  { day: "Thu", title: "Easy run", time: "6:30 pm · 30 min", category: "cardio", tilt: "rotate-1 translate-x-8" },
-  { day: "Sat", title: "Yoga flow", time: "9:30 am · 40 min", category: "yoga", tilt: "-rotate-1 translate-x-2" },
+  { day: "Tue", title: "Lower body strength", time: "45 min · any time", category: "strength", tilt: "-rotate-2" },
+  { day: "Thu", title: "Easy run", time: "30 min · any time", category: "cardio", tilt: "rotate-1 translate-x-8" },
+  { day: "Sat", title: "Yoga flow", time: "40 min · any time", category: "yoga", tilt: "-rotate-1 translate-x-2" },
 ];
 
 const FEATURES = [
   {
-    title: "Plans around your real week",
-    body: "Pivot reads your calendar's busy times and fits workouts into the gaps. It won't make up free time you don't have.",
+    title: "Today's workout, on your terms",
+    body: "Pivot picks the days and sizes each workout to how busy that day is. You do it whenever suits you and tick it off.",
   },
   {
     title: "Life Happens, in plain English",
@@ -35,8 +35,8 @@ export default function Home() {
             Fitness that <em className="text-coral">fits</em> your life.
           </h1>
           <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-soft">
-            Most planners tell you what to do. Pivot figures out when, where, and how, and adjusts when your week doesn&apos;t
-            go to plan.
+            Open Pivot, see today&apos;s workout, tick it off. Pivot plans the week around how busy each day is and adjusts when
+            it doesn&apos;t go to plan.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <StartButton />

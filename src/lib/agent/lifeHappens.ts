@@ -9,7 +9,8 @@
 import { z } from "zod";
 import { blockedToBusy } from "../calendar";
 import { proposeRuleBasedAlternatives, applyOperations } from "../planner/alternatives";
-import { buildWorkout, filterFromProfile, findSlotWithFallback } from "../planner/generate";
+import { fitMinutes } from "../capacity";
+import { buildWorkout, capacityOn, filterFromProfile } from "../planner/generate";
 import {
   ALTERNATIVE_KINDS,
   ClockTime,
@@ -26,17 +27,16 @@ import {
   type Proposal,
   type WeeklyPlan,
 } from "../schemas";
-import { dayLong, formatTime, weekdayOf } from "../time";
+import { dayLong, weekdayOf } from "../time";
 import { validatePlan, type ValidationContext } from "../validation";
 import {
   assembleWorkout,
   catalogFor,
-  conflicts,
   daysContext,
+  fitsDay,
   memoryContext,
   profileContext,
   remainingDates,
-  repairStart,
   weekContext,
   type AgentRequest,
 } from "./context";
@@ -47,10 +47,9 @@ const opt = <T extends z.ZodType>(s: T) => s.nullish();
 const Operation = z.object({
   op: z.enum(["move", "replace", "skip"]),
   workoutId: z.string().describe("id from <plan>"),
-  date: opt(IsoDate).describe("move/replace: new date"),
-  start: opt(ClockTime).describe("move/replace: new start, inside a free window"),
+  date: opt(IsoDate).describe("move: a day with no workout and enough free_minutes; replace: defaults to the same day"),
   category: opt(WorkoutCategory).describe("replace: format of the new session"),
-  minutes: opt(z.number()).describe("replace: new length"),
+  minutes: opt(z.number()).describe("replace: new length, at most that day's free_minutes"),
   focus: opt(z.array(MuscleGroup)),
   exerciseIds: opt(z.array(z.string())).describe("replace: ids from <catalog>"),
   title: opt(z.string()).describe("replace: 2-4 words"),
@@ -61,7 +60,7 @@ const LifeHappensOutput = z.object({
   new_busy: z
     .array(z.object({ date: IsoDate, start: ClockTime, end: ClockTime, title: z.string() }))
     .max(10)
-    .describe("events from the message that are not in the calendar yet"),
+    .describe("events from the message that are not in the calendar yet; whole day = 00:00-23:59"),
   day_limits: z
     .array(z.object({ date: IsoDate, minutes: z.number() }))
     .max(7)
@@ -72,7 +71,7 @@ const LifeHappensOutput = z.object({
       z.object({
         kind: z.enum(ALTERNATIVE_KINDS),
         title: z.string().describe("at most 6 words"),
-        summary: z.string().describe("one sentence: what happens, with day and time"),
+        summary: z.string().describe("one sentence: what happens and on which day; no clock times"),
         tradeoffs: z.array(z.string()).max(2).describe("honest costs; never claim it's equivalent"),
         operations: z.array(Operation).min(1).max(7),
       }),
@@ -85,8 +84,8 @@ const LifeHappensOutput = z.object({
         type: z.enum(["blocked", "note"]),
         text: z.string().describe("note text, or a short label for the blocked time"),
         days: opt(z.array(Weekday)).describe("blocked: recurring weekdays"),
-        start: opt(ClockTime),
-        end: opt(ClockTime),
+        start: opt(ClockTime).describe("blocked: 00:00 for the whole day"),
+        end: opt(ClockTime).describe("blocked: 23:59 for the whole day"),
       }),
     )
     .max(3)
@@ -97,18 +96,18 @@ const LifeHappensOutput = z.object({
 type LifeHappensOutput = z.infer<typeof LifeHappensOutput>;
 
 const SYSTEM = `You are Pivot's Life Happens agent. The user says what changed in their week; you offer up to three different, feasible ways to adapt their workout plan.
+Workouts are assigned to days, not times: the user does each one whenever suits them that day. A workout fits a day when its minutes are at most that day's free_minutes (its longest free stretch).
 
 Rules:
-- First record the facts: a day that is "out" or fully busy goes in day_limits with minutes 0; a time-limited day ("only 20 minutes") gets its minutes; specific new events go in new_busy; recurring times the user can never work out go in remember AND count as busy now.
-- Every alternative should resolve ALL of it: each planned workout that now conflicts should be moved, replaced, or skipped in that same alternative. Never put two workouts on one day.
+- First record the facts: a day that is "out" goes in day_limits with minutes 0; a time-limited day ("only 20 minutes") gets its minutes; specific new events go in new_busy; recurring times the user can never work out go in remember.
+- Every alternative should resolve ALL of it: each planned workout that no longer fits its day should be moved, shortened, swapped, or skipped in that same alternative. One workout per day at most.
 - Only change planned workouts that the message affects. Never touch completed workouts. Never add make-up sessions or extra volume.
-- Offer distinct kinds where possible: "shorter" (replace with a shorter session), "move" (same workout, another free slot), "swap_format" (replace with a different format that fits), "skip" (rest; always an honest option).
-- Every new start must fit inside a free window from <days>, after any new_busy events from the message.
+- Offer distinct kinds where possible: "shorter" (replace with a shorter session that fits the day), "move" (same workout, another day with room), "swap_format" (replace with a different format that fits), "skip" (rest; always an honest option).
 - If the message limits equipment for a period, every remaining workout in that period must fit it, so include operations for each one.
 - Use exercise ids from <catalog> only. Minutes never exceed max_session_minutes.
-- Use memory: lean toward the kinds of options the user picked before, and avoid times they usually miss.
+- Use memory: lean toward the kinds of options the user picked before, and avoid days they usually miss.
 - Tradeoffs must be honest. Never say a different workout gives the same benefit. No medical or rehab advice.
-- Be concise. If nothing fits, return no alternatives and say why in infeasible_reason.`;
+- Be concise and never mention clock times for workouts. If nothing fits, return no alternatives and say why in infeasible_reason.`;
 
 export interface MemorySuggestions {
   blocked: BlockedTime[];
@@ -133,7 +132,6 @@ function buildPrompt(req: AgentRequest & { message: string }, plan: WeeklyPlan, 
       plan.workouts.map((w) => ({
         id: w.id,
         date: w.date,
-        start: w.start,
         minutes: w.durationMin,
         category: w.category,
         title: w.title,
@@ -161,20 +159,18 @@ function toOperations(
   for (const op of ops) {
     const target = plan.workouts.find((w) => w.id === op.workoutId);
     if (!target || target.status === "completed") return null;
-    const others = working.workouts.filter((w) => w.id !== target.id);
     let next: PlanOperation;
     if (op.op === "skip") {
       next = { op: "skip", workoutId: target.id };
     } else if (op.op === "move") {
-      if (!op.date || !op.start) return null;
-      const moved = repairStart({ ...target, date: op.date, start: op.start }, ctx.busy, others, req.profile, req.now);
-      if (!moved) return null;
-      next = { op: "move", workoutId: target.id, date: moved.date, start: moved.start };
+      if (!op.date || !fitsDay({ ...target, date: op.date }, ctx.busy, working.workouts, req.now)) return null;
+      next = { op: "move", workoutId: target.id, date: op.date };
     } else {
+      const date = op.date ?? target.date;
+      const limit = ctx.dateLimits?.[date];
       const built = assembleWorkout(
         {
-          date: op.date ?? target.date,
-          start: op.start ?? target.start,
+          date,
           category: op.category ?? target.category,
           minutes: op.minutes ?? target.durationMin,
           focus: op.focus ?? target.muscles,
@@ -182,11 +178,10 @@ function toOperations(
           title: op.title ?? target.title,
           rationale: summary,
         },
-        { id: target.id, profile: req.profile, filter },
+        { id: target.id, profile: req.profile, filter, maxMinutes: Math.min(capacityOn(date, ctx.busy, req.now), limit ?? Infinity) },
       );
-      const placed = built && repairStart(built, ctx.busy, others, req.profile, req.now);
-      if (!placed) return null;
-      next = { op: "replace", workoutId: target.id, workout: placed };
+      if (!built || !fitsDay(built, ctx.busy, working.workouts, req.now)) return null;
+      next = { op: "replace", workoutId: target.id, workout: built };
     }
     out.push(next);
     working = applyOperations(working, [next]);
@@ -205,6 +200,7 @@ export function resolveCollateral(plan: WeeklyPlan, ops: PlanOperation[], ctx: V
   const filter = filterFromProfile(req.profile, ctx.equipmentAvailable ? { equipment: ctx.equipmentAvailable } : {});
   const have = new Set(ctx.equipmentAvailable ?? req.profile.equipment);
   const limits = ctx.dateLimits ?? {};
+  const roomOn = (date: string) => Math.min(capacityOn(date, ctx.busy, req.now), limits[date] ?? Infinity);
   let working = applyOperations(plan, ops);
   const extra: PlanOperation[] = [];
   const notes: string[] = [];
@@ -212,60 +208,46 @@ export function resolveCollateral(plan: WeeklyPlan, ops: PlanOperation[], ctx: V
   for (const w of plan.workouts) {
     if (w.status !== "planned" || touched.has(w.id) || w.date < req.now.date) continue;
     const others = working.workouts.filter((o) => o.id !== w.id && o.status !== "skipped");
-    const limit = limits[w.date];
     const needsEquip = w.equipment.some((e) => !have.has(e));
-    const tooLong = limit !== undefined && limit > 0 && w.durationMin > limit;
-    if (limit !== 0 && !needsEquip && !tooLong && !conflicts(w, ctx.busy, others)) continue;
+    const room = roomOn(w.date);
+    if (!needsEquip && room >= w.durationMin) continue;
 
     let op: PlanOperation | null = null;
     let note = "";
-    if (limit !== 0 && (needsEquip || tooLong)) {
-      const minutes = tooLong ? limit : w.durationMin;
-      const rebuilt =
-        minutes >= 10 &&
-        buildWorkout({
-          category: w.category,
-          focus: w.muscles,
-          minutes,
-          filter,
-          workoutTypes: req.profile.workoutTypes,
-          id: w.id,
-          date: w.date,
-          start: w.start,
-          origin: "agent",
-          rationale: w.rationale,
-          title: w.title,
-        });
-      const placed = rebuilt && repairStart(rebuilt, ctx.busy, others, req.profile, req.now);
-      if (placed) {
-        op = { op: "replace", workoutId: w.id, workout: placed };
+    // 1. Same day: a shorter session and/or one that uses the equipment available.
+    const minutes = fitMinutes(w.durationMin, room);
+    if (minutes) {
+      const rebuilt = buildWorkout({
+        category: w.category,
+        focus: w.muscles,
+        minutes,
+        filter,
+        workoutTypes: req.profile.workoutTypes,
+        id: w.id,
+        date: w.date,
+        origin: "agent",
+        rationale: w.rationale,
+        title: w.title,
+      });
+      if (rebuilt) {
+        op = { op: "replace", workoutId: w.id, workout: rebuilt };
         note = `${w.title} on ${dayLong(w.date)} becomes ${minutes} min${needsEquip ? " with the equipment you have" : ""}.`;
       }
     }
-    if (!op && limit !== 0 && !needsEquip) {
-      const moved = repairStart(w, ctx.busy, others, req.profile, req.now);
-      if (moved) {
-        op = { op: "move", workoutId: w.id, date: moved.date, start: moved.start };
-        note = `${w.title} moves to ${formatTime(moved.start)} on ${dayLong(w.date)}.`;
-      }
-    }
+    // 2. Another day with room and no workout.
     if (!op && !needsEquip) {
-      for (const date of remainingDates(plan.weekStart, req.now.date)) {
-        if (date === w.date || others.some((o) => o.date === date) || (limits[date] !== undefined && limits[date]! < w.durationMin)) continue;
-        const slot = findSlotWithFallback(
-          { date, minutes: w.durationMin, busy: ctx.busy, taken: others, notBefore: req.now },
-          req.profile.preferredTimes,
-        );
-        if (slot) {
-          op = { op: "move", workoutId: w.id, date, start: slot.start };
-          note = `${w.title} moves to ${dayLong(date)} at ${formatTime(slot.start)}.`;
-          break;
-        }
+      const date = remainingDates(plan.weekStart, req.now.date).find(
+        (d) => d !== w.date && !others.some((o) => o.date === d) && roomOn(d) >= w.durationMin,
+      );
+      if (date) {
+        op = { op: "move", workoutId: w.id, date };
+        note = `${w.title} moves to ${dayLong(date)}.`;
       }
     }
+    // 3. Nothing works: rest.
     if (!op) {
       op = { op: "skip", workoutId: w.id };
-      note = `${w.title} on ${dayLong(w.date)} is skipped; no other time works.`;
+      note = `${w.title} on ${dayLong(w.date)} is skipped; no other day has room.`;
     }
     extra.push(op);
     notes.push(note);
@@ -386,7 +368,7 @@ export async function agentLifeHappens(req: AgentRequest & { message: string }):
         req,
         plan,
         ctx.busy,
-        `<previous_attempt_failed>\n${problems.join("\n")}\nFix these and try again. Use only free windows listed in <days>.\n</previous_attempt_failed>`,
+        `<previous_attempt_failed>\n${problems.join("\n")}\nFix these and try again. Respect each day's free_minutes in <days>.\n</previous_attempt_failed>`,
       ),
     );
     usage.push(repair.usage);

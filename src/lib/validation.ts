@@ -6,9 +6,9 @@
  * LLM agent. The eval harness uses the same functions, so "constraint
  * adherence" means exactly what this file checks.
  */
+import { dayCapacity } from "./capacity";
 import { getExercise } from "./catalog";
 import type { DateRange } from "./calendar";
-import { TIME_OF_DAY } from "./labels";
 import {
   WeeklyPlan,
   type AvoidTag,
@@ -19,7 +19,7 @@ import {
   type IsoDate,
   type Workout,
 } from "./schemas";
-import { compareMoments, overlaps, toMinutes, weekdayOf } from "./time";
+import { weekdayOf } from "./time";
 
 export const HARD_CONSTRAINTS = [
   "schema",
@@ -35,13 +35,13 @@ export const HARD_CONSTRAINTS = [
 ] as const;
 export type HardConstraint = (typeof HARD_CONSTRAINTS)[number];
 
-export const SOFT_PREFERENCES = ["preferred_day", "preferred_time", "experience_level"] as const;
+export const SOFT_PREFERENCES = ["preferred_day", "experience_level"] as const;
 export type SoftPreference = (typeof SOFT_PREFERENCES)[number];
 
 export const CONSTRAINT_LABELS: Record<HardConstraint, string> = {
   schema: "Valid plan format",
   catalog_grounded: "Exercises from Pivot's catalog",
-  calendar_conflict: "No calendar conflicts",
+  calendar_conflict: "Fits the day's free time",
   duration_limit: "Within your time limits",
   equipment: "Uses only available equipment",
   avoided_activity: "Respects what you avoid",
@@ -62,8 +62,6 @@ export interface ValidationContext {
   busy: BusyBlock[];
   /** Dates the calendar provider can vouch for. Anything outside is unknown, not free. */
   knownRange: DateRange;
-  /** Earliest start / latest end for any workout. Defaults to 06:00–22:00. */
-  dayWindow?: { start: ClockTime; end: ClockTime };
   now?: { date: IsoDate; time: ClockTime };
   /** The plan before this change. Enables completed/volume/past checks. */
   previousPlan?: WeeklyPlan;
@@ -81,11 +79,9 @@ export interface ValidationResult {
   checked: HardConstraint[];
 }
 
-const DEFAULT_DAY_WINDOW = { start: "06:00", end: "22:00" };
 /** Exercises may run this much over the session length before we flag it. */
 const DURATION_TOLERANCE = 1.15;
 
-const endMinutes = (w: Pick<Workout, "start" | "durationMin">) => toMinutes(w.start) + w.durationMin;
 const active = (plan: WeeklyPlan) => plan.workouts.filter((w) => w.status === "planned");
 
 /** Estimated minutes for a workout's exercises, scaled when sets/minutes are overridden. */
@@ -112,33 +108,41 @@ export function checkCatalog(plan: WeeklyPlan): Violation[] {
   );
 }
 
-export function checkCalendarConflicts(plan: WeeklyPlan, busy: BusyBlock[]): Violation[] {
-  const out: Violation[] = [];
-  const workouts = active(plan);
-  for (const w of workouts) {
-    for (const b of busy) {
-      if (b.date === w.date && overlaps(toMinutes(w.start), endMinutes(w), toMinutes(b.start), toMinutes(b.end))) {
-        out.push({
-          constraint: "calendar_conflict",
-          workoutId: w.id,
-          message: `"${w.title}" (${w.date} ${w.start}) overlaps "${b.title}" (${b.start}–${b.end}).`,
-        });
-      }
-    }
-  }
-  // Workouts may not overlap each other either.
-  workouts.forEach((a, i) =>
-    workouts.slice(i + 1).forEach((b) => {
-      if (a.date === b.date && overlaps(toMinutes(a.start), endMinutes(a), toMinutes(b.start), endMinutes(b))) {
-        out.push({
-          constraint: "calendar_conflict",
-          workoutId: b.id,
-          message: `"${a.title}" and "${b.title}" overlap on ${a.date}.`,
-        });
-      }
-    }),
+/** Workouts whose day or session changed relative to the previous plan (all of them without one). */
+function changedIds(plan: WeeklyPlan, previous?: WeeklyPlan): Set<string> {
+  const prev = new Map(previous?.workouts.map((w) => [w.id, w]));
+  return new Set(
+    plan.workouts
+      .filter((w) => {
+        const p = prev.get(w.id);
+        return !previous || !p || p.date !== w.date || p.durationMin !== w.durationMin || p.status !== w.status;
+      })
+      .map((w) => w.id),
   );
-  return out;
+}
+
+/**
+ * Each day's free time must have a stretch long enough for its workout.
+ * For today, only time from now counts, and only for workouts this change
+ * touched (an untouched workout later today isn't this change's problem).
+ */
+export function checkCalendarConflicts(plan: WeeklyPlan, busy: BusyBlock[], ctx?: Pick<ValidationContext, "now" | "previousPlan">): Violation[] {
+  const changed = changedIds(plan, ctx?.previousPlan);
+  return active(plan).flatMap((w) => {
+    const fromNow = ctx?.now && ctx.now.date === w.date && changed.has(w.id) ? ctx.now.time : undefined;
+    const free = dayCapacity(w.date, busy, fromNow);
+    if (free >= w.durationMin) return [];
+    return [
+      {
+        constraint: "calendar_conflict" as const,
+        workoutId: w.id,
+        message:
+          free === 0
+            ? `"${w.title}" is on ${w.date}, which has no free time.`
+            : `"${w.title}" needs ${w.durationMin} min, but ${w.date} only has ${free} min free in one stretch.`,
+      },
+    ];
+  });
 }
 
 export function checkDurations(plan: WeeklyPlan, ctx: ValidationContext): Violation[] {
@@ -234,28 +238,17 @@ export function checkCompletedPreserved(plan: WeeklyPlan, previous: WeeklyPlan):
 }
 
 export function checkGroundedAvailability(plan: WeeklyPlan, ctx: ValidationContext): Violation[] {
-  const window = ctx.dayWindow ?? DEFAULT_DAY_WINDOW;
-  return active(plan).flatMap((w) => {
-    if (w.date < ctx.knownRange.start || w.date > ctx.knownRange.end) {
-      return [
-        {
-          constraint: "grounded_availability" as const,
-          workoutId: w.id,
-          message: `"${w.title}" is on ${w.date}, outside the calendar range Pivot can see.`,
-        },
-      ];
-    }
-    if (toMinutes(w.start) < toMinutes(window.start) || endMinutes(w) > toMinutes(window.end)) {
-      return [
-        {
-          constraint: "grounded_availability" as const,
-          workoutId: w.id,
-          message: `"${w.title}" falls outside ${window.start}–${window.end}.`,
-        },
-      ];
-    }
-    return [];
-  });
+  return active(plan).flatMap((w) =>
+    w.date < ctx.knownRange.start || w.date > ctx.knownRange.end
+      ? [
+          {
+            constraint: "grounded_availability" as const,
+            workoutId: w.id,
+            message: `"${w.title}" is on ${w.date}, outside the calendar range Pivot can see.`,
+          },
+        ]
+      : [],
+  );
 }
 
 export function checkVolume(plan: WeeklyPlan, ctx: ValidationContext): Violation[] {
@@ -305,21 +298,18 @@ export function checkVolume(plan: WeeklyPlan, ctx: ValidationContext): Violation
 export function checkNoPastScheduling(plan: WeeklyPlan, ctx: ValidationContext): Violation[] {
   if (!ctx.now) return [];
   const now = ctx.now;
-  const prevById = new Map(ctx.previousPlan?.workouts.map((w) => [w.id, w]));
-  return active(plan).flatMap((w) => {
-    const prev = prevById.get(w.id);
-    const changed = !prev || prev.date !== w.date || prev.start !== w.start || prev.status !== w.status;
-    if (changed && compareMoments({ date: w.date, time: w.start }, now) < 0) {
-      return [
-        {
-          constraint: "no_past_scheduling" as const,
-          workoutId: w.id,
-          message: `"${w.title}" is scheduled for ${w.date} ${w.start}, which has already passed.`,
-        },
-      ];
-    }
-    return [];
-  });
+  const changed = changedIds(plan, ctx.previousPlan);
+  return active(plan).flatMap((w) =>
+    changed.has(w.id) && w.date < now.date
+      ? [
+          {
+            constraint: "no_past_scheduling" as const,
+            workoutId: w.id,
+            message: `"${w.title}" is scheduled for ${w.date}, which has already passed.`,
+          },
+        ]
+      : [],
+  );
 }
 
 const LEVEL_RANK = { beginner: 0, intermediate: 1, advanced: 2 } as const;
@@ -329,13 +319,6 @@ export function softPreferenceWarnings(plan: WeeklyPlan, profile: FitnessProfile
     const out: Violation[] = [];
     if (!profile.preferredDays.includes(weekdayOf(w.date))) {
       out.push({ constraint: "preferred_day", workoutId: w.id, message: `"${w.title}" is on a non-preferred day.` });
-    }
-    const inPreferredTime = profile.preferredTimes.some((t) => {
-      const win = TIME_OF_DAY[t];
-      return toMinutes(w.start) >= toMinutes(win.start) && toMinutes(w.start) < toMinutes(win.end);
-    });
-    if (!inPreferredTime) {
-      out.push({ constraint: "preferred_time", workoutId: w.id, message: `"${w.title}" starts outside your preferred times.` });
     }
     for (const we of w.exercises) {
       const ex = getExercise(we.exerciseId);
@@ -377,7 +360,7 @@ export function validatePlan(plan: unknown, ctx: ValidationContext): ValidationR
   ];
   const violations = [
     ...checkCatalog(p),
-    ...checkCalendarConflicts(p, ctx.busy),
+    ...checkCalendarConflicts(p, ctx.busy, ctx),
     ...checkDurations(p, ctx),
     ...checkEquipment(p, ctx.equipmentAvailable ?? ctx.profile.equipment),
     ...checkAvoidance(p, ctx.profile, ctx.extraAvoidTags),

@@ -2,8 +2,8 @@
  * What Pivot has learned from the user's past weeks.
  *
  * Pure and deterministic: computed from the workout log, the current plan, and
- * Life Happens decisions. The rule-based planner uses `timeOrder` to try the
- * windows the user actually shows up for first; the agent gets `summary`.
+ * Life Happens decisions. Workouts have no assigned time, so "time of day" is
+ * when the user actually checked a workout off. The agent gets `summary`.
  */
 import { CATEGORY_STYLE, TIME_OF_DAY, WEEKDAY_LABELS } from "./labels";
 import type {
@@ -18,7 +18,7 @@ import type {
   WorkoutLogEntry,
 } from "./schemas";
 import { TIMES_OF_DAY } from "./schemas";
-import { compareMoments, fromMinutes, toMinutes, weekdayOf } from "./time";
+import { toMinutes, weekdayOf } from "./time";
 
 export interface Rate {
   done: number;
@@ -28,7 +28,8 @@ export interface Rate {
 export interface Insights {
   /** Workouts with a known outcome (done, skipped, or missed). */
   samples: number;
-  byWindow: Partial<Record<TimeOfDay, Rate>>;
+  /** When completed workouts were checked off. */
+  doneByWindow: Partial<Record<TimeOfDay, number>>;
   byCategory: Partial<Record<WorkoutCategory, Rate>>;
   byWeekday: Partial<Record<Weekday, Rate>>;
   /** Alternative kinds the user picked in Life Happens. */
@@ -51,8 +52,6 @@ function bump<K extends string>(rec: Partial<Record<K, Rate>>, key: K, done: boo
   if (done) r.done++;
 }
 
-/** Smoothed completion rate so one lucky workout doesn't dominate. */
-const score = (r: Rate | undefined) => (r ? (r.done + 1) / (r.total + 2) : 0.5);
 const pct = (r: Rate) => Math.round((r.done / r.total) * 100);
 
 export function computeInsights(args: {
@@ -61,28 +60,28 @@ export function computeInsights(args: {
   plan: WeeklyPlan | null;
   now: { date: IsoDate; time: ClockTime };
 }): Insights {
-  const outcomes: { date: IsoDate; start: ClockTime; category: WorkoutCategory; done: boolean }[] = args.log.map((e) => ({
+  const outcomes: { date: IsoDate; category: WorkoutCategory; done: boolean }[] = args.log.map((e) => ({
     ...e,
     done: e.status === "completed",
   }));
-  // Planned workouts whose time has passed without being marked count as missed.
+  // Planned workouts whose day has passed without being checked off count as missed.
   const logged = new Set(args.log.map((e) => e.workoutId));
   for (const w of args.plan?.workouts ?? []) {
-    if (w.status !== "planned" || logged.has(w.id)) continue;
-    const end = fromMinutes(Math.min(toMinutes(w.start) + w.durationMin, 23 * 60 + 59));
-    if (compareMoments({ date: w.date, time: end }, args.now) < 0) {
-      outcomes.push({ date: w.date, start: w.start, category: w.category, done: false });
+    if (w.status === "planned" && !logged.has(w.id) && w.date < args.now.date) {
+      outcomes.push({ date: w.date, category: w.category, done: false });
     }
   }
 
-  const byWindow: Insights["byWindow"] = {};
+  const doneByWindow: Insights["doneByWindow"] = {};
   const byCategory: Insights["byCategory"] = {};
   const byWeekday: Insights["byWeekday"] = {};
   for (const o of outcomes) {
-    const win = windowOf(o.start);
-    if (win) bump(byWindow, win, o.done);
     bump(byCategory, o.category, o.done);
     bump(byWeekday, weekdayOf(o.date), o.done);
+  }
+  for (const e of args.log) {
+    const win = e.status === "completed" && e.time ? windowOf(e.time) : null;
+    if (win) doneByWindow[win] = (doneByWindow[win] ?? 0) + 1;
   }
 
   const chosenKinds: Insights["chosenKinds"] = {};
@@ -93,13 +92,10 @@ export function computeInsights(args: {
   }
 
   const summary: string[] = [];
-  const windows = TIMES_OF_DAY.filter((t) => (byWindow[t]?.total ?? 0) >= MIN_SAMPLES);
-  if (windows.length) {
-    summary.push(
-      "Completion by time of day: " +
-        windows.map((t) => `${TIME_OF_DAY[t].label.toLowerCase()} ${byWindow[t]!.done}/${byWindow[t]!.total}`).join(", ") +
-        ".",
-    );
+  const totalDone = Object.values(doneByWindow).reduce((a, b) => a + b, 0);
+  const [topWindow, topCount] = (Object.entries(doneByWindow) as [TimeOfDay, number][]).sort((a, b) => b[1] - a[1])[0] ?? [];
+  if (topWindow && totalDone >= MIN_SAMPLES && topCount / totalDone >= 0.5) {
+    summary.push(`Usually works out in the ${TIME_OF_DAY[topWindow].label.toLowerCase()} (${topCount} of ${totalDone} completed).`);
   }
   const cats = (Object.keys(byCategory) as WorkoutCategory[]).filter((c) => byCategory[c]!.total >= MIN_SAMPLES);
   const weak = cats.filter((c) => pct(byCategory[c]!) < 50);
@@ -116,17 +112,5 @@ export function computeInsights(args: {
   }
   if (declined >= MIN_SAMPLES) summary.push(`Declined all options ${declined} times.`);
 
-  return { samples: outcomes.length, byWindow, byCategory, byWeekday, chosenKinds, declined, summary };
+  return { samples: outcomes.length, doneByWindow, byCategory, byWeekday, chosenKinds, declined, summary };
 }
-
-/**
- * The user's preferred windows, best track record first. Undefined until
- * there's enough data to beat the default (earliest first).
- */
-export function learnedTimeOrder(preferred: TimeOfDay[], insights: Insights): TimeOfDay[] | undefined {
-  const known = preferred.filter((t) => (insights.byWindow[t]?.total ?? 0) >= MIN_SAMPLES);
-  if (!known.length) return undefined;
-  const chrono = TIMES_OF_DAY.filter((t) => preferred.includes(t));
-  return [...chrono].sort((a, b) => score(insights.byWindow[b]) - score(insights.byWindow[a]));
-}
-

@@ -11,6 +11,8 @@ import { Field } from "./sections";
 
 const INPUT = "rounded-2xl border border-line-strong bg-card px-4 py-2.5 text-sm focus:border-ink focus:outline-none";
 
+const isAllDay = (b: Pick<BlockedTime, "start" | "end">) => b.start === "00:00" && b.end >= "23:00";
+
 function when(b: BlockedTime) {
   if (b.date) return `${dayLong(b.date)}, ${monthDay(b.date)} only`;
   if (b.days.length === 7) return "Every day";
@@ -26,6 +28,7 @@ export function MemorySection({ state }: { state: AppState }) {
   const [days, setDays] = useState<Weekday[]>([]);
   const [start, setStart] = useState("07:00");
   const [end, setEnd] = useState("09:00");
+  const [allDay, setAllDay] = useState(false);
   const [label, setLabel] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -34,9 +37,17 @@ export function MemorySection({ state }: { state: AppState }) {
 
   const addBlocked = () => {
     if (!days.length) return setError("Pick at least one day.");
-    if (!start || !end || end <= start) return setError("End time must be after start time.");
+    if (!allDay && (!start || !end || end <= start)) return setError("End time must be after start time.");
     pivot.addBlocked([
-      { id: crypto.randomUUID(), days, start, end, label: label.trim(), source: "user", createdAt: new Date().toISOString() },
+      {
+        id: crypto.randomUUID(),
+        days,
+        start: allDay ? "00:00" : start,
+        end: allDay ? "23:59" : end,
+        label: label.trim(),
+        source: "user",
+        createdAt: new Date().toISOString(),
+      },
     ]);
     setDays([]);
     setLabel("");
@@ -59,13 +70,16 @@ export function MemorySection({ state }: { state: AppState }) {
       </p>
 
       <div className="flex flex-col gap-8">
-        <Field label="Times I can't work out" hint="Pivot treats these like calendar events and never plans over them.">
+        <Field
+          label="Times I can't work out"
+          hint="Pivot counts these as busy. A whole day blocked gets no workout; part of a day just means less free time."
+        >
           {state.blocked.length > 0 && (
             <ul className="flex flex-col divide-y divide-line rounded-2xl border border-line">
               {state.blocked.map((b) => (
                 <li key={b.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
                   <span>
-                    <span className="font-semibold">{when(b)}</span> · {formatTime(b.start)}–{formatTime(b.end)}
+                    <span className="font-semibold">{when(b)}</span> · {isAllDay(b) ? "all day" : `${formatTime(b.start)}–${formatTime(b.end)}`}
                     {b.label && <span className="text-ink-soft"> · {b.label}</span>}
                     {b.source === "agent" && <span className="ml-2 text-xs text-ink-faint">(from Life Happens)</span>}
                   </span>
@@ -90,9 +104,17 @@ export function MemorySection({ state }: { state: AppState }) {
               ))}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <input type="time" aria-label="From" value={start} onChange={(e) => setStart(e.target.value)} className={INPUT} />
-              <span className="text-sm text-ink-soft">to</span>
-              <input type="time" aria-label="To" value={end} onChange={(e) => setEnd(e.target.value)} className={INPUT} />
+              <label className="flex items-center gap-2 text-sm text-ink-soft">
+                <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} className="accent-coral" />
+                All day
+              </label>
+              {!allDay && (
+                <>
+                  <input type="time" aria-label="From" value={start} onChange={(e) => setStart(e.target.value)} className={INPUT} />
+                  <span className="text-sm text-ink-soft">to</span>
+                  <input type="time" aria-label="To" value={end} onChange={(e) => setEnd(e.target.value)} className={INPUT} />
+                </>
+              )}
               <input
                 placeholder="Why (optional), e.g. commute"
                 maxLength={80}
@@ -135,7 +157,7 @@ export function MemorySection({ state }: { state: AppState }) {
           </form>
         </Field>
 
-        <Field label="What Pivot has learned" hint="From workouts you've marked done or skipped and the options you picked.">
+        <Field label="What Pivot has learned" hint="From the workouts you check off or skip, when you check them off, and the options you pick.">
           {insights && insights.summary.length ? (
             <ul className="flex flex-col gap-1 text-sm">
               {insights.summary.map((s) => (
@@ -144,7 +166,7 @@ export function MemorySection({ state }: { state: AppState }) {
             </ul>
           ) : (
             <p className="text-sm text-ink-faint">
-              Not enough history yet. Mark workouts done or skipped on the week view and patterns will show up here.
+              Not enough history yet. Check off or skip a few workouts and patterns will show up here.
             </p>
           )}
         </Field>

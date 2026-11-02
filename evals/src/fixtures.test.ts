@@ -63,7 +63,7 @@ describe("eval fixtures", () => {
       // Completed workouts must already be in the past at scenario time.
       const { plan: scenarioPlan } = buildScenarioContext(s, personas, plans, referenceWeek);
       for (const w of scenarioPlan.workouts.filter((w) => w.status === "completed")) {
-        expect(`${w.date} ${w.start}` < `${s.now.date} ${s.now.time}`, w.id).toBe(true);
+        expect(w.date <= s.now.date, w.id).toBe(true);
       }
     });
   }

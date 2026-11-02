@@ -10,8 +10,7 @@ import { z } from "zod";
 import { CALENDAR_PRESET_IDS, type CalendarPresetId } from "../calendar";
 import { getExercise } from "../catalog";
 import { computeInsights } from "../insights";
-import { TIME_OF_DAY } from "../labels";
-import { buildWorkout, eligibleExercises, findSlotWithFallback, type ExerciseFilter } from "../planner/generate";
+import { buildWorkout, capacityOn, eligibleExercises, type ExerciseFilter } from "../planner/generate";
 import {
   BlockedTime,
   ChangeRecord,
@@ -27,8 +26,9 @@ import {
   type Workout,
   type WorkoutCategory,
 } from "../schemas";
+import { MIN_SESSION } from "../capacity";
 import { calendarForWeek } from "../session";
-import { fromMinutes, mondayOf, overlaps, toMinutes, weekDates, weekdayOf } from "../time";
+import { mondayOf, weekDates, weekdayOf } from "../time";
 
 /** Everything the server needs, sent by the browser (the server stores nothing). */
 export const AgentRequest = z.object({
@@ -43,39 +43,10 @@ export const AgentRequest = z.object({
 });
 export type AgentRequest = z.infer<typeof AgentRequest>;
 
-const DAY_START = 6 * 60;
-const DAY_END = 22 * 60;
-const BUFFER_MIN = 15;
-
 export function weekContext(req: AgentRequest, extraBusy: BusyBlock[] = []) {
   const weekStart = mondayOf(req.now.date);
   const cal = calendarForWeek(req.calendarPreset, weekStart, req.blocked);
   return { weekStart, busy: [...cal.busy, ...extraBusy], knownRange: cal.knownRange };
-}
-
-/** Free intervals on a date (06:00–22:00, 15 min breathing room around events, not in the past). */
-export function freeWindows(
-  date: IsoDate,
-  busy: BusyBlock[],
-  taken: Pick<Workout, "date" | "start" | "durationMin">[],
-  now: { date: IsoDate; time: ClockTime },
-): string[] {
-  if (date < now.date) return [];
-  let from = DAY_START;
-  if (date === now.date) from = Math.max(from, Math.ceil((toMinutes(now.time) + 30) / 15) * 15);
-  const blocks = [
-    ...busy.filter((b) => b.date === date).map((b) => [toMinutes(b.start) - BUFFER_MIN, toMinutes(b.end) + BUFFER_MIN]),
-    ...taken.filter((t) => t.date === date).map((t) => [toMinutes(t.start), toMinutes(t.start) + t.durationMin]),
-  ].sort((a, b) => a[0] - b[0]);
-  const out: string[] = [];
-  let cursor = from;
-  for (const [s, e] of blocks) {
-    if (s > cursor && s - cursor >= 15) out.push(`${fromMinutes(cursor)}-${fromMinutes(Math.min(s, DAY_END))}`);
-    cursor = Math.max(cursor, e);
-    if (cursor >= DAY_END) break;
-  }
-  if (DAY_END - cursor >= 15) out.push(`${fromMinutes(cursor)}-${fromMinutes(DAY_END)}`);
-  return out;
 }
 
 function prescriptionText(id: string): string {
@@ -111,7 +82,6 @@ export function profileContext(p: FitnessProfile) {
     max_session_minutes: p.sessionMinutes,
     workouts_per_week: p.frequencyPerWeek,
     preferred_days: p.preferredDays,
-    preferred_times: p.preferredTimes.map((t) => `${t} (${TIME_OF_DAY[t].start}-${TIME_OF_DAY[t].end})`),
     avoid: p.avoidTags,
     avoid_notes: p.avoidNotes || undefined,
     limitations: p.limitations || undefined,
@@ -136,16 +106,18 @@ export function memoryContext(req: AgentRequest) {
   };
 }
 
+/** Per day: the longest free stretch (the most a session can take) and what's on the calendar. */
 export function daysContext(
   dates: IsoDate[],
   busy: BusyBlock[],
-  taken: Pick<Workout, "date" | "start" | "durationMin">[],
+  taken: Pick<Workout, "date" | "status" | "title">[],
   now: { date: IsoDate; time: ClockTime },
 ) {
   return dates.map((date) => ({
     date,
     day: weekdayOf(date),
-    free: freeWindows(date, busy, taken, now),
+    free_minutes: capacityOn(date, busy, now),
+    already_has_workout: taken.find((t) => t.date === date && t.status !== "skipped")?.title,
     busy: busy.filter((b) => b.date === date).map((b) => `${b.start}-${b.end} ${b.title}`),
   }));
 }
@@ -156,7 +128,6 @@ export const remainingDates = (weekStart: IsoDate, today: IsoDate) => weekDates(
 
 export interface SessionSpec {
   date: IsoDate;
-  start: ClockTime;
   category: WorkoutCategory;
   minutes: number;
   focus: MuscleGroup[];
@@ -173,16 +144,17 @@ export interface SessionSpec {
  */
 export function assembleWorkout(
   spec: SessionSpec,
-  opts: { id: string; profile: FitnessProfile; filter: ExerciseFilter },
+  opts: { id: string; profile: FitnessProfile; filter: ExerciseFilter; /** Day's free minutes. */ maxMinutes?: number },
 ): Workout | null {
-  const minutes = Math.max(10, Math.min(opts.profile.sessionMinutes, Math.round(spec.minutes / 5) * 5));
+  const cap = Math.min(opts.profile.sessionMinutes, opts.maxMinutes ?? Infinity);
+  const minutes = Math.min(cap, Math.max(MIN_SESSION, Math.round(spec.minutes / 5) * 5));
+  if (minutes < MIN_SESSION) return null;
   const pool = new Map(eligibleExercises(spec.category, opts.filter).map((e) => [e.id, e]));
   const picks = [...new Set(spec.exerciseIds)].map((id) => pool.get(id)).filter((e) => e !== undefined);
   const base = {
     id: opts.id,
     title: spec.title.trim().slice(0, 60) || "Workout",
     date: spec.date,
-    start: spec.start,
     durationMin: minutes,
     category: spec.category,
     rationale: spec.rationale.trim().slice(0, 300),
@@ -219,7 +191,6 @@ export function assembleWorkout(
       workoutTypes: opts.profile.workoutTypes,
       id: opts.id,
       date: spec.date,
-      start: spec.start,
       origin: "agent",
       rationale: base.rationale,
       title: base.title,
@@ -236,31 +207,15 @@ export function assembleWorkout(
   };
 }
 
-/** True when the workout overlaps busy time (with buffer) or another workout. */
-export function conflicts(w: Workout, busy: BusyBlock[], others: Workout[]): boolean {
-  const s = toMinutes(w.start);
-  const e = s + w.durationMin;
-  return (
-    e > DAY_END ||
-    s < DAY_START ||
-    busy.some((b) => b.date === w.date && overlaps(s, e, toMinutes(b.start), toMinutes(b.end))) ||
-    others.some((o) => o.date === w.date && o.status !== "skipped" && overlaps(s, e, toMinutes(o.start), toMinutes(o.start) + o.durationMin))
-  );
-}
-
-/** Keep the model's day but move the start into a real free slot if its time doesn't fit. */
-export function repairStart(
+/** The day has room for this workout and no other (non-skipped) workout. */
+export function fitsDay(
   w: Workout,
   busy: BusyBlock[],
   others: Workout[],
-  profile: FitnessProfile,
   now: { date: IsoDate; time: ClockTime },
-): Workout | null {
-  const past = w.date < now.date || (w.date === now.date && w.start <= now.time);
-  if (!past && !conflicts(w, busy, others)) return w;
-  const slot = findSlotWithFallback(
-    { date: w.date, minutes: w.durationMin, busy, taken: others.filter((o) => o.status !== "skipped"), notBefore: now },
-    profile.preferredTimes,
+): boolean {
+  return (
+    !others.some((o) => o.id !== w.id && o.date === w.date && o.status !== "skipped") &&
+    capacityOn(w.date, busy, now) >= w.durationMin
   );
-  return slot ? { ...w, start: slot.start } : null;
 }

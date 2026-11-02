@@ -13,7 +13,6 @@ import {
   EXPERIENCE_LABELS,
   GOAL_LABELS,
   MUSCLE_LABELS,
-  TIME_OF_DAY,
   WEEKDAY_LABELS,
   WORKOUT_TYPE_LABELS,
 } from "@/lib/labels";
@@ -24,7 +23,6 @@ import {
   FitnessProfile,
   GOALS,
   MUSCLE_GROUPS,
-  TIMES_OF_DAY,
   WEEKDAYS,
   WORKOUT_TYPES,
 } from "@/lib/schemas";
@@ -210,7 +208,7 @@ export function ScheduleSection({ draft, set }: SectionProps) {
           </div>
         </Field>
       </div>
-      <Field label="Which days usually work best?">
+      <Field label="Which days usually work best?" hint="Workouts land on days, not times. You do each one whenever suits you.">
         <div className="flex flex-wrap gap-2">
           {WEEKDAYS.map((d) => (
             <Chip
@@ -221,19 +219,6 @@ export function ScheduleSection({ draft, set }: SectionProps) {
             >
               {WEEKDAY_LABELS[d].short}
             </Chip>
-          ))}
-        </div>
-      </Field>
-      <Field label="And what times of day?">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          {TIMES_OF_DAY.map((t) => (
-            <OptionCard
-              key={t}
-              selected={draft.preferredTimes.includes(t)}
-              onClick={() => set({ preferredTimes: toggle(draft.preferredTimes, t) })}
-              title={TIME_OF_DAY[t].label}
-              blurb={TIME_OF_DAY[t].range}
-            />
           ))}
         </div>
       </Field>
@@ -352,6 +337,6 @@ export const SECTION_CHECKS = {
   style: (d: ProfileDraft) => (d.workoutTypes.length ? null : "Pick at least one kind of workout."),
   equipment: () => null,
   schedule: (d: ProfileDraft) =>
-    !d.preferredDays.length ? "Pick at least one day." : !d.preferredTimes.length ? "Pick at least one time of day." : null,
+    !d.preferredDays.length ? "Pick at least one day." : null,
   boundaries: () => null,
 } satisfies Record<string, (d: ProfileDraft) => string | null>;

@@ -129,7 +129,8 @@ export const FitnessProfile = z.object({
   sessionMinutes: z.number().int().min(10).max(120),
   frequencyPerWeek: z.number().int().min(1).max(7),
   preferredDays: z.array(Weekday).min(1),
-  preferredTimes: z.array(TimeOfDay).min(1),
+  /** Legacy: workouts no longer have clock times. Kept so older saved profiles still load. */
+  preferredTimes: z.array(TimeOfDay).default([]),
   avoidTags: z.array(AvoidTag),
   avoidExerciseIds: z.array(z.string()),
   /** Free text. Not machine-checked; passed to the agent as context only. */
@@ -185,11 +186,14 @@ export type WorkoutStatus = z.infer<typeof WorkoutStatus>;
 export const WorkoutOrigin = z.enum(["mock_template", "rule_based", "agent", "user"]);
 export type WorkoutOrigin = z.infer<typeof WorkoutOrigin>;
 
+/**
+ * A workout is assigned to a day, not a time: the user does it whenever suits
+ * them and checks it off. The calendar only decides whether the day has room.
+ */
 export const Workout = z.object({
   id: z.string(),
   title: z.string(),
   date: IsoDate,
-  start: ClockTime,
   durationMin: z.number().int().min(5).max(180),
   category: WorkoutCategory,
   muscles: z.array(MuscleGroup),
@@ -228,7 +232,7 @@ export type BusyBlock = z.infer<typeof BusyBlock>;
 // ---------- Life Happens proposals ----------
 
 export const PlanOperation = z.discriminatedUnion("op", [
-  z.object({ op: z.literal("move"), workoutId: z.string(), date: IsoDate, start: ClockTime }),
+  z.object({ op: z.literal("move"), workoutId: z.string(), date: IsoDate }),
   z.object({ op: z.literal("replace"), workoutId: z.string(), workout: Workout }),
   z.object({ op: z.literal("skip"), workoutId: z.string() }),
   z.object({ op: z.literal("add"), workout: Workout }),
@@ -307,10 +311,11 @@ export type MemoryNote = z.infer<typeof MemoryNote>;
 export const WorkoutLogEntry = z.object({
   workoutId: z.string(),
   date: IsoDate,
-  start: ClockTime,
   durationMin: z.number().int(),
   category: WorkoutCategory,
   status: z.enum(["completed", "skipped"]),
+  /** Local wall-clock time the user checked it off. */
+  time: ClockTime.optional(),
   at: z.string(),
 });
 export type WorkoutLogEntry = z.infer<typeof WorkoutLogEntry>;

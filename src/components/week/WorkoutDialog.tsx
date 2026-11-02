@@ -1,20 +1,15 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { demoVideoUrl, getExercise } from "@/lib/catalog";
-import { CATEGORY_STYLE, EQUIPMENT_LABELS, MUSCLE_LABELS } from "@/lib/labels";
-import type { Workout, WorkoutExercise, WorkoutStatus } from "@/lib/schemas";
-import { dayLong, formatRange, monthDay } from "@/lib/time";
+import { CATEGORY_STYLE, EQUIPMENT_LABELS } from "@/lib/labels";
+import type { Workout, WorkoutStatus } from "@/lib/schemas";
+import { pivot, usePivotState } from "@/lib/store";
+import { dayLong, monthDay } from "@/lib/time";
 import { CategoryIcon, Check, SkipIcon } from "../icons";
 import { Button, MockBadge, cx } from "../ui";
+import { BodyMap } from "./BodyMap";
+import { ExerciseStep } from "./ExerciseStep";
 import { StatusPill } from "./WorkoutCard";
-
-function prescription(we: WorkoutExercise): string {
-  if (we.minutes) return `${we.minutes} min`;
-  if (we.sets && we.reps) return `${we.sets} × ${we.reps}`;
-  if (we.sets && we.seconds) return `${we.sets} × ${we.seconds} s`;
-  return "";
-}
 
 const ORIGIN_LABEL: Record<Workout["origin"], string> = {
   mock_template: "Sample workout from a template",
@@ -33,6 +28,7 @@ export function WorkoutDialog({
   onStatus: (status: WorkoutStatus) => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const steps = usePivotState()?.steps ?? {};
 
   useEffect(() => {
     const d = ref.current;
@@ -63,8 +59,7 @@ export function WorkoutDialog({
             </div>
             <h2 className="font-display text-3xl leading-tight font-semibold">{workout.title}</h2>
             <p className="text-sm text-ink-soft">
-              {dayLong(workout.date)}, {monthDay(workout.date)} · {formatRange(workout.start, workout.durationMin)} ·{" "}
-              {workout.durationMin} min
+              {dayLong(workout.date)}, {monthDay(workout.date)} · {workout.durationMin} min · any time that day
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill status={workout.status} />
@@ -80,39 +75,25 @@ export function WorkoutDialog({
 
             <section>
               <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-faint">Exercises</h3>
-              <ol className="flex flex-col divide-y divide-line rounded-2xl border border-line">
-                {workout.exercises.map((we, i) => {
-                  const ex = getExercise(we.exerciseId);
-                  return (
-                    <li key={`${we.exerciseId}-${i}`} className="flex items-start justify-between gap-4 px-4 py-3">
-                      <div>
-                        <p className="font-medium">{ex?.name ?? we.exerciseId}</p>
-                        {ex && <p className="text-sm text-ink-soft">{ex.cue}</p>}
-                        {ex && (
-                          <a
-                            href={demoVideoUrl(ex)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-1 inline-block text-xs font-semibold text-coral-deep underline-offset-4 hover:underline"
-                          >
-                            Watch a form demo ↗
-                          </a>
-                        )}
-                      </div>
-                      <span className="shrink-0 font-mono text-sm text-ink-soft">{prescription(we)}</span>
-                    </li>
-                  );
-                })}
+              <ol className="flex flex-col divide-y divide-line overflow-hidden rounded-2xl border border-line">
+                {workout.exercises.map((we, i) => (
+                  <ExerciseStep
+                    key={`${we.exerciseId}-${i}`}
+                    we={we}
+                    index={i}
+                    done={workout.status === "completed" || (steps[workout.id] ?? []).includes(i)}
+                    onToggle={workout.status === "planned" ? () => pivot.toggleStep(workout.id, i) : undefined}
+                  />
+                ))}
               </ol>
               <p className="mt-2 text-xs text-ink-faint">
                 Sets and reps are starting points. Pick a weight that leaves a couple of reps in reserve.
               </p>
             </section>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <section>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-faint">Targets</h3>
-                <p className="text-sm">{workout.muscles.map((m) => MUSCLE_LABELS[m]).join(", ")}</p>
+            <div className="grid items-start gap-4 sm:grid-cols-2">
+              <section className="flex flex-col items-center rounded-2xl bg-paper-deep/40 p-4">
+                <BodyMap muscles={workout.muscles} />
               </section>
               <section>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-faint">Equipment</h3>

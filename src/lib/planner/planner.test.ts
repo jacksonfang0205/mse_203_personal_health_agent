@@ -118,8 +118,8 @@ describe("rule-based alternatives", () => {
   it("applyOperations moves, replaces, skips, and adds", () => {
     const plan = generateMockWeek({ profile: base, weekStart: WEEK, busy: [], createdAt: "x" });
     const [a, b] = plan.workouts;
-    const moved = applyOperations(plan, [{ op: "move", workoutId: a.id, date: "2026-11-08", start: "09:00" }]);
-    expect(moved.workouts.find((w) => w.id === a.id)).toMatchObject({ date: "2026-11-08", start: "09:00" });
+    const moved = applyOperations(plan, [{ op: "move", workoutId: a.id, date: "2026-11-08" }]);
+    expect(moved.workouts.find((w) => w.id === a.id)).toMatchObject({ date: "2026-11-08" });
     expect(moved.workouts.at(-1)?.id).toBe(a.id); // re-sorted chronologically
     const skipped = applyOperations(plan, [{ op: "skip", workoutId: b.id }]);
     expect(skipped.workouts.find((w) => w.id === b.id)?.status).toBe("skipped");

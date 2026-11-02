@@ -9,7 +9,6 @@ import {
   EXPERIENCE_LABELS,
   GOAL_LABELS,
   MUSCLE_LABELS,
-  TIME_OF_DAY,
   WEEKDAY_LABELS,
   WORKOUT_TYPE_LABELS,
 } from "@/lib/labels";
@@ -36,7 +35,7 @@ const STEPS = [
   { key: "goals", title: "Let's start with why.", sub: "Your goals shape every plan Pivot makes.", Section: GoalsSection },
   { key: "style", title: "How do you like to move?", sub: "Pivot plans around what you'll actually show up for.", Section: StyleSection },
   { key: "equipment", title: "What's in your toolkit?", sub: "Pivot only suggests exercises you can do with what you have.", Section: EquipmentSection },
-  { key: "schedule", title: "When does fitness fit?", sub: "Pivot reads your calendar and fills the gaps around it.", Section: ScheduleSection },
+  { key: "schedule", title: "When does fitness fit?", sub: "Pick your days. Pivot checks how busy each one is and sizes the workout to fit.", Section: ScheduleSection },
   { key: "boundaries", title: "Set your boundaries.", sub: "Anything here is off the table, every time.", Section: BoundariesSection },
   { key: "review", title: "Here's what Pivot heard.", sub: "Check it over. You can change any of this later.", Section: ReviewSection },
 ] as const;
@@ -168,7 +167,6 @@ function ReviewSection({ draft, set, jump }: SectionProps) {
     { label: "Equipment", value: list(draft.equipment.map((e) => EQUIPMENT_LABELS[e]), "Bodyweight only"), step: 2 },
     { label: "Sessions", value: `${draft.frequencyPerWeek}× a week, up to ${draft.sessionMinutes} min`, step: 3 },
     { label: "Days", value: list(draft.preferredDays.map((d) => WEEKDAY_LABELS[d].short)), step: 3 },
-    { label: "Times", value: list(draft.preferredTimes.map((t) => TIME_OF_DAY[t].label)), step: 3 },
     { label: "Avoiding", value: list(draft.avoidTags.map((t) => AVOID_TAG_LABELS[t].label)), step: 4 },
   ];
   return (

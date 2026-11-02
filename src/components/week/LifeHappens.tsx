@@ -44,7 +44,8 @@ interface Props {
 
 function describeBlocked(b: MemorySuggestions["blocked"][number]) {
   const when = b.date ? `${dayShort(b.date)} ${monthDay(b.date)} only,` : b.days.map((d) => WEEKDAY_LABELS[d].short).join(", ");
-  return `Can't work out ${when} ${formatTime(b.start)}–${formatTime(b.end)}${b.label ? ` (${b.label})` : ""}`;
+  const hours = b.start === "00:00" && b.end >= "23:00" ? "all day" : `${formatTime(b.start)}–${formatTime(b.end)}`;
+  return `Can't work out ${when} ${hours}${b.label ? ` (${b.label})` : ""}`;
 }
 
 export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props) {

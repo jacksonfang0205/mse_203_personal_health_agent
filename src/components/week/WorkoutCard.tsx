@@ -1,6 +1,5 @@
 import { CATEGORY_STYLE, MUSCLE_LABELS } from "@/lib/labels";
 import type { Workout } from "@/lib/schemas";
-import { formatRange } from "@/lib/time";
 import { CategoryIcon, Check, Clock, SkipIcon } from "../icons";
 import { cx } from "../ui";
 
@@ -49,9 +48,7 @@ export function WorkoutCard({ workout, onOpen }: { workout: Workout; onOpen: () 
       </h3>
       <div className="flex items-center gap-1.5 text-xs text-ink-soft">
         <Clock width={14} height={14} />
-        {formatRange(workout.start, workout.durationMin)}
-        <span aria-hidden>·</span>
-        {workout.durationMin} min
+        {workout.durationMin} min · any time
       </div>
       {muscles.length > 0 && (
         <div className="flex flex-wrap gap-1">

@@ -4,7 +4,7 @@
  */
 import { blockedToBusy, presetProvider, type CalendarPresetId } from "./calendar";
 import { generateMockWeek } from "./planner/generate";
-import type { BlockedTime, ClockTime, FitnessProfile, IsoDate, TimeOfDay, Workout } from "./schemas";
+import type { BlockedTime, ClockTime, FitnessProfile, IsoDate, Workout } from "./schemas";
 import { mondayOf } from "./time";
 import type { ValidationContext } from "./validation";
 
@@ -22,8 +22,6 @@ export function buildSamplePlan(args: {
   createdAt: string;
   keep?: Workout[];
   blocked?: BlockedTime[];
-  /** Preferred windows in the order the user actually shows up (from insights). */
-  timeOrder?: TimeOfDay[];
 }) {
   const weekStart = mondayOf(args.now.date);
   const { busy } = calendarForWeek(args.preset, weekStart, args.blocked);
@@ -34,7 +32,6 @@ export function buildSamplePlan(args: {
     now: args.now,
     keep: args.keep,
     createdAt: args.createdAt,
-    timeOrder: args.timeOrder,
   });
 }
 

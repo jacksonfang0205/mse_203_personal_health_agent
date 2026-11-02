@@ -18,16 +18,17 @@ import type {
   WeeklyPlan,
   Workout,
 } from "../schemas";
-import { addDays, dayLong, formatTime, weekDates, weekdayOf } from "../time";
+import { fitMinutes } from "../capacity";
+import { addDays, dayLong, weekDates, weekdayOf } from "../time";
 import { validatePlan } from "../validation";
-import { allowedCategories, buildWorkout, filterFromProfile, findSlotWithFallback } from "./generate";
+import { allowedCategories, buildWorkout, capacityOn, filterFromProfile } from "./generate";
 
 export function applyOperations(plan: WeeklyPlan, ops: PlanOperation[]): WeeklyPlan {
   let workouts = [...plan.workouts];
   for (const op of ops) {
     switch (op.op) {
       case "move":
-        workouts = workouts.map((w) => (w.id === op.workoutId ? { ...w, date: op.date, start: op.start } : w));
+        workouts = workouts.map((w) => (w.id === op.workoutId ? { ...w, date: op.date } : w));
         break;
       case "replace":
         workouts = workouts.map((w) => (w.id === op.workoutId ? { ...op.workout, id: op.workoutId } : w));
@@ -40,7 +41,7 @@ export function applyOperations(plan: WeeklyPlan, ops: PlanOperation[]): WeeklyP
         break;
     }
   }
-  workouts.sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  workouts.sort((a, b) => a.date.localeCompare(b.date));
   return { ...plan, workouts };
 }
 
@@ -80,17 +81,12 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
   const filter = filterFromProfile(a.profile);
   const candidates: Alternative[] = [];
   const label = `${target.title} on ${dayLong(target.date)}`;
+  const todayFree = capacityOn(target.date, a.busy, a.now);
 
   // 1. Shorter version, same focus.
-  const shortMin = target.durationMin > 25 ? 20 : Math.floor(target.durationMin / 2 / 5) * 5;
-  if (shortMin >= 10) {
-    const slot = findSlotWithFallback(
-      { date: target.date, minutes: shortMin, busy: a.busy, taken: others, notBefore: a.now },
-      a.profile.preferredTimes,
-    );
-    const short =
-      slot &&
-      buildWorkout({
+  const shortMin = fitMinutes(target.durationMin > 25 ? 20 : Math.floor(target.durationMin / 2 / 5) * 5, todayFree);
+  if (shortMin) {
+    const short = buildWorkout({
         category: target.category,
         focus: target.muscles,
         minutes: shortMin,
@@ -98,7 +94,6 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
         workoutTypes: a.profile.workoutTypes,
         id: target.id,
         date: target.date,
-        start: slot.start,
         origin: "rule_based",
         title: `Quick ${target.title.toLowerCase()}`,
         rationale: `A shorter take on ${target.title.toLowerCase()} that keeps the same focus.`,
@@ -108,7 +103,7 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
         id: `${a.proposalId}-shorter`,
         kind: "shorter",
         title: `${shortMin}-minute version`,
-        summary: `Keep ${dayLong(target.date)}, but do a ${shortMin}-min ${CATEGORY_STYLE[target.category].label.toLowerCase()} session at ${formatTime(short.start)}.`,
+        summary: `Keep ${dayLong(target.date)}, but do a ${shortMin}-min ${CATEGORY_STYLE[target.category].label.toLowerCase()} session whenever you get a gap.`,
         tradeoffs: [
           `About ${Math.round((shortMin / target.durationMin) * 100)}% of the planned time, so less total work. It keeps the habit going but isn't a full substitute.`,
         ],
@@ -126,24 +121,19 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
     ...days.filter((d) => !a.profile.preferredDays.includes(weekdayOf(d))),
   ];
   for (const date of ranked) {
-    const slot = findSlotWithFallback(
-      { date, minutes: target.durationMin, busy: a.busy, taken: others, notBefore: a.now },
-      a.profile.preferredTimes,
-    );
-    if (!slot) continue;
+    if (capacityOn(date, a.busy, a.now) < target.durationMin) continue;
     const tradeoffs: string[] = [];
     const neighbors = others.filter((w) => w.date === addDays(date, -1) || w.date === addDays(date, 1));
     if (neighbors.length) tradeoffs.push(`Lands next to ${neighbors.map((w) => w.title).join(" and ")}, so less recovery in between.`);
     if (!a.profile.preferredDays.includes(weekdayOf(date))) tradeoffs.push(`${dayLong(date)} isn't one of your preferred days.`);
-    if (!slot.preferred) tradeoffs.push("It's outside your preferred times of day.");
     if (!tradeoffs.length) tradeoffs.push("Same workout and volume, just a different day.");
     candidates.push({
       id: `${a.proposalId}-move`,
       kind: "move",
       title: `Move to ${dayLong(date)}`,
-      summary: `Do the full ${target.title.toLowerCase()} on ${dayLong(date)} at ${formatTime(slot.start)}.`,
+      summary: `Do the full ${target.title.toLowerCase()} on ${dayLong(date)} instead.`,
       tradeoffs,
-      operations: [{ op: "move", workoutId: target.id, date, start: slot.start }],
+      operations: [{ op: "move", workoutId: target.id, date }],
     });
     break;
   }
@@ -151,13 +141,9 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
   // 3. Different format that still supports a goal.
   const swapCategory = allowedCategories(a.profile, filter).find((c) => c !== target.category);
   if (swapCategory) {
-    const minutes = Math.min(target.durationMin, 25);
-    const slot = findSlotWithFallback(
-      { date: target.date, minutes, busy: a.busy, taken: others, notBefore: a.now },
-      a.profile.preferredTimes,
-    );
+    const minutes = fitMinutes(Math.min(target.durationMin, 25), todayFree);
     const swap =
-      slot &&
+      minutes > 0 &&
       buildWorkout({
         category: swapCategory,
         focus: target.muscles,
@@ -166,7 +152,6 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
         workoutTypes: a.profile.workoutTypes,
         id: target.id,
         date: target.date,
-        start: slot.start,
         origin: "rule_based",
         rationale: `A lighter ${CATEGORY_STYLE[swapCategory].label.toLowerCase()} session in place of ${target.title.toLowerCase()}.`,
       });
@@ -175,7 +160,7 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
         id: `${a.proposalId}-swap`,
         kind: "swap_format",
         title: `Switch to ${swap.title.toLowerCase()}`,
-        summary: `${minutes} min of ${CATEGORY_STYLE[swapCategory].label.toLowerCase()} on ${dayLong(target.date)} at ${formatTime(swap.start)}.`,
+        summary: `${minutes} min of ${CATEGORY_STYLE[swapCategory].label.toLowerCase()} on ${dayLong(target.date)}, whenever suits you.`,
         tradeoffs: [
           `A different kind of training. It keeps you moving, but it won't build ${CATEGORY_STYLE[target.category].label.toLowerCase()} the way the original would.`,
         ],
@@ -211,7 +196,7 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
     ...base,
     understood: [
       "Preview mode: Pivot isn't reading your message yet.",
-      `Showing options for your next workout: ${label} at ${formatTime(target.start)}.`,
+      `Showing options for your next workout: ${label}.`,
     ],
     alternatives: valid.slice(0, 3),
   };
