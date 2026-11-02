@@ -7,7 +7,7 @@
  * can do, and every workout it describes is rebuilt here from the catalog.
  */
 import { z } from "zod";
-import { CALENDAR_PRESET_IDS, type CalendarPresetId } from "../calendar";
+import { blockedToBusy, CALENDAR_PRESET_IDS, type CalendarPresetId, type DateRange } from "../calendar";
 import { getExercise } from "../catalog";
 import { computeInsights } from "../insights";
 import { TIME_OF_DAY } from "../labels";
@@ -41,7 +41,13 @@ export const AgentRequest = z.object({
   calendarPreset: z.enum(CALENDAR_PRESET_IDS as [CalendarPresetId, ...CalendarPresetId[]]),
   now: z.object({ date: IsoDate, time: ClockTime }),
 });
-export type AgentRequest = z.infer<typeof AgentRequest>;
+export type AgentRequest = z.infer<typeof AgentRequest> & {
+  /**
+   * Server-side only (never parsed from a request): use this calendar instead of
+   * the preset. The eval harness passes each scenario's persona calendar here.
+   */
+  calendar?: { busy: BusyBlock[]; knownRange: DateRange };
+};
 
 const DAY_START = 6 * 60;
 const DAY_END = 22 * 60;
@@ -49,7 +55,9 @@ const BUFFER_MIN = 15;
 
 export function weekContext(req: AgentRequest, extraBusy: BusyBlock[] = []) {
   const weekStart = mondayOf(req.now.date);
-  const cal = calendarForWeek(req.calendarPreset, weekStart, req.blocked);
+  const cal = req.calendar
+    ? { busy: [...req.calendar.busy, ...blockedToBusy(req.blocked, req.calendar.knownRange)], knownRange: req.calendar.knownRange }
+    : calendarForWeek(req.calendarPreset, weekStart, req.blocked);
   return { weekStart, busy: [...cal.busy, ...extraBusy], knownRange: cal.knownRange };
 }
 

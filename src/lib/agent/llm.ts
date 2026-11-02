@@ -11,18 +11,24 @@
  */
 import { z } from "zod";
 
-const env = process.env;
-const API_KEY = env.LLM_API_KEY || env.ANTHROPIC_API_KEY || "";
-const PROVIDER = env.LLM_PROVIDER || (env.LLM_API_KEY ? "openai" : "anthropic");
-export const MODEL =
-  env.LLM_MODEL || env.ANTHROPIC_MODEL || (PROVIDER === "openai" ? "gpt-5.4-mini" : "claude-sonnet-5-5");
-const BASE_URL = (
-  env.LLM_BASE_URL ||
-  env.ANTHROPIC_BASE_URL ||
-  (PROVIDER === "openai" ? "https://aiapi-prod.stanford.edu/v1" : "https://api.anthropic.com")
-).replace(/\/$/, "");
+/** Read at call time, so scripts (e.g. the eval runner) can load env files first. */
+function config() {
+  const env = process.env;
+  const provider = env.LLM_PROVIDER || (env.LLM_API_KEY ? "openai" : "anthropic");
+  return {
+    apiKey: env.LLM_API_KEY || env.ANTHROPIC_API_KEY || "",
+    provider,
+    model: env.LLM_MODEL || env.ANTHROPIC_MODEL || (provider === "openai" ? "gpt-5.4-mini" : "claude-sonnet-5-5"),
+    baseUrl: (
+      env.LLM_BASE_URL ||
+      env.ANTHROPIC_BASE_URL ||
+      (provider === "openai" ? "https://aiapi-prod.stanford.edu/v1" : "https://api.anthropic.com")
+    ).replace(/\/$/, ""),
+  };
+}
 
-export const aiEnabled = () => Boolean(API_KEY);
+export const aiEnabled = () => Boolean(config().apiKey);
+export const modelName = () => config().model;
 
 export class LlmError extends Error {}
 
@@ -33,6 +39,8 @@ export interface ToolCall<T extends z.ZodType> {
   description: string;
   schema: T;
   maxTokens?: number;
+  /** Overrides LLM_MODEL, e.g. to compare model sizes in evals. */
+  model?: string;
 }
 
 export interface LlmResult<T> {
@@ -47,13 +55,14 @@ function jsonSchema(schema: z.ZodType) {
 }
 
 export async function callTool<T extends z.ZodType>(call: ToolCall<T>): Promise<LlmResult<z.infer<T>>> {
-  if (!API_KEY) throw new LlmError("AI is not configured (missing LLM_API_KEY).");
-  const raw = PROVIDER === "openai" ? await callOpenAI(call) : await callAnthropic(call);
+  const cfg = { ...config(), ...(call.model ? { model: call.model } : {}) };
+  if (!cfg.apiKey) throw new LlmError("AI is not configured (missing LLM_API_KEY).");
+  const raw = cfg.provider === "openai" ? await callOpenAI(call, cfg) : await callAnthropic(call, cfg);
   const parsed = call.schema.safeParse(raw.input);
   if (!parsed.success) {
     throw new LlmError(`The model's answer didn't match the expected format: ${parsed.error.issues[0]?.message ?? ""}`);
   }
-  return { output: parsed.data, usage: { model: MODEL, ...raw.usage } };
+  return { output: parsed.data, usage: { model: cfg.model, ...raw.usage } };
 }
 
 interface RawResult {
@@ -73,12 +82,14 @@ async function postJson(url: string, headers: Record<string, string>, body: unkn
   return data;
 }
 
-async function callAnthropic(call: ToolCall<z.ZodType>): Promise<RawResult> {
+type Config = ReturnType<typeof config>;
+
+async function callAnthropic(call: ToolCall<z.ZodType>, cfg: Config): Promise<RawResult> {
   const data = await postJson(
-    `${BASE_URL}/v1/messages`,
-    { "x-api-key": API_KEY, "anthropic-version": "2023-06-01" },
+    `${cfg.baseUrl}/v1/messages`,
+    { "x-api-key": cfg.apiKey, "anthropic-version": "2023-06-01" },
     {
-      model: MODEL,
+      model: cfg.model,
       max_tokens: call.maxTokens ?? 4096,
       system: call.system,
       tools: [{ name: call.name, description: call.description, input_schema: jsonSchema(call.schema) }],
@@ -91,12 +102,12 @@ async function callAnthropic(call: ToolCall<z.ZodType>): Promise<RawResult> {
   return { input: tool.input, usage: { inputTokens: data.usage?.input_tokens ?? 0, outputTokens: data.usage?.output_tokens ?? 0 } };
 }
 
-async function callOpenAI(call: ToolCall<z.ZodType>): Promise<RawResult> {
+async function callOpenAI(call: ToolCall<z.ZodType>, cfg: Config): Promise<RawResult> {
   const data = await postJson(
-    `${BASE_URL}/chat/completions`,
-    { authorization: `Bearer ${API_KEY}` },
+    `${cfg.baseUrl}/chat/completions`,
+    { authorization: `Bearer ${cfg.apiKey}` },
     {
-      model: MODEL,
+      model: cfg.model,
       messages: [
         { role: "system", content: call.system },
         { role: "user", content: call.user },

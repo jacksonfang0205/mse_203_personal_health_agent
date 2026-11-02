@@ -15,6 +15,13 @@ import { buildScenarioContext, EVALS_DIR, loadBaselines, loadPersonas, loadScena
 import { PLANNERS, type PlannerOutput, type Usage } from "./planners";
 import { scoreScenario, type ScenarioScore } from "./score";
 
+// LLM planners read their key and model from .env.local, like the app.
+try {
+  process.loadEnvFile(".env.local");
+} catch {
+  // no env file: LLM planners will report that AI isn't configured
+}
+
 const { values: args } = parseArgs({
   options: {
     planner: { type: "string", default: "rule_based" },
