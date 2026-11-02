@@ -6,7 +6,7 @@
  * will implement the same interface later; it must only ever *read* calendars
  * unless the user explicitly confirms a write.
  */
-import type { BusyBlock, ClockTime, IsoDate, Weekday } from "./schemas";
+import type { BlockedTime, BusyBlock, ClockTime, IsoDate, Weekday } from "./schemas";
 import { addDays, weekdayOf } from "./time";
 
 export interface DateRange {
@@ -40,6 +40,19 @@ export function expandRecurring(blocks: RecurringBlock[], range: DateRange): Bus
       .forEach((b, i) =>
         out.push({ id: `sim-${date}-${i}`, date, start: b.start, end: b.end, title: b.title, source: "simulated" }),
       );
+  }
+  return out;
+}
+
+/** The user's remembered "can't make it" times, as busy blocks within the range. */
+export function blockedToBusy(blocked: BlockedTime[], range: DateRange): BusyBlock[] {
+  const out: BusyBlock[] = [];
+  for (let date = range.start; date <= range.end; date = addDays(date, 1)) {
+    const wd = weekdayOf(date);
+    for (const b of blocked) {
+      if (b.date ? b.date !== date : !b.days.includes(wd)) continue;
+      out.push({ id: `blk-${b.id}-${date}`, date, start: b.start, end: b.end, title: b.label || "Unavailable", source: "blocked" });
+    }
   }
   return out;
 }

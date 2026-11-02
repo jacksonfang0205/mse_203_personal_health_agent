@@ -16,6 +16,7 @@ import type { DateRange } from "@/lib/calendar";
 import { proposeRuleBasedAlternatives } from "@/lib/planner/alternatives";
 import { generateMockWeek } from "@/lib/planner/generate";
 import type { BusyBlock, ClockTime, FitnessProfile, IsoDate, Proposal, WeeklyPlan } from "@/lib/schemas";
+import { genericLlmPlanner, pivotAgentPlanner } from "./llmPlanners";
 
 export interface PlannerInput {
   scenarioId: string;
@@ -107,4 +108,6 @@ export const ruleBasedPlanner: Planner = {
 export const PLANNERS: Record<string, Planner> = {
   [noopPlanner.id]: noopPlanner,
   [ruleBasedPlanner.id]: ruleBasedPlanner,
+  [genericLlmPlanner.id]: genericLlmPlanner,
+  [pivotAgentPlanner.id]: pivotAgentPlanner,
 };

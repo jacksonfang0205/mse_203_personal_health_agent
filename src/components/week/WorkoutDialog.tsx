@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { getExercise } from "@/lib/catalog";
+import { demoVideoUrl, getExercise } from "@/lib/catalog";
 import { CATEGORY_STYLE, EQUIPMENT_LABELS, MUSCLE_LABELS } from "@/lib/labels";
 import type { Workout, WorkoutExercise, WorkoutStatus } from "@/lib/schemas";
 import { dayLong, formatRange, monthDay } from "@/lib/time";
@@ -88,6 +88,16 @@ export function WorkoutDialog({
                       <div>
                         <p className="font-medium">{ex?.name ?? we.exerciseId}</p>
                         {ex && <p className="text-sm text-ink-soft">{ex.cue}</p>}
+                        {ex && (
+                          <a
+                            href={demoVideoUrl(ex)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1 inline-block text-xs font-semibold text-coral-deep underline-offset-4 hover:underline"
+                          >
+                            Watch a form demo ↗
+                          </a>
+                        )}
                       </div>
                       <span className="shrink-0 font-mono text-sm text-ink-soft">{prescription(we)}</span>
                     </li>

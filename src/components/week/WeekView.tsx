@@ -1,14 +1,16 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import { agentSnapshot, requestPlan, useAiStatus, type AiStatus } from "@/lib/agentClient";
 import { CALENDAR_PRESETS } from "@/lib/calendar";
-import type { ChangeRecord, IsoDate, WeeklyPlan, WorkoutStatus } from "@/lib/schemas";
+import { computeInsights, learnedTimeOrder } from "@/lib/insights";
+import type { BusyBlock, ChangeRecord, IsoDate, WeeklyPlan, WorkoutStatus } from "@/lib/schemas";
 import { buildSamplePlan, calendarForWeek } from "@/lib/session";
 import { pivot, useNow, usePivotState } from "@/lib/store";
 import { track } from "@/lib/telemetry";
 import { dayOfMonth, dayShort, formatTime, localNow, monthDay, mondayOf, toMinutes, weekDates } from "@/lib/time";
 import { CONSTRAINT_LABELS, validatePlan, type ValidationResult } from "@/lib/validation";
-import { CalendarIcon, Shield } from "../icons";
+import { CalendarIcon, Shield, Sparkle } from "../icons";
 import { Button, ButtonLink, Card, Eyebrow, MockBadge, Skeleton, cx } from "../ui";
 import { LifeHappens } from "./LifeHappens";
 import { WorkoutCard } from "./WorkoutCard";
@@ -24,10 +26,13 @@ export function WeekView() {
   const now = useNow();
   const [openId, setOpenId] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(true);
+  const [planning, setPlanning] = useState(false);
+  const [planNote, setPlanNote] = useState<string | null>(null);
+  const ai = useAiStatus();
 
   const weekStart = now ? mondayOf(now.date) : null;
   const calendar = useMemo(
-    () => (state && weekStart ? calendarForWeek(state.calendarPreset, weekStart) : null),
+    () => (state && weekStart ? calendarForWeek(state.calendarPreset, weekStart, state.blocked) : null),
     [state, weekStart],
   );
   const checks = useMemo(
@@ -53,9 +58,36 @@ export function WeekView() {
   const profile = state.profile;
   const plan = state.plan;
 
-  const buildPlan = () => {
+  const buildPlan = async () => {
     const at = new Date();
-    const next = buildSamplePlan({ profile, preset: state.calendarPreset, now: localNow(at), createdAt: at.toISOString() });
+    setPlanNote(null);
+    if (ai?.ai) {
+      setPlanning(true);
+      try {
+        const res = await requestPlan(agentSnapshot(pivot.get(), localNow(at)));
+        pivot.setPlan(res.plan);
+        setPlanNote(res.fallback ?? null);
+        track("plan_generated", { source: res.plan.generatedBy, workouts: res.plan.workouts.length });
+        return;
+      } catch (e) {
+        setPlanNote(`AI planning failed (${(e as Error).message}). Showing a template plan instead.`);
+      } finally {
+        setPlanning(false);
+      }
+    }
+    // Template planner, still aware of blocked times and past completion.
+    const now = localNow(at);
+    const insights = computeInsights({ log: state.log, history: state.history, plan: state.plan, now });
+    const keep = state.plan?.weekStart === weekStart ? state.plan.workouts.filter((w) => w.status === "completed") : [];
+    const next = buildSamplePlan({
+      profile,
+      preset: state.calendarPreset,
+      now,
+      createdAt: at.toISOString(),
+      keep,
+      blocked: state.blocked,
+      timeOrder: learnedTimeOrder(profile.preferredTimes, insights),
+    });
     pivot.setPlan(next);
     track("plan_generated", { source: "mock_template", workouts: next.workouts.length });
   };
@@ -64,8 +96,15 @@ export function WeekView() {
     return (
       <EmptyState
         title="A fresh week."
-        body="Pivot will plan the rest of this week around your simulated calendar."
-        action={<Button onClick={buildPlan}>Plan this week</Button>}
+        body="Pivot will plan the rest of this week around your simulated calendar and the times you can't make."
+        action={
+          <div className="flex flex-col items-center gap-3">
+            <Button onClick={buildPlan} disabled={planning || !ai}>
+              {planning ? "Planning…" : ai?.ai ? "Plan this week with AI" : "Plan this week"}
+            </Button>
+            {planNote && <p className="text-sm text-coral-deep">{planNote}</p>}
+          </div>
+        }
       />
     );
   }
@@ -90,14 +129,29 @@ export function WeekView() {
             {profile.name ? `, ${profile.name}` : ""}.
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <MockBadge>Sample plan · template, not AI</MockBadge>
+            <PlanBadge plan={plan} ai={ai} />
             <ChecksBadge result={checks} />
+            <Button variant="secondary" className="h-8 px-3.5 text-xs" onClick={buildPlan} disabled={planning || !ai}>
+              <Sparkle width={14} height={14} />
+              {planning ? "Planning…" : ai?.ai ? "Replan with AI" : "Rebuild plan"}
+            </Button>
           </div>
         </div>
         <Progress plan={plan} />
       </header>
 
-      <LifeHappens plan={plan} profile={profile} busy={calendar.busy} knownRange={calendar.knownRange} now={now} />
+      {planNote && (
+        <Card className="border-coral/30 bg-coral-soft p-4 text-sm text-coral-ink shadow-none">{planNote}</Card>
+      )}
+
+      <LifeHappens
+        plan={plan}
+        profile={profile}
+        busy={calendar.busy}
+        knownRange={calendar.knownRange}
+        now={now}
+        ai={ai?.ai ?? false}
+      />
 
       {plan.notes.length > 0 && (
         <Card className="flex flex-col gap-1 border-butter/50 bg-butter-soft p-4 text-sm text-butter-ink shadow-none">
@@ -149,7 +203,7 @@ function DayColumn(props: {
   isToday: boolean;
   isPast: boolean;
   plan: WeeklyPlan;
-  busy: { id: string; start: string; end: string; title: string }[];
+  busy: BusyBlock[];
   onOpen: (id: string) => void;
 }) {
   const workouts = props.plan.workouts.filter((w) => w.date === props.date);
@@ -157,8 +211,18 @@ function DayColumn(props: {
     ...props.busy.map((b) => ({
       start: b.start,
       el: (
-        <div key={b.id} className="rounded-xl border border-line bg-paper-deep/60 px-3 py-2 text-[11px] text-ink-faint">
-          <span className="font-semibold text-ink-soft">{formatTime(b.start)}</span> {b.title}
+        <div
+          key={b.id}
+          title={b.source === "blocked" ? "You told Pivot you can't work out now" : undefined}
+          className={cx(
+            "rounded-xl border px-3 py-2 text-[11px]",
+            b.source === "blocked"
+              ? "border-dashed border-coral/40 bg-coral-soft/40 text-coral-ink"
+              : "border-line bg-paper-deep/60 text-ink-faint",
+          )}
+        >
+          <span className="font-semibold">{formatTime(b.start)}</span> {b.source === "blocked" ? "⊘ " : ""}
+          {b.title}
         </div>
       ),
     })),
@@ -228,6 +292,17 @@ function Progress({ plan }: { plan: WeeklyPlan }) {
       </dl>
     </Card>
   );
+}
+
+function PlanBadge({ plan, ai }: { plan: WeeklyPlan; ai: AiStatus | null }) {
+  if (plan.generatedBy === "agent") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-lilac-soft px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-lilac-ink">
+        <Sparkle width={13} height={13} /> Planned by AI{ai?.model ? ` · ${ai.model}` : ""}
+      </span>
+    );
+  }
+  return <MockBadge>Sample plan · template, not AI</MockBadge>;
 }
 
 function ChecksBadge({ result }: { result: ValidationResult | null }) {

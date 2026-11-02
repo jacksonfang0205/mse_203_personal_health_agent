@@ -267,9 +267,12 @@ export function findSlot(q: SlotQuery): ClockTime | null {
   return null;
 }
 
-/** Try preferred windows first, then anywhere in the day. */
-export function findSlotWithFallback(q: Omit<SlotQuery, "windows">, preferred: TimeOfDay[]) {
-  const ordered = TIMES_OF_DAY.filter((t) => preferred.includes(t));
+/**
+ * Try preferred windows first, then anywhere in the day. Windows are searched
+ * earliest first unless `keepOrder` is set (e.g. ordered by past completion).
+ */
+export function findSlotWithFallback(q: Omit<SlotQuery, "windows">, preferred: TimeOfDay[], keepOrder = false) {
+  const ordered = keepOrder ? preferred : TIMES_OF_DAY.filter((t) => preferred.includes(t));
   const inPreferred = findSlot({ ...q, windows: ordered });
   if (inPreferred) return { start: inPreferred, preferred: true };
   const any = findSlot(q);
@@ -292,6 +295,8 @@ export interface MockWeekArgs {
   /** Workouts to carry over unchanged (e.g. completed ones when preferences change). */
   keep?: Workout[];
   createdAt: string;
+  /** Preferred windows, best first. Defaults to the profile's, earliest first. */
+  timeOrder?: TimeOfDay[];
 }
 
 /** Spread `n` picks across `items` as evenly as possible. */
@@ -331,7 +336,8 @@ export function generateMockWeek(args: MockWeekArgs): WeeklyPlan {
         : profile.targetMuscles;
     const slot = findSlotWithFallback(
       { date, minutes: profile.sessionMinutes, busy, taken: workouts, notBefore: now },
-      profile.preferredTimes,
+      args.timeOrder ?? profile.preferredTimes,
+      !!args.timeOrder,
     );
     if (!slot) return false;
     const goal = profile.goals.find((g) => GOAL_CATEGORIES[g].includes(category)) ?? profile.goals[0];

@@ -9,6 +9,7 @@ import { clearEvents, downloadJson, getEvents, track } from "@/lib/telemetry";
 import { localNow } from "@/lib/time";
 import { Check } from "../icons";
 import { Button, ButtonLink, Card, Eyebrow, OptionCard, Skeleton } from "../ui";
+import { MemorySection } from "./MemorySection";
 import {
   BoundariesSection,
   EquipmentSection,
@@ -73,7 +74,9 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
     pivot.setCalendarPreset(preset);
     if (rebuild) {
       const keep = state.plan?.workouts.filter((w) => w.status === "completed") ?? [];
-      pivot.setPlan(buildSamplePlan({ profile: parsed.data, preset, now: localNow(at), createdAt: at.toISOString(), keep }));
+      pivot.setPlan(
+        buildSamplePlan({ profile: parsed.data, preset, now: localNow(at), createdAt: at.toISOString(), keep, blocked: state.blocked }),
+      );
     }
     pivot.saveProfile(parsed.data);
     track("preferences_saved", { rebuilt: rebuild });
@@ -134,13 +137,15 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
         </div>
       </Card>
 
+      <MemorySection state={state} />
+
       <StudyTools state={state} />
 
       <div className="sticky bottom-4 z-10">
         <Card className="flex flex-col gap-3 p-4 shadow-lift sm:flex-row sm:items-center sm:justify-between">
           <label className="flex items-center gap-2 text-sm text-ink-soft">
             <input type="checkbox" checked={rebuild} onChange={(e) => setRebuild(e.target.checked)} className="accent-coral" />
-            Rebuild this week&apos;s sample plan (completed workouts are kept)
+            Rebuild this week&apos;s plan from a template (completed workouts are kept; use Replan with AI on the week view for AI)
           </label>
           <div className="flex items-center gap-3">
             {error && <span className="text-sm font-medium text-coral-deep">{error}</span>}
