@@ -1,0 +1,1341 @@
+{
+  "runId": "2026-11-02T03-02-43-682Z_generic_llm_dev",
+  "startedAt": "2026-11-02T03:02:43.682Z",
+  "planner": {
+    "id": "generic_llm",
+    "description": "Single-shot LLM with the same information and rules; no validation, repair, or pre-filtering."
+  },
+  "split": "dev",
+  "gitCommit": "002304a",
+  "node": "v24.14.1",
+  "syntheticData": true,
+  "summary": {
+    "scenarios": 26,
+    "errors": 4,
+    "metric1_constraintAdherence": {
+      "passed": 9,
+      "evaluated": 22,
+      "noProposal": 4,
+      "rate": 0.4090909090909091,
+      "target": 0.9
+    },
+    "metric3_objectiveReplanning": {
+      "feasible": 15,
+      "total": 22,
+      "rate": 0.6818181818181818,
+      "target": 0.8,
+      "note": "Objective feasibility only. User acceptance is measured separately in user studies."
+    },
+    "initialPlans": {
+      "feasible": 3,
+      "total": 4
+    },
+    "latencyMs": {
+      "median": 21703,
+      "p90": 33045
+    },
+    "tokens": {
+      "input": 119500,
+      "output": 12580
+    },
+    "estimatedCostUsd": null,
+    "byCategory": {
+      "initial_plan": {
+        "total": 4,
+        "constraintPass": 3,
+        "feasible": 3
+      },
+      "unexpected_meeting": {
+        "total": 4,
+        "constraintPass": 2,
+        "feasible": 4
+      },
+      "missed_workout": {
+        "total": 2,
+        "constraintPass": 0,
+        "feasible": 2
+      },
+      "reduced_time": {
+        "total": 3,
+        "constraintPass": 1,
+        "feasible": 3
+      },
+      "equipment_change": {
+        "total": 2,
+        "constraintPass": 0,
+        "feasible": 2
+      },
+      "activity_restriction": {
+        "total": 3,
+        "constraintPass": 0,
+        "feasible": 1
+      },
+      "conflicting_preferences": {
+        "total": 2,
+        "constraintPass": 0,
+        "feasible": 0
+      },
+      "no_feasible_window": {
+        "total": 1,
+        "constraintPass": 0,
+        "feasible": 0
+      },
+      "preserve_completed": {
+        "total": 2,
+        "constraintPass": 1,
+        "feasible": 1
+      },
+      "multi_change": {
+        "total": 3,
+        "constraintPass": 2,
+        "feasible": 2
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "DEV-01",
+      "split": "dev",
+      "category": "initial_plan",
+      "personaId": "maya",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 19284,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-01",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 4838,
+      "outputTokens": 575,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-02",
+      "split": "dev",
+      "category": "initial_plan",
+      "personaId": "jordan",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 26509,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 4738,
+      "outputTokens": 455,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-03",
+      "split": "dev",
+      "category": "initial_plan",
+      "personaId": "ana",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 21915,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": false,
+        "feasible": false,
+        "feasibleReason": "plan violates hard constraints",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-03",
+            "kind": "plan",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "schema",
+                "message": "workouts.0.exercises.1.minutes: Too small: expected number to be >0"
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 4692,
+      "outputTokens": 401,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-04",
+      "split": "dev",
+      "category": "unexpected_meeting",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 18184,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-04-0",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-04-1",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-04-2",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5745,
+      "outputTokens": 438,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-05",
+      "split": "dev",
+      "category": "unexpected_meeting",
+      "personaId": "jordan",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 23207,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-05-0",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-05-1",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-05-2",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5361,
+      "outputTokens": 539,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-06",
+      "split": "dev",
+      "category": "missed_workout",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 21287,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-06-0",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-06-1",
+            "kind": "move",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "calendar_conflict",
+                "workoutId": "maya-w3",
+                "message": "\"Easy run\" and \"Yoga flow\" overlap on 2026-11-05."
+              },
+              {
+                "constraint": "no_volume_spike",
+                "message": "2 workouts stacked on 2026-11-05."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-06-2",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5710,
+      "outputTokens": 450,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-07",
+      "split": "dev",
+      "category": "missed_workout",
+      "personaId": "sam",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 29385,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-07-0",
+            "kind": "move",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "no_past_scheduling",
+                "workoutId": "sam-w1",
+                "message": "\"Easy run\" is scheduled for 2026-11-03 18:30, which has already passed."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-07-1",
+            "kind": "swap_format",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "no_past_scheduling",
+                "workoutId": "sam-w1",
+                "message": "\"Steady bike\" is scheduled for 2026-11-03 18:30, which has already passed."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-07-2",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5498,
+      "outputTokens": 493,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-08",
+      "split": "dev",
+      "category": "reduced_time",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 24524,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-08-0",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-08-1",
+            "kind": "move",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "calendar_conflict",
+                "workoutId": "maya-w3",
+                "message": "\"Yoga flow\" (2026-11-06 20:00) overlaps \"Dinner with friends\" (19:00–22:00)."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-08-2",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5711,
+      "outputTokens": 603,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-09",
+      "split": "dev",
+      "category": "reduced_time",
+      "personaId": "lee",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 26777,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-09-0",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-09-1",
+            "kind": "move",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "calendar_conflict",
+                "workoutId": "lee-w1",
+                "message": "\"Lower body strength\" (2026-11-04 18:15) overlaps \"Volunteering\" (19:00–21:00)."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-09-2",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5768,
+      "outputTokens": 640,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-10",
+      "split": "dev",
+      "category": "equipment_change",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 30214,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-10-0",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-10-1",
+            "kind": "move",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "equipment",
+                "workoutId": "maya-w4",
+                "message": "\"Upper body strength\" needs barbell, bench, dumbbells, kettlebell."
+              },
+              {
+                "constraint": "no_volume_spike",
+                "message": "2 workouts stacked on 2026-11-02."
+              },
+              {
+                "constraint": "no_past_scheduling",
+                "workoutId": "maya-w4",
+                "message": "\"Upper body strength\" is scheduled for 2026-11-02 18:00, which has already passed."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-10-2",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5720,
+      "outputTokens": 662,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-11",
+      "split": "dev",
+      "category": "equipment_change",
+      "personaId": "lee",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 36573,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-11-0",
+            "kind": "move",
+            "valid": false,
+            "resolves": false,
+            "violations": [
+              {
+                "constraint": "calendar_conflict",
+                "workoutId": "lee-w3",
+                "message": "\"Full body strength\" (2026-11-04 18:15) overlaps \"Volunteering\" (19:00–21:00)."
+              },
+              {
+                "constraint": "equipment",
+                "workoutId": "lee-w3",
+                "message": "\"Full body strength\" needs barbell, squat_rack, kettlebell."
+              },
+              {
+                "constraint": "equipment",
+                "workoutId": "lee-w4",
+                "message": "\"Lower body strength\" needs barbell, squat_rack, kettlebell."
+              }
+            ],
+            "unresolved": [
+              "lee-w4"
+            ],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-11-1",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-11-2",
+            "kind": "shorter",
+            "valid": false,
+            "resolves": false,
+            "violations": [
+              {
+                "constraint": "equipment",
+                "workoutId": "lee-w3",
+                "message": "\"Full body strength\" needs barbell, squat_rack, kettlebell."
+              }
+            ],
+            "unresolved": [
+              "lee-w3"
+            ],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5776,
+      "outputTokens": 696,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-12",
+      "split": "dev",
+      "category": "activity_restriction",
+      "personaId": "sam",
+      "expectedOutcome": "replan",
+      "status": "error",
+      "error": "The model's answer didn't match the expected format: Invalid option: expected one of \"shorter\"|\"move\"|\"swap_format\"|\"skip\"",
+      "latencyMs": 33045,
+      "alternativesOffered": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-13",
+      "split": "dev",
+      "category": "activity_restriction",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 27669,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-13-0",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-13-1",
+            "kind": "shorter",
+            "valid": false,
+            "resolves": false,
+            "violations": [
+              {
+                "constraint": "avoided_activity",
+                "workoutId": "maya-w4",
+                "message": "\"Upper body strength\" includes Dumbbell shoulder press (overhead), which you asked to avoid."
+              }
+            ],
+            "unresolved": [
+              "maya-w4"
+            ],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-13-2",
+            "kind": "swap_format",
+            "valid": false,
+            "resolves": false,
+            "violations": [
+              {
+                "constraint": "avoided_activity",
+                "workoutId": "maya-w4",
+                "message": "\"Upper body strength\" includes Dumbbell shoulder press (overhead), which you asked to avoid."
+              }
+            ],
+            "unresolved": [
+              "maya-w4"
+            ],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5715,
+      "outputTokens": 839,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-14",
+      "split": "dev",
+      "category": "conflicting_preferences",
+      "personaId": "lee",
+      "expectedOutcome": "infeasible",
+      "status": "error",
+      "error": "The operation was aborted due to timeout",
+      "latencyMs": 90014,
+      "alternativesOffered": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-15",
+      "split": "dev",
+      "category": "conflicting_preferences",
+      "personaId": "ana",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 31716,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": false,
+        "feasibleReason": "every option violates constraints",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-15-0",
+            "kind": "move",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "calendar_conflict",
+                "workoutId": "ana-w1",
+                "message": "\"Standing Pilates\" (2026-11-03 14:00) overlaps \"Seminar\" (13:30–15:20)."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-15-1",
+            "kind": "move",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "calendar_conflict",
+                "workoutId": "ana-w1",
+                "message": "\"Pilates + Mobility\" (2026-11-03 14:00) overlaps \"Seminar\" (13:30–15:20)."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-15-2",
+            "kind": "swap_format",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "calendar_conflict",
+                "workoutId": "ana-w1",
+                "message": "\"Standing Mobility\" (2026-11-03 14:00) overlaps \"Seminar\" (13:30–15:20)."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5218,
+      "outputTokens": 710,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-16",
+      "split": "dev",
+      "category": "no_feasible_window",
+      "personaId": "jordan",
+      "expectedOutcome": "infeasible",
+      "status": "ok",
+      "latencyMs": 20586,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": false,
+        "feasibleReason": "did not acknowledge that the request can't be met",
+        "restOnly": true,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-16-0",
+            "kind": "move",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "no_past_scheduling",
+                "workoutId": "jordan-w3",
+                "message": "\"Brisk walk\" is scheduled for 2026-11-05 18:15, which has already passed."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-16-1",
+            "kind": "move",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "no_volume_spike",
+                "message": "2 workouts stacked on 2026-11-04."
+              },
+              {
+                "constraint": "no_past_scheduling",
+                "workoutId": "jordan-w3",
+                "message": "\"Brisk walk\" is scheduled for 2026-11-04 18:15, which has already passed."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-16-2",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5438,
+      "outputTokens": 377,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-17",
+      "split": "dev",
+      "category": "unexpected_meeting",
+      "personaId": "lee",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 17712,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-17-0",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-17-1",
+            "kind": "move",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "no_past_scheduling",
+                "workoutId": "lee-w4",
+                "message": "\"Lower body strength\" is scheduled for 2026-11-06 06:30, which has already passed."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-17-2",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5766,
+      "outputTokens": 413,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-18",
+      "split": "dev",
+      "category": "preserve_completed",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 20096,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-18-0",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-18-1",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-18-2",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5714,
+      "outputTokens": 735,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-19",
+      "split": "dev",
+      "category": "multi_change",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "error",
+      "error": "The model's answer didn't match the expected format: Invalid option: expected one of \"shorter\"|\"move\"|\"swap_format\"|\"skip\"",
+      "latencyMs": 17933,
+      "alternativesOffered": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-20",
+      "split": "dev",
+      "category": "multi_change",
+      "personaId": "jordan",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 15430,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-20-0",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": false,
+            "violations": [],
+            "unresolved": [
+              "jordan-w1"
+            ],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-20-1",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-20-2",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5358,
+      "outputTokens": 687,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-21",
+      "split": "dev",
+      "category": "multi_change",
+      "personaId": "ana",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 24667,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-21-0",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-21-1",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-21-2",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5221,
+      "outputTokens": 641,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-22",
+      "split": "dev",
+      "category": "reduced_time",
+      "personaId": "sam",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 16203,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-22-0",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-22-1",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-22-2",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5497,
+      "outputTokens": 534,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-23",
+      "split": "dev",
+      "category": "preserve_completed",
+      "personaId": "lee",
+      "expectedOutcome": "infeasible",
+      "status": "ok",
+      "latencyMs": 21491,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": false,
+        "feasibleReason": "did not acknowledge that the request can't be met",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-23-0",
+            "kind": "swap_format",
+            "valid": false,
+            "resolves": false,
+            "violations": [
+              {
+                "constraint": "completed_preserved",
+                "workoutId": "lee-w1",
+                "message": "Completed workout \"Lower body strength\" was modified."
+              },
+              {
+                "constraint": "no_past_scheduling",
+                "workoutId": "lee-w1",
+                "message": "\"Upper body strength\" is scheduled for 2026-11-02 18:15, which has already passed."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": [
+              "lee-w1"
+            ]
+          },
+          {
+            "id": "generic-DEV-23-1",
+            "kind": "swap_format",
+            "valid": false,
+            "resolves": false,
+            "violations": [
+              {
+                "constraint": "completed_preserved",
+                "workoutId": "lee-w1",
+                "message": "Completed workout \"Lower body strength\" was modified."
+              },
+              {
+                "constraint": "no_past_scheduling",
+                "workoutId": "lee-w1",
+                "message": "\"Lower body strength (DB/cable)\" is scheduled for 2026-11-02 18:15, which has already passed."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": [
+              "lee-w1"
+            ]
+          },
+          {
+            "id": "generic-DEV-23-2",
+            "kind": "shorter",
+            "valid": false,
+            "resolves": false,
+            "violations": [
+              {
+                "constraint": "completed_preserved",
+                "workoutId": "lee-w1",
+                "message": "Completed workout \"Lower body strength\" was modified."
+              },
+              {
+                "constraint": "no_past_scheduling",
+                "workoutId": "lee-w1",
+                "message": "\"Condensed full body strength\" is scheduled for 2026-11-02 18:15, which has already passed."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": [
+              "lee-w1"
+            ]
+          }
+        ]
+      },
+      "inputTokens": 5763,
+      "outputTokens": 845,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-24",
+      "split": "dev",
+      "category": "activity_restriction",
+      "personaId": "jordan",
+      "expectedOutcome": "replan",
+      "status": "error",
+      "error": "The model's answer didn't match the expected format: Invalid option: expected one of \"shorter\"|\"move\"|\"swap_format\"|\"skip\"",
+      "latencyMs": 16847,
+      "alternativesOffered": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-25",
+      "split": "dev",
+      "category": "unexpected_meeting",
+      "personaId": "sam",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 17016,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-25-0",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-25-1",
+            "kind": "move",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "no_volume_spike",
+                "message": "2 workouts stacked on 2026-11-07."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "generic-DEV-25-2",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 5535,
+      "outputTokens": 446,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-26",
+      "split": "dev",
+      "category": "initial_plan",
+      "personaId": "lee",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 14994,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "generic-DEV-26",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 4718,
+      "outputTokens": 401,
+      "costUsd": null
+    }
+  ]
+}

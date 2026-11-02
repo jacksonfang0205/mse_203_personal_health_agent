@@ -6,6 +6,7 @@ Fitness that fits your life. An AI workout planner that adapts when your week ch
 - Evaluation methodology: [EVAL_PLAN.md](EVAL_PLAN.md)
 - Task checklist: [TASKS.md](TASKS.md)
 - Eval harness: [evals/README.md](evals/README.md)
+- **Latest eval results:** [evals/results/2026-11-02-dev](evals/results/2026-11-02-dev/README.md)
 
 ## Run locally
 

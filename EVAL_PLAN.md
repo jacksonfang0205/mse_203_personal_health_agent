@@ -111,4 +111,6 @@ Each run writes `evals/results/runs/<timestamp>_<planner>_<split>.json` (full de
 
 ## Current status
 
-The harness works end to end with the `noop` and `rule_based` planners. Those runs only validate the harness. They are not results for Pivot's AI, which doesn't exist yet.
+All four automated conditions run end to end: `noop`, `rule_based`, `generic_llm` and `pivot_agent`. **First LLM results (dev split, one run, gpt-5.4-mini): [evals/results/2026-11-02-dev](evals/results/2026-11-02-dev/README.md).** Metric 1 (constraint adherence): `pivot_agent` 96% vs `generic_llm` 41%. Metric 3 (objective replanning): 73% vs 68%. Metric 2 and the subjective half of Metric 3 still need user sessions.
+
+`pivot_agent` currently uses one structured LLM call plus a deterministic gate and one repair round, rather than the tool loop described for condition C. The team still needs to confirm that design.

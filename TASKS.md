@@ -26,17 +26,22 @@ Ordered by priority within each week. See [PLAN.md](PLAN.md) and [EVAL_PLAN.md](
 ## Week 2: Agent (Phase 2)
 
 - [ ] Choose model and provider; add `ANTHROPIC_API_KEY` to `.env.local` and Vercel
-- [ ] `POST /api/life-happens` route handler (server only; validates the request snapshot with Zod)
+  - Done locally: Stanford AI API Gateway with `gpt-5.4-mini`, configured through `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL` (see `.env.example`). **Still to do:** set these in Vercel for Production and Preview, and switch from a personal key to the team key.
+- [x] `POST /api/life-happens` route handler (server only; validates the request snapshot with Zod)
 - [ ] Agent loop with the read tools, `build_workout`, `validate_workout_plan`, and `propose_schedule_changes`
+  - Built differently: one structured LLM call per request, with the read and validation steps done in code before and after it (`src/lib/agent/`). The first eval results support this design. **Team to decide:** keep it and update PLAN.md, or build the tool loop.
 - [ ] Server-side validation gate and repair loop (max 2 rounds)
-- [ ] Wire the Life Happens UI to the API, with loading and error states, and keep the rule-based fallback when there is no API key
-- [ ] LLM-backed initial plan generation using the same gate
-- [ ] `pivot_agent` and `generic_llm` planners in `evals/src/planners.ts`
-- [ ] Fill in `evals/pricing.json` from current provider pricing
-- [ ] First dev-split runs for both planners; log failures by category
-- [ ] Remove the "Preview" labels only where output is actually AI-generated
+  - Gate done for plans and Life Happens. Repair loop has 1 round (Life Happens only), not 2.
+- [x] Wire the Life Happens UI to the API, with loading and error states, and keep the rule-based fallback when there is no API key
+- [x] LLM-backed initial plan generation using the same gate
+- [x] `pivot_agent` and `generic_llm` planners in `evals/src/planners.ts` (implemented in `evals/src/llmPlanners.ts`)
+- [x] Fill in `evals/pricing.json` from current provider pricing (gpt-5.4-mini only; add others before comparing models)
+- [x] First dev-split runs for both planners; log failures by category: [results and failure log](evals/results/2026-11-02-dev/README.md)
+- [x] Remove the "Preview" labels only where output is actually AI-generated
 
 ## Week 3: Reliability and users
+
+- [ ] Fix the four `pivot_agent` failure types from the first dev run (format errors, restrictions stated only in the message, not acknowledging infeasible requests, options that don't resolve the disruption). See the [results](evals/results/2026-11-02-dev/README.md).
 
 - [ ] Iterate prompts and tools on the dev split only
 - [ ] Rubric for subjective acceptance; two blind raters

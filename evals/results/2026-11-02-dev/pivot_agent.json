@@ -1,0 +1,1181 @@
+{
+  "runId": "2026-11-02T03-02-43-682Z_pivot_agent_dev",
+  "startedAt": "2026-11-02T03:02:43.682Z",
+  "planner": {
+    "id": "pivot_agent",
+    "description": "Pivot agent: filtered catalog, free windows, validation gate, repair round, collateral fixes."
+  },
+  "split": "dev",
+  "gitCommit": "002304a",
+  "node": "v24.14.1",
+  "syntheticData": true,
+  "summary": {
+    "scenarios": 26,
+    "errors": 2,
+    "metric1_constraintAdherence": {
+      "passed": 23,
+      "evaluated": 24,
+      "noProposal": 2,
+      "rate": 0.9583333333333334,
+      "target": 0.9
+    },
+    "metric3_objectiveReplanning": {
+      "feasible": 16,
+      "total": 22,
+      "rate": 0.7272727272727273,
+      "target": 0.8,
+      "note": "Objective feasibility only. User acceptance is measured separately in user studies."
+    },
+    "initialPlans": {
+      "feasible": 4,
+      "total": 4
+    },
+    "latencyMs": {
+      "median": 23002.5,
+      "p90": 30787
+    },
+    "tokens": {
+      "input": 78263,
+      "output": 9288
+    },
+    "estimatedCostUsd": null,
+    "byCategory": {
+      "initial_plan": {
+        "total": 4,
+        "constraintPass": 4,
+        "feasible": 4
+      },
+      "unexpected_meeting": {
+        "total": 4,
+        "constraintPass": 4,
+        "feasible": 4
+      },
+      "missed_workout": {
+        "total": 2,
+        "constraintPass": 2,
+        "feasible": 2
+      },
+      "reduced_time": {
+        "total": 3,
+        "constraintPass": 2,
+        "feasible": 2
+      },
+      "equipment_change": {
+        "total": 2,
+        "constraintPass": 2,
+        "feasible": 2
+      },
+      "activity_restriction": {
+        "total": 3,
+        "constraintPass": 2,
+        "feasible": 2
+      },
+      "conflicting_preferences": {
+        "total": 2,
+        "constraintPass": 1,
+        "feasible": 0
+      },
+      "no_feasible_window": {
+        "total": 1,
+        "constraintPass": 1,
+        "feasible": 0
+      },
+      "preserve_completed": {
+        "total": 2,
+        "constraintPass": 2,
+        "feasible": 1
+      },
+      "multi_change": {
+        "total": 3,
+        "constraintPass": 3,
+        "feasible": 3
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "DEV-01",
+      "split": "dev",
+      "category": "initial_plan",
+      "personaId": "maya",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 19449,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2906,
+      "outputTokens": 318,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-02",
+      "split": "dev",
+      "category": "initial_plan",
+      "personaId": "jordan",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 26416,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2330,
+      "outputTokens": 245,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-03",
+      "split": "dev",
+      "category": "initial_plan",
+      "personaId": "ana",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 21646,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 1543,
+      "outputTokens": 245,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-04",
+      "split": "dev",
+      "category": "unexpected_meeting",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 18021,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "e15adb52-d6bf-41fe-9737-8eda1082267b-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "94fdee0e-9322-4625-98a4-c83cde6c2d54-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "ab2abe4e-f924-4261-84d9-37c7baa5e1d7-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3914,
+      "outputTokens": 322,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-05",
+      "split": "dev",
+      "category": "unexpected_meeting",
+      "personaId": "jordan",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 23618,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "2211fd1a-23b3-4545-9859-815416153891-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "5574a8a0-112a-4516-ab31-1f8e0e847c97-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "3a0f274d-17c1-4d83-95e8-1af3a8717598-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3201,
+      "outputTokens": 349,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-06",
+      "split": "dev",
+      "category": "missed_workout",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 20469,
+      "alternativesOffered": 2,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "24420ef6-17f9-48df-b099-49ee36273a76-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "2f07c824-a6ea-4d5a-b1fc-af3c26605193-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3850,
+      "outputTokens": 326,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-07",
+      "split": "dev",
+      "category": "missed_workout",
+      "personaId": "sam",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 30183,
+      "alternativesOffered": 2,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "9a6e019f-1111-4e0c-be16-9f7d910da4e5-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "d8169c4d-56d6-435d-a4b1-00347b71e75c-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3052,
+      "outputTokens": 320,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-08",
+      "split": "dev",
+      "category": "reduced_time",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 21302,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "05fb4d82-b3a0-42c8-a73d-c939d62ce2c9-shorter",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "4dc89dcb-7cea-4966-9e0a-91da2e53a6b5-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "89ec6b6c-ccf3-42c2-84b6-f07c378da5cb-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3798,
+      "outputTokens": 381,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-09",
+      "split": "dev",
+      "category": "reduced_time",
+      "personaId": "lee",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 24963,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "700e86b0-e2b1-44f7-9f45-7f19479b446a-shorter",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "ab5579ab-9157-45e3-b3cb-9aff3786e3ad-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "de250f38-a6f4-4e64-9d5d-379eda7ca9df-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3938,
+      "outputTokens": 360,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-10",
+      "split": "dev",
+      "category": "equipment_change",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 30086,
+      "alternativesOffered": 2,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "7e0af389-86ae-41ce-b754-638edd38868c-swap_format",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "ac693ea1-f98b-47c7-9766-71bf89bae260-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3683,
+      "outputTokens": 454,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-11",
+      "split": "dev",
+      "category": "equipment_change",
+      "personaId": "lee",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 32180,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "657efdeb-8e1f-470e-8adb-1a755775166c-swap_format",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "0e2389c4-8953-4182-9097-e262e2345610-shorter",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "26c2f706-5d98-4fab-9cc7-859aa9fe564a-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3857,
+      "outputTokens": 609,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-12",
+      "split": "dev",
+      "category": "activity_restriction",
+      "personaId": "sam",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 30787,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "f1a229b9-6f0a-4368-86b5-44e57092167e-swap_format",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "506d66d3-4bcd-4b7a-986b-08c105030e31-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "2d778286-4fc0-4038-a1ce-96b23252852b-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3022,
+      "outputTokens": 550,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-13",
+      "split": "dev",
+      "category": "activity_restriction",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 28412,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "3be794cf-c602-4607-a9ef-8dfbc49c575f-swap_format",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "30253167-a973-448e-94d9-20c46d8266ea-shorter",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "b70a5bee-5b61-424d-8bbe-875b81b4761d-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3900,
+      "outputTokens": 464,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-14",
+      "split": "dev",
+      "category": "conflicting_preferences",
+      "personaId": "lee",
+      "expectedOutcome": "infeasible",
+      "status": "error",
+      "error": "The model's answer didn't match the expected format: Too small: expected array to have >=1 items",
+      "latencyMs": 35323,
+      "alternativesOffered": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-15",
+      "split": "dev",
+      "category": "conflicting_preferences",
+      "personaId": "ana",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 26003,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": false,
+        "feasibleReason": "valid options don't resolve the disruption",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "1cc02ac3-699f-488c-b2f6-56d078d10353-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": false,
+            "violations": [],
+            "unresolved": [
+              "ana-w1"
+            ],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2458,
+      "outputTokens": 439,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-16",
+      "split": "dev",
+      "category": "no_feasible_window",
+      "personaId": "jordan",
+      "expectedOutcome": "infeasible",
+      "status": "ok",
+      "latencyMs": 27442,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": false,
+        "feasibleReason": "did not acknowledge that the request can't be met",
+        "restOnly": true,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "a52515cf-af04-42c5-8609-01f31e23abe7-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3072,
+      "outputTokens": 463,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-17",
+      "split": "dev",
+      "category": "unexpected_meeting",
+      "personaId": "lee",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 25338,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "8c64c550-c605-4904-a0a2-0684e667f550-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "d19ba1f6-a7b0-4a54-9a7f-72106d48219c-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "0e33cf60-0dd8-4777-a215-b73069aa58e4-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3740,
+      "outputTokens": 353,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-18",
+      "split": "dev",
+      "category": "preserve_completed",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 22387,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "d339f8fc-91f4-46d5-a833-abeaf420aa0b-swap_format",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "19902e1b-8b48-485f-b891-40be458842ae-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "7469a8aa-cef4-47bb-8988-0caf5c2718aa-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3747,
+      "outputTokens": 341,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-19",
+      "split": "dev",
+      "category": "multi_change",
+      "personaId": "maya",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 18329,
+      "alternativesOffered": 2,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "32bb3dad-d3d4-40e7-93e7-47f81fe8f2b0-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "18d9ff4f-09fd-4d49-b2b9-1f093a46339a-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3855,
+      "outputTokens": 445,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-20",
+      "split": "dev",
+      "category": "multi_change",
+      "personaId": "jordan",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 16281,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "9ff184ff-d383-4139-8932-529171f44ebd-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "eee0b53b-3586-4453-bd9c-a20f97a963c1-shorter",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": false,
+            "violations": [],
+            "unresolved": [
+              "jordan-w1"
+            ],
+            "disturbed": []
+          },
+          {
+            "id": "20d5e3ad-2920-4557-b3ed-cf5f8239acbc-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3250,
+      "outputTokens": 344,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-21",
+      "split": "dev",
+      "category": "multi_change",
+      "personaId": "ana",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 25315,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "47b39770-a470-4605-8637-17ce3d35ca7f-shorter",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "5230c2ea-1d2f-4445-a0fc-3343e038d8bf-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "789af000-53c5-44d2-b7a8-360a85e81e7f-swap_format",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2364,
+      "outputTokens": 423,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-22",
+      "split": "dev",
+      "category": "reduced_time",
+      "personaId": "sam",
+      "expectedOutcome": "replan",
+      "status": "error",
+      "error": "The model's answer didn't match the expected format: Invalid input: expected array, received undefined",
+      "latencyMs": 17184,
+      "alternativesOffered": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-23",
+      "split": "dev",
+      "category": "preserve_completed",
+      "personaId": "lee",
+      "expectedOutcome": "infeasible",
+      "status": "ok",
+      "latencyMs": 12854,
+      "alternativesOffered": 2,
+      "score": {
+        "constraintPass": true,
+        "feasible": false,
+        "feasibleReason": "did not acknowledge that the request can't be met",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "70af184c-f681-400c-aecb-cedcc7b15681-swap_format",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "b5eb2b31-f8a1-417a-ae34-42ca21a9b3be-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3781,
+      "outputTokens": 366,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-24",
+      "split": "dev",
+      "category": "activity_restriction",
+      "personaId": "jordan",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 16324,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": false,
+        "feasible": false,
+        "feasibleReason": "only offered rest",
+        "restOnly": true,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "035e9ec5-5b22-4d9a-ab57-79e06195184c-swap_format",
+            "kind": "swap_format",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "avoided_activity",
+                "workoutId": "jordan-w2",
+                "message": "\"Standing mobility\" includes Thoracic open books (floor_work), which you asked to avoid."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "130adbc6-eaba-46c2-9c59-e4928a8302ae-move",
+            "kind": "move",
+            "valid": false,
+            "resolves": false,
+            "violations": [
+              {
+                "constraint": "avoided_activity",
+                "workoutId": "jordan-w2",
+                "message": "\"Yoga flow\" includes Sun salutation flow (floor_work), which you asked to avoid."
+              },
+              {
+                "constraint": "avoided_activity",
+                "workoutId": "jordan-w2",
+                "message": "\"Yoga flow\" includes Low lunge (floor_work), which you asked to avoid."
+              },
+              {
+                "constraint": "avoided_activity",
+                "workoutId": "jordan-w2",
+                "message": "\"Yoga flow\" includes Seated wind-down (floor_work), which you asked to avoid."
+              },
+              {
+                "constraint": "avoided_activity",
+                "workoutId": "jordan-w3",
+                "message": "\"Standing yoga flow\" includes Sun salutation flow (floor_work), which you asked to avoid."
+              }
+            ],
+            "unresolved": [
+              "jordan-w2"
+            ],
+            "disturbed": []
+          },
+          {
+            "id": "d2854dc3-93cb-43a2-99d8-5cdc78deb18f-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3248,
+      "outputTokens": 442,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-25",
+      "split": "dev",
+      "category": "unexpected_meeting",
+      "personaId": "sam",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 16994,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "a71c289e-02c7-4e5e-aeea-989157dc2a29-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "fe4de358-a3f0-4254-afe3-b8b4947db11a-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "2999b2aa-e51d-4787-806d-1f9ba808a10c-swap_format",
+            "kind": "swap_format",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3028,
+      "outputTokens": 388,
+      "costUsd": null
+    },
+    {
+      "id": "DEV-26",
+      "split": "dev",
+      "category": "initial_plan",
+      "personaId": "lee",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 21510,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2726,
+      "outputTokens": 341,
+      "costUsd": null
+    }
+  ]
+}

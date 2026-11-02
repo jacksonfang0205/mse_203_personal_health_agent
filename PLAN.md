@@ -110,7 +110,7 @@ If time allows after Week 4 polish, this would be a `StudioProvider` adapter (Go
 | Phase | Week | Scope | Status |
 | --- | --- | --- | --- |
 | 1 | 1 | Schemas, design system, onboarding, editable preferences, dashboard, simulated calendar, validation, local persistence, eval harness and fixtures | **Done (this session)** |
-| 2 | 2 | `/api/life-happens` route, agent loop with tools, LLM workout generation, generic-LLM baseline planner, eval adapters for both | Next |
+| 2 | 2 | `/api/life-happens` route, agent loop with tools, LLM workout generation, generic-LLM baseline planner, eval adapters for both | **Mostly done.** Built as one structured call plus a deterministic gate rather than a tool loop; see [TASKS.md](TASKS.md) and the [first results](evals/results/2026-11-02-dev/README.md) |
 | 3 | 3 | Reliability work driven by dev-split evals, rubric-based acceptance scoring, first user tests, Google FreeBusy if feasible | |
 | 4 | 4 | Held-out comparative evaluation, fixes for major failures, polish, demo | |
 
