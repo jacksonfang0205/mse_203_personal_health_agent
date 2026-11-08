@@ -39,6 +39,8 @@ export interface OverlayRep {
   startMs: number;
   bottomMs?: number;
   endMs: number;
+  /** The angle this rep was filmed from, if it differs across the clip. */
+  view?: CameraView;
   faults: string[];
 }
 
@@ -116,8 +118,9 @@ export function drawOverlay(
       ctx.stroke();
     }
 
+    const view = rep?.view ?? o.view;
     const lk = p("l_knee"), rk = p("r_knee"), la = p("l_ankle"), ra = p("r_ankle");
-    if (o.view === "front" && o.primary !== "elbow") {
+    if (view === "front" && o.primary !== "elbow") {
       // Live knee width vs. feet width: below ~85% means the knees are caving in.
       if (rep && lk && rk && la && ra && Math.abs(la.x - ra.x) > 1) {
         const pct = Math.round((Math.abs(lk.x - rk.x) / Math.abs(la.x - ra.x)) * 100);
@@ -128,7 +131,7 @@ export function drawOverlay(
     const s = o.side === "left" ? "l" : "r";
     const [a, b, c, label] = PRIMARY_JOINTS[o.primary];
     const pa = p(`${s}_${a}` as Joint), pb = p(`${s}_${b}` as Joint), pc = p(`${s}_${c}` as Joint);
-    if (o.view !== "front" && pa && pb && pc) {
+    if (view !== "front" && pa && pb && pc) {
       const deg = Math.round(angleAt(pa, pb, pc));
       tag(ctx, `${label} ${deg}°`, pb.x + 14 * scale, pb.y - 14 * scale, color, scale);
     }

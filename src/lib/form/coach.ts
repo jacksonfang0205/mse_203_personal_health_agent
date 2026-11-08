@@ -134,7 +134,7 @@ export interface FormCoachResponse {
   quality: FormAnalysis["quality"];
   repCount: number;
   /** Rep timing for the video overlay. */
-  reps: { n: number; startMs: number; bottomMs: number; endMs: number; faults: string[]; features: Record<string, number> }[];
+  reps: { n: number; startMs: number; bottomMs: number; endMs: number; view: "side" | "front"; faults: string[]; features: Record<string, number> }[];
   overlay: { side: "left" | "right"; primary: MovementGuide["primary"] };
   measured: FaultFinding[];
   golden: Pick<GoldenComparison, "available" | "deviations" | "shapeSimilarity" | "note">;
@@ -241,7 +241,7 @@ export function buildTools(req: FormCoachRequest, m: MovementGuide, analysis: Fo
           fault_id: f.id,
           label: f.label,
           meaning: f.meaning,
-          rule: `${f.feature} ${f.op} ${f.threshold}${f.view ? ` (${f.view} view only)` : ""}`,
+          rule: `${f.feature} ${f.op} ${f.threshold}${f.view && f.view !== "any" ? ` (${f.view} view only)` : ""}`,
           causes: f.causes.map((c) => ({ cause_id: c.id, label: c.label, signals: c.signals })),
         })),
         cannotAssess: m.cannotAssess,
@@ -294,6 +294,13 @@ export function buildTools(req: FormCoachRequest, m: MovementGuide, analysis: Fo
   ];
 }
 
+/** "front view", or "reps 1-4 from the front, rep 5 from the side" when the person turned during the set. */
+function describeViews(analysis: FormAnalysis): string {
+  const views = [...new Set(analysis.reps.map((r) => r.view))];
+  if (views.length <= 1) return `${views[0] ?? analysis.quality.view} view`;
+  return views.map((v) => `rep${analysis.reps.filter((r) => r.view === v).length > 1 ? "s" : ""} ${analysis.reps.filter((r) => r.view === v).map((r) => r.n).join(", ")} from the ${v}`).join("; ");
+}
+
 const SYSTEM = `You are Pivot's form coach. You review one set of an exercise that the app has already measured from the user's video.
 
 How to work:
@@ -316,7 +323,7 @@ function userPrompt(req: FormCoachRequest, m: MovementGuide, analysis: FormAnaly
   const ex = req.exerciseId ? EXERCISES_BY_ID[req.exerciseId]?.name ?? req.exerciseId : m.name;
   return [
     `Movement: ${m.name} (${ex}).`,
-    `Clip: ${analysis.quality.durationS}s, ${analysis.quality.view} view, quality ${analysis.quality.ok ? "OK" : "too low"}, ${analysis.reps.length} reps found.`,
+    `Clip: ${analysis.quality.durationS}s, ${describeViews(analysis)}, quality ${analysis.quality.ok ? "OK" : "too low"}, ${analysis.reps.length} reps found.`,
     `Measured faults: ${analysis.faults.length ? analysis.faults.map((f) => f.faultId).join(", ") : "none"}.`,
     `Golden reference: ${golden.available ? `${golden.goldenClips} clips` : "not built yet"}.`,
     req.set.note ? `User's note: "${req.set.note}"` : "",
@@ -519,6 +526,7 @@ export async function coachForm(req: FormCoachRequest, o: CoachOptions = {}): Pr
       startMs: req.pose.frames[r.start].t,
       bottomMs: req.pose.frames[r.bottom].t,
       endMs: req.pose.frames[r.end].t,
+      view: r.view,
       faults: analysis.faults.filter((f) => f.reps.includes(r.n)).map((f) => f.faultId),
       features: r.features as Record<string, number>,
     })),

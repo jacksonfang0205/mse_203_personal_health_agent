@@ -20,7 +20,7 @@ export const FEATURES = {
   min_elbow_angle: "Smallest elbow angle in the rep. Lower = deeper push-up.",
   max_elbow_angle: "Largest elbow angle in the rep. Near 180 = full lockout.",
   torso_lean_at_bottom: "Torso angle from vertical at the deepest point. Higher = more forward lean.",
-  max_torso_lean: "Largest torso angle from vertical during the rep.",
+  max_torso_lean: "Largest torso angle from vertical during the rep. From the front it is estimated from how much shorter the torso looks as it tips toward the camera.",
   hip_depth_at_bottom: "Hip height relative to the knee at the bottom, as a fraction of thigh length. Positive = hip below knee.",
   max_heel_lift: "How far the heel rises from its starting height, as a fraction of leg length.",
   max_hip_sag: "Largest drop of the hips below the shoulder-ankle line, in degrees (push-up).",
@@ -55,8 +55,8 @@ export interface FaultRule {
   feature: FeatureId;
   op: "<" | ">";
   threshold: number;
-  /** The camera angle that can see this fault. Defaults to side; rules run only on clips filmed from that angle. */
-  view?: CameraView;
+  /** The camera angle that can see this fault. Defaults to side; rules run only on reps filmed from that angle. "any" runs on both. */
+  view?: CameraView | "any";
   severity: "minor" | "moderate" | "major";
   meaning: string;
   causes: Cause[];
@@ -142,6 +142,7 @@ const SQUAT: MovementGuide = {
       feature: "max_torso_lean",
       op: ">",
       threshold: 55,
+      view: "any",
       severity: "moderate",
       meaning: "The chest drops far forward at the bottom, shifting load to the lower back.",
       causes: [

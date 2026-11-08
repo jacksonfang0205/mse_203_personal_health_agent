@@ -12,6 +12,18 @@ type Pt = { x: number; y: number };
 type Series = (number | null)[];
 
 const MIN_VIS = 0.5;
+/** Shoulder and hip width ÷ torso length above this means the person faces the camera. */
+const FRONT_WIDTH = 0.35;
+
+/** Whether a rule can be checked on a rep filmed from `view`. */
+export function ruleSees(rule: Pick<FaultRule, "view">, view: CameraView): boolean {
+  return rule.view === "any" || (rule.view ?? "side") === (view === "unknown" ? "side" : view);
+}
+
+/** A joint we can use: visible enough and inside the picture (walking up to the camera puts the feet off-screen). */
+function visible(k: [number, number, number] | null | undefined): k is [number, number, number] {
+  return Boolean(k && k[2] >= MIN_VIS && k[0] >= -0.05 && k[0] <= 1.05 && k[1] >= -0.05 && k[1] <= 1.06);
+}
 
 export interface Rep {
   /** 1-based, as shown to users. */
@@ -19,6 +31,8 @@ export interface Rep {
   start: number;
   bottom: number;
   end: number;
+  /** Which way the person faced the camera during this rep. Fault rules run per rep on the angle that can see them. */
+  view: "side" | "front";
   features: Partial<Record<FeatureId, number>>;
 }
 
@@ -58,7 +72,7 @@ export interface Trend {
 
 export interface FormAnalysis {
   movementId: string;
-  /** Which fault checks this clip's camera angle allowed. */
+  /** Which fault checks the camera angles in this clip allowed. */
   checks: { ran: string[]; skipped: { id: string; label: string; needs: CameraView }[] };
   quality: Quality;
   reps: Rep[];
@@ -149,16 +163,20 @@ interface Signals {
   heelY: Series;
   hipLine: Series;
   kneeAnkleRatio: Series;
-  /** Front view: hip height above the ankles as a share of leg length, ×180 so it behaves like an angle for rep counting. */
+  /** Hip height above the ankles as a share of torso length, ×100 so it behaves like an angle for rep counting. */
   hipHeight: Series;
+  /** Shoulder and hip width ÷ torso length: near 0 side-on, large when facing the camera. */
+  widthRatio: Series;
+  /** Front view: on-screen torso height ÷ shoulder width. It shrinks as the chest tips toward the camera. */
+  torsoTall: Series;
   legLen: number;
   usable: boolean[];
 }
 
-function computeSignals(seq: PoseSequence, side: "l" | "r"): Signals {
+export function computeSignals(seq: PoseSequence, side: "l" | "r"): Signals {
   const point = (f: number, j: Joint): Pt | null => {
     const kp = seq.frames[f].kp[JOINT_INDEX[j]];
-    if (!kp || kp[2] < MIN_VIS) return null;
+    if (!visible(kp)) return null;
     return { x: kp[0] * seq.width, y: kp[1] * seq.height };
   };
   const s = (name: string) => `${side}_${name}` as Joint;
@@ -174,10 +192,13 @@ function computeSignals(seq: PoseSequence, side: "l" | "r"): Signals {
     hipLine: [],
     kneeAnkleRatio: [],
     hipHeight: [],
+    widthRatio: [],
+    torsoTall: [],
     legLen: NaN,
     usable: [],
   };
   const legLens: number[] = [];
+  const torsos: number[] = [];
   for (let f = 0; f < n; f++) {
     const sh = point(f, s("shoulder"));
     const hip = point(f, s("hip"));
@@ -211,10 +232,17 @@ function computeSignals(seq: PoseSequence, side: "l" | "r"): Signals {
     const hips = [lh, rh].filter(Boolean) as Pt[];
     const ankles = [la, ra].filter(Boolean) as Pt[];
     out.hipHeight.push(hips.length && ankles.length ? ankles.reduce((a, p) => a + p.y, 0) / ankles.length - hips.reduce((a, p) => a + p.y, 0) / hips.length : null);
+    const ls = point(f, "l_shoulder"), rs = point(f, "r_shoulder");
+    const torso = ls && lh && rs && rh ? (dist(ls, lh) + dist(rs, rh)) / 2 : ls && lh ? dist(ls, lh) : rs && rh ? dist(rs, rh) : null;
+    if (torso && hip && knee && ankle) torsos.push(torso);
+    out.widthRatio.push(ls && rs && lh && rh && torso ? (Math.abs(ls.x - rs.x) + Math.abs(lh.x - rh.x)) / 2 / torso : null);
+    out.torsoTall.push(ls && rs && lh && rh && Math.abs(ls.x - rs.x) > 1 ? ((lh.y + rh.y) / 2 - (ls.y + rs.y) / 2) / Math.abs(ls.x - rs.x) : null);
   }
   // Segment lengths shrink on screen when a joint bends toward the camera, so use a high quantile (the standing length).
   out.legLen = quantile(legLens, 0.9);
-  out.hipHeight = out.hipHeight.map((v) => (v === null || !(out.legLen > 0) ? null : (v / out.legLen) * 180));
+  // The torso stays about the same length through a squat from either angle, so it is the yardstick for hip height.
+  const torsoLen = median(torsos);
+  out.hipHeight = out.hipHeight.map((v) => (v === null || !(torsoLen > 0) ? null : (v / torsoLen) * 100));
   return out;
 }
 
@@ -245,44 +273,81 @@ function primarySeries(sig: Signals, m: MovementGuide, view: CameraView): Series
 
 // ---------- reps ----------
 
-function segmentReps(p: Series, minRom: number): { start: number; bottom: number; end: number }[] {
+export function segmentReps(p: Series, minRom: number, maxGap = Infinity): { start: number; bottom: number; end: number }[] {
   const vals = p.filter((v): v is number => v !== null);
   if (vals.length < 5) return [];
   const top = quantile(vals, 0.95);
-  const bottom = quantile(vals, 0.05);
-  const range = top - bottom;
+  const low = quantile(vals, 0.05);
+  const range = top - low;
   if (range < minRom) return [];
-  // Loose thresholds so a shallow, tired last rep still counts as a rep.
-  const hi = top - 0.2 * range;
-  const lo = bottom + 0.55 * range;
-  const reps: { start: number; bottom: number; end: number }[] = [];
-  let state: "waiting" | "up" | "down" = "waiting";
-  let start = -1;
+  // Zigzag: turning points where the signal reverses by at least `swing`. Each trough between two peaks is a rep.
+  // This copes with the standing height drifting during a clip (stepping closer, widening the stance, turning),
+  // which a single global "standing" threshold does not.
+  const swing = minRom * 0.5;
+  const turns: { i: number; v: number; kind: "peak" | "trough" | "gap" }[] = [];
+  let cand: { i: number; v: number } | null = null;
+  let dir: "up" | "down" | null = null;
+  let last = -1;
+  const flush = () => {
+    if (cand && dir) turns.push({ ...cand, kind: dir === "up" ? "peak" : "trough" });
+  };
   for (let i = 0; i < p.length; i++) {
     const v = p[i];
     if (v === null) continue;
-    if (state === "waiting" || state === "up") {
-      if (v >= hi) {
-        state = "up";
-        start = i;
-      } else if (state === "up" && v <= lo) state = "down";
-    } else if (v >= hi) {
-      let b = start;
-      for (let k = start; k <= i; k++) if (p[k] !== null && p[k]! < (p[b] ?? Infinity)) b = k;
-      reps.push({ start, bottom: b, end: i });
-      state = "up";
-      start = i;
+    if (last >= 0 && i - last > maxGap) {
+      // Long gap (the person left the frame): don't join reps across it.
+      flush();
+      turns.push({ i: last, v: NaN, kind: "gap" });
+      cand = null;
+      dir = null;
+    }
+    last = i;
+    if (!cand) {
+      cand = { i, v };
+      continue;
+    }
+    if (dir === null) {
+      if (v - cand.v >= swing) dir = "up";
+      else if (cand.v - v >= swing) dir = "down";
+      else if (v > cand.v) {
+        // Still deciding: remember the extreme we started from as a possible peak.
+        cand = { i, v };
+        continue;
+      } else continue;
+      // The first point we started from is the opposite turning point.
+      turns.push({ ...cand, kind: dir === "up" ? "trough" : "peak" });
+      cand = { i, v };
+      continue;
+    }
+    if (dir === "up") {
+      if (v >= cand.v) cand = { i, v };
+      else if (cand.v - v >= swing) {
+        turns.push({ ...cand, kind: "peak" });
+        cand = { i, v };
+        dir = "down";
+      }
+    } else {
+      if (v <= cand.v) cand = { i, v };
+      else if (v - cand.v >= swing) {
+        turns.push({ ...cand, kind: "trough" });
+        cand = { i, v };
+        dir = "up";
+      }
     }
   }
-  // Widen each rep to the local peaks on both sides, so the top position is included.
-  for (let r = 0; r < reps.length; r++) {
-    const rep = reps[r];
-    const floor = r > 0 ? reps[r - 1].bottom : 0;
-    while (rep.start > floor && p[rep.start - 1] !== null && p[rep.start - 1]! >= p[rep.start]!) rep.start--;
-    const ceil = r < reps.length - 1 ? reps[r + 1].bottom : p.length - 1;
-    while (rep.end < ceil && p[rep.end + 1] !== null && p[rep.end + 1]! >= p[rep.end]!) rep.end++;
+  if (cand && dir === "up") turns.push({ ...cand, kind: "peak" });
+  // A rep goes from standing back to standing: both peaks must be in the upper half of the clip's range,
+  // so bouncing at the bottom doesn't count as extra reps.
+  const standing = low + 0.5 * range;
+  const reps: { start: number; bottom: number; end: number }[] = [];
+  for (let k = 1; k + 1 < turns.length; k++) {
+    const [a, t, b] = [turns[k - 1], turns[k], turns[k + 1]];
+    if (t.kind !== "trough" || a.kind !== "peak" || b.kind !== "peak") continue;
+    if (a.v < standing || b.v < standing) continue;
+    if (Math.max(a.v, b.v) - t.v < minRom * 0.5) continue;
+    reps.push({ start: a.i, bottom: t.i, end: b.i });
   }
-  return reps.filter((rep) => p[rep.bottom] !== null && Math.max(p[rep.start]!, p[rep.end]!) - p[rep.bottom]! >= minRom * 0.5);
+  return reps;
 }
 
 function resample(xs: number[], n: number): number[] {
@@ -306,8 +371,7 @@ function repFeatures(
   primary: Series,
   r: { start: number; bottom: number; end: number },
   seq: PoseSequence,
-  baselineHeel: number,
-  view: CameraView,
+  view: "side" | "front",
 ): Partial<Record<FeatureId, number>> {
   const t = (i: number) => seq.frames[i].t / 1000;
   const f: Partial<Record<FeatureId, number>> = {};
@@ -320,9 +384,14 @@ function repFeatures(
   set("min_hip_angle", min(sig.hip));
   set("min_elbow_angle", min(sig.elbow));
   set("max_elbow_angle", max(sig.elbow));
-  set("torso_lean_at_bottom", sig.torsoLean[r.bottom]);
-  set("max_torso_lean", max(sig.torsoLean));
-  set("hip_depth_at_bottom", sig.hipDepth[r.bottom]);
+  // Angles in the picture plane only mean something side-on.
+  if (view === "side") {
+    set("torso_lean_at_bottom", sig.torsoLean[r.bottom]);
+    set("hip_depth_at_bottom", sig.hipDepth[r.bottom]);
+  }
+  // Heel baseline: where the heel sits at the start and end of this rep (standing), so stepping around between reps doesn't matter.
+  const edge = Math.max(1, Math.round(seq.fps / 5));
+  const baselineHeel = median([...seriesIn(sig.heelY, r.start, r.start + edge), ...seriesIn(sig.heelY, r.end - edge, r.end)]);
   const heelMin = min(sig.heelY);
   if (heelMin !== null && Number.isFinite(baselineHeel) && sig.legLen > 0) set("max_heel_lift", Math.max(0, (baselineHeel - heelMin) / sig.legLen));
   const line = seriesIn(sig.hipLine, r.start, r.end);
@@ -333,17 +402,30 @@ function repFeatures(
   if (view === "front") {
     // Knees can cave anywhere in the deepest third of the rep (often on the way up), not just at the deepest frame.
     // Standing frames are left out: with a wide stance the knees sit inside the feet even with good form.
+    // Only frames where the person still faces the camera (they may turn away at the end of the set).
+    const facing = (i: number) => (sig.widthRatio[i] ?? 0) > FRONT_WIDTH;
     const pv = seriesIn(primary, r.start, r.end);
     if (pv.length) {
       const top = Math.max(...pv), low = Math.min(...pv);
-      const cut = low + 0.35 * (top - low);
+      const deep = low + 0.35 * (top - low);
+      const high = low + 0.65 * (top - low);
       const ratios: number[] = [];
+      const tallTop: number[] = [];
+      const tallLow: number[] = [];
       for (let i = r.start; i <= r.end; i++) {
-        const pr = primary[i], kr = sig.kneeAnkleRatio[i];
-        if (pr !== null && kr !== null && pr <= cut) ratios.push(kr);
+        const pr = primary[i], kr = sig.kneeAnkleRatio[i], tt = sig.torsoTall[i];
+        if (pr === null || !facing(i)) continue;
+        if (kr !== null && pr <= deep) ratios.push(kr);
+        if (tt !== null && pr >= high) tallTop.push(tt);
+        if (tt !== null && pr <= deep) tallLow.push(tt);
       }
       if (ratios.length) set("knee_ankle_width_ratio", Math.min(...ratios));
+      // Forward lean from the front: the torso looks shorter as it tips toward the camera. lean = acos(height at the bottom ÷ height standing).
+      const stand = median(tallTop);
+      if (tallLow.length && stand > 0) set("max_torso_lean", (Math.acos(Math.min(1, Math.max(0, Math.min(...tallLow) / stand))) * 180) / Math.PI);
     }
+  } else {
+    set("max_torso_lean", max(sig.torsoLean));
   }
   set("descent_s", t(r.bottom) - t(r.start));
   set("ascent_s", t(r.end) - t(r.bottom));
@@ -356,13 +438,11 @@ function repFeatures(
 
 const breaks = (v: number, rule: Pick<FaultRule, "op" | "threshold">) => (rule.op === ">" ? v > rule.threshold : v < rule.threshold);
 
-export function detectFaults(reps: Rep[], movement: MovementGuide, view: CameraView): FaultFinding[] {
+export function detectFaults(reps: Rep[], movement: MovementGuide): FaultFinding[] {
   const out: FaultFinding[] = [];
-  const seen = view === "unknown" ? "side" : view;
   for (const rule of movement.faults) {
-    // Each rule only runs on the camera angle that can see it (side unless stated).
-    if ((rule.view ?? "side") !== seen) continue;
-    const measured = reps.filter((r) => r.features[rule.feature] !== undefined);
+    // Each rule only runs on reps filmed from the angle that can see it (side unless stated).
+    const measured = reps.filter((r) => ruleSees(rule, r.view) && r.features[rule.feature] !== undefined);
     const bad = measured.filter((r) => breaks(r.features[rule.feature]!, rule));
     if (!bad.length) continue;
     const values = bad.map((r) => r.features[rule.feature]!);
@@ -433,19 +513,30 @@ export function analyzeMovement(seq: PoseSequence, movement: MovementGuide): For
     hipLine: smooth(raw.hipLine, win, gap),
     kneeAnkleRatio: smooth(raw.kneeAnkleRatio, win, gap),
     hipHeight: smooth(raw.hipHeight, win, gap),
+    widthRatio: smooth(raw.widthRatio, win, gap),
+    torsoTall: smooth(raw.torsoTall, win, gap),
   };
   const primary = primarySeries(sig, movement, seq.view);
-  const segments = segmentReps(primary, movement.minRomDeg);
+  const segments = segmentReps(primary, movement.minRomDeg, Math.round(seq.fps));
 
-  // Heel baseline: median heel height while standing at the top of reps (or the first frames).
-  const topFrames = segments.length ? segments.map((s) => s.start) : [0, 1, 2, 3, 4];
-  const baselineHeel = median(topFrames.map((i) => sig.heelY[i]).filter((v): v is number => v !== null));
+  // People turn between reps (a few from the front, then one side-on), so each rep gets its own view.
+  const clipView: "side" | "front" = seq.view === "front" ? "front" : "side";
+  const repView = (s: { start: number; end: number }): "side" | "front" => {
+    const w = seriesIn(sig.widthRatio, s.start, s.end);
+    return w.length >= 3 ? (median(w) > FRONT_WIDTH ? "front" : "side") : clipView;
+  };
+  // A feature only one camera angle can measure is dropped on reps filmed from the other angle (a knee angle seen from the front is meaningless).
+  const rulesFor = (k: FeatureId) => movement.faults.filter((f) => f.feature === k);
 
   const reps: Rep[] = segments.map((s, i) => {
-    const all = repFeatures(sig, primary, s, seq, baselineHeel, seq.view);
+    const view = repView(s);
+    const all = repFeatures(sig, primary, s, seq, view);
     const features: Partial<Record<FeatureId, number>> = {};
-    for (const k of movement.features) if (all[k] !== undefined) features[k] = all[k];
-    return { n: i + 1, ...s, features };
+    for (const k of movement.features) {
+      const rules = rulesFor(k);
+      if (all[k] !== undefined && (!rules.length || rules.some((f) => ruleSees(f, view)))) features[k] = all[k];
+    }
+    return { n: i + 1, ...s, view, features };
   });
 
   const usableFraction = raw.usable.filter(Boolean).length / seq.frames.length;
@@ -477,10 +568,12 @@ export function analyzeMovement(seq: PoseSequence, movement: MovementGuide): For
     issues,
   };
 
-  const seen = seq.view === "unknown" ? "side" : seq.view;
+  const seen = new Set<CameraView>(reps.length ? reps.map((r) => r.view) : [clipView]);
   const checks = {
-    ran: movement.faults.filter((f) => (f.view ?? "side") === seen).map((f) => f.id),
-    skipped: movement.faults.filter((f) => (f.view ?? "side") !== seen).map((f) => ({ id: f.id, label: f.label, needs: f.view ?? ("side" as CameraView) })),
+    ran: movement.faults.filter((f) => [...seen].some((v) => ruleSees(f, v))).map((f) => f.id),
+    skipped: movement.faults
+      .filter((f) => ![...seen].some((v) => ruleSees(f, v)))
+      .map((f) => ({ id: f.id, label: f.label, needs: (f.view === "any" ? "side" : f.view ?? "side") as CameraView })),
   };
 
   return {
@@ -489,7 +582,7 @@ export function analyzeMovement(seq: PoseSequence, movement: MovementGuide): For
     quality,
     reps,
     summary,
-    faults: quality.ok ? detectFaults(reps, movement, seq.view) : [],
+    faults: quality.ok ? detectFaults(reps, movement) : [],
     trends: quality.ok ? trends(reps, movement) : [],
     repCurves: reps.map((r) => resample(seriesIn(primary, r.start, r.end), 40).map((v) => round(v, 1))),
   };
@@ -505,12 +598,12 @@ export function detectView(seq: PoseSequence): "side" | "front" {
   for (const f of seq.frames) {
     const g = (j: Joint) => {
       const k = f.kp[JOINT_INDEX[j]];
-      return k && k[2] >= MIN_VIS ? { x: k[0] * seq.width, y: k[1] * seq.height } : null;
+      return visible(k) ? { x: k[0] * seq.width, y: k[1] * seq.height } : null;
     };
     const ls = g("l_shoulder"), rs = g("r_shoulder"), lh = g("l_hip"), rh = g("r_hip");
     if (!ls || !rs || !lh || !rh) continue;
     const torso = (dist(ls, lh) + dist(rs, rh)) / 2;
     if (torso > 0) ratios.push((Math.abs(ls.x - rs.x) + Math.abs(lh.x - rh.x)) / 2 / torso);
   }
-  return ratios.length && median(ratios) > 0.35 ? "front" : "side";
+  return ratios.length && median(ratios) > FRONT_WIDTH ? "front" : "side";
 }

@@ -5,7 +5,7 @@ import { analyzeMovement } from "./analyze";
 import { coachForm, SAFETY_NOTE, type FormCoachRequest } from "./coach";
 import { buildReference, compareToGolden, dtw, type LabeledClip } from "./golden";
 import { MOVEMENTS } from "./movements";
-import { fromBlazePose, fromCoco17, JOINTS } from "./pose";
+import { fromBlazePose, fromCoco17, JOINT_INDEX, JOINTS } from "./pose";
 import { syntheticPushUp, syntheticSquat } from "./synthetic";
 import { z } from "zod";
 
@@ -381,7 +381,63 @@ describe("front-view knee check details", () => {
   it("only praises checks that actually ran", async () => {
     const { syntheticFrontSquat } = await import("./synthetic");
     const r = await coachForm(request({ pose: syntheticFrontSquat() }), { ruleBased: true, references: {} });
-    expect(r.feedback.praise).toMatch(/No problems with knees caving in\./);
-    expect(r.feedback.praise).toMatch(/Not checked from this angle: above-parallel depth, excessive forward lean, heels lifting\./);
+    expect(r.feedback.praise).toMatch(/No problems with excessive forward lean, knees caving in\./);
+    expect(r.feedback.praise).toMatch(/Not checked from this angle: above-parallel depth, heels lifting\./);
+  });
+});
+
+describe("mixed clips and drifting standing height", () => {
+  it("counts reps when the standing height drifts between reps", async () => {
+    const { syntheticFrontSquat } = await import("./synthetic");
+    const seq = syntheticFrontSquat({ reps: 4 });
+    // Lower the standing hip height for the second half of the clip (wider stance), which used to merge reps.
+    const half = Math.floor(seq.frames.length / 2);
+    for (const f of seq.frames.slice(half)) for (const j of ["l_hip", "r_hip", "l_shoulder", "r_shoulder", "nose"] as const) {
+      const k = f.kp[JOINT_INDEX[j]];
+      if (k) k[1] += 0.06;
+    }
+    const a = analyzeMovement(seq, MOVEMENTS.squat);
+    expect(a.reps.length).toBe(4);
+  });
+
+  it("ignores frames where the feet are off-screen", async () => {
+    const { syntheticFrontSquat } = await import("./synthetic");
+    const seq = syntheticFrontSquat({ reps: 3 });
+    // Walking up to the camera at the start: everything is huge and the feet leave the picture.
+    for (const f of seq.frames.slice(0, 15)) f.kp = f.kp.map((k) => (k ? [0.5 + (k[0] - 0.5) * 2.5, 0.2 + k[1] * 1.4, k[2]] : k));
+    const a = analyzeMovement(seq, MOVEMENTS.squat);
+    expect(a.reps.length).toBe(3);
+  });
+
+  it("checks each rep from the angle it was filmed", async () => {
+    const { syntheticFrontSquat, syntheticSquat } = await import("./synthetic");
+    const front = syntheticFrontSquat({ reps: 3, bottomKneeRatio: 0.7 });
+    const side = syntheticSquat({ reps: 2, bottomKneeDeg: 120, heelLift: 0.15 });
+    const t0 = front.frames[front.frames.length - 1].t + 33;
+    const seq = { ...front, frames: [...front.frames, ...side.frames.map((f) => ({ ...f, t: f.t + t0 }))] };
+    const a = analyzeMovement(seq, MOVEMENTS.squat);
+    expect(a.reps.map((r) => r.view)).toEqual(["front", "front", "front", "side", "side"]);
+    const ids = a.faults.map((f) => f.faultId).sort();
+    expect(ids).toEqual(["squat_heel_lift", "squat_knee_valgus", "squat_shallow"]);
+    expect(a.faults.find((f) => f.faultId === "squat_knee_valgus")!.reps).toEqual([1, 2, 3]);
+    expect(a.faults.find((f) => f.faultId === "squat_shallow")!.reps).toEqual([4, 5]);
+    expect(a.checks.skipped).toEqual([]);
+  });
+
+  it("estimates forward lean from the front", async () => {
+    const { syntheticFrontSquat } = await import("./synthetic");
+    const seq = syntheticFrontSquat({ reps: 3 });
+    // Tip the torso toward the camera at the bottom: the shoulders drop toward the hips on screen.
+    for (const f of seq.frames) {
+      const lh = f.kp[JOINT_INDEX.l_hip]!, la = f.kp[JOINT_INDEX.l_ankle]!;
+      const d = Math.max(0, Math.min(1, (0.44 - (la[1] - lh[1])) / 0.176)); // 0 standing, 1 at the bottom
+      for (const j of ["l_shoulder", "r_shoulder"] as const) {
+        const k = f.kp[JOINT_INDEX[j]]!;
+        k[1] = lh[1] - 0.28 * Math.cos((65 * d * Math.PI) / 180);
+      }
+    }
+    const a = analyzeMovement(seq, MOVEMENTS.squat);
+    expect(a.faults.map((f) => f.faultId)).toContain("squat_forward_lean");
+    expect(a.reps[0].features.max_torso_lean!).toBeGreaterThan(55);
   });
 });

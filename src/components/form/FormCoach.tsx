@@ -203,12 +203,6 @@ export function FormCoach() {
         setStage("upload");
         return;
       }
-      if (r.pose.view === "front") {
-        coach(
-          "You filmed from the front, so I'll check whether your knees cave in. Depth, forward lean and heel lift need a side view, so send a side-on clip too if you want those checked.",
-          "muted",
-        );
-      }
       if (r.detectedFraction < 0.5) {
         coach(`I could only find you in ${Math.round(r.detectedFraction * 100)}% of the frames, so the review may be rough. Better light and your whole body in frame help a lot.`, "muted");
       }
@@ -261,7 +255,7 @@ export function FormCoach() {
       if (process.env.NODE_ENV !== "production") {
         // For debugging thresholds: open the browser console to see what was measured on each rep.
         console.info(`Form coach: ${res.quality.view} view, ${res.repCount} reps`);
-        console.table(res.reps.map((r) => ({ rep: r.n, ...r.features, faults: r.faults.join(", ") })));
+        console.table(res.reps.map((r) => ({ rep: r.n, view: r.view, ...r.features, faults: r.faults.join(", ") })));
       }
       setMsgs((xs) => xs.map((m) => (m.id === traceId && m.kind === "trace" ? { ...m, trace: res.trace ?? [], generatedBy: res.generatedBy } : m)));
       push({ from: "coach", kind: "result", result: res });
