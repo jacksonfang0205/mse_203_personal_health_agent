@@ -126,14 +126,18 @@ export async function extractPose(videoUrl: string, o: ExtractOptions = {}): Pro
     o.onProgress?.((i + 1) / total, "tracking");
   }
 
+  // Read the size before unloading the video: afterwards videoWidth/videoHeight are 0. Keypoints are 0..1 on each axis,
+  // so without the real size a portrait phone clip gets squashed square and every angle is wrong.
+  const width = video.videoWidth, height = video.videoHeight;
   video.removeAttribute("src");
   video.load();
+  if (!width || !height) throw new Error("Couldn't read the video's size.");
   const pose: PoseSequence = {
     version: 1,
     source: "mediapipe_blazepose",
     fps,
-    width: video.videoWidth || 1,
-    height: video.videoHeight || 1,
+    width,
+    height,
     view: "side",
     frames,
   };
