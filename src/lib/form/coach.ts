@@ -134,7 +134,7 @@ export interface FormCoachResponse {
   quality: FormAnalysis["quality"];
   repCount: number;
   /** Rep timing for the video overlay. */
-  reps: { n: number; startMs: number; bottomMs: number; endMs: number; faults: string[] }[];
+  reps: { n: number; startMs: number; bottomMs: number; endMs: number; faults: string[]; features: Record<string, number> }[];
   overlay: { side: "left" | "right"; primary: MovementGuide["primary"] };
   measured: FaultFinding[];
   golden: Pick<GoldenComparison, "available" | "deviations" | "shapeSimilarity" | "note">;
@@ -260,11 +260,17 @@ export function buildTools(req: FormCoachRequest, m: MovementGuide, analysis: Fo
     }),
     tool({
       name: "get_measured_faults",
-      description: "Faults the rule checks found, with the reps, values and pattern (consistent, late_reps, occasional). These are the only faults you may report.",
+      description:
+        "Faults the rule checks found, with the reps, values and pattern (consistent, late_reps, occasional), plus which checks ran and which this camera angle couldn't do. These are the only faults you may report.",
       schema: z.object({}),
       run: () =>
         analysis.quality.ok
-          ? { faults: analysis.faults, trendsWithinSet: analysis.trends }
+          ? {
+              faults: analysis.faults,
+              trendsWithinSet: analysis.trends,
+              checksRun: analysis.checks.ran.map((id) => findFault(m, id)!.label),
+              checksNotPossibleFromThisAngle: analysis.checks.skipped.map((c) => `${c.label} (needs a ${c.needs} view)`),
+            }
           : { faults: [], note: "Clip quality is too low to measure faults.", issues: analysis.quality.issues },
     }),
     tool({
@@ -301,6 +307,7 @@ Rules:
 - Never invent a fault, measurement, exercise or drill. If nothing was measured, say the set looked solid and what to keep doing.
 - If clip quality is too low, report no faults and explain how to film again.
 - Say what this camera view can't show (cannot_assess) instead of guessing about it.
+- Never say a check passed unless get_measured_faults lists it under checksRun. Checks under checksNotPossibleFromThisAngle were not done.
 - No medical or rehab advice and no diagnosis of injuries. If the user mentions pain, tell them to stop the movement and see a professional.
 - Be direct and brief. Cues are short phrases the user can think about mid-rep.
 - When done, call submit_coaching.`;
@@ -393,7 +400,7 @@ export function gate(out: CoachOutput, m: MovementGuide, analysis: FormAnalysis,
   return {
     feedback: {
       headline,
-      praise: analysis.quality.ok ? out.praise ?? null : null,
+      praise: analysis.quality.ok ? passedChecks(m, analysis) : null,
       findings,
       cues: out.cues.slice(0, 2),
       changes: changes.slice(0, 3),
@@ -402,6 +409,17 @@ export function gate(out: CoachOutput, m: MovementGuide, analysis: FormAnalysis,
     },
     dropped,
   };
+}
+
+/** What actually passed, written by code so it can't claim checks that never ran. */
+function passedChecks(m: MovementGuide, analysis: FormAnalysis): string | null {
+  const failed = new Set(analysis.faults.map((f) => f.faultId));
+  const passed = analysis.checks.ran.filter((id) => !failed.has(id)).map((id) => findFault(m, id)!.label.toLowerCase());
+  const skipped = analysis.checks.skipped.map((c) => c.label.toLowerCase());
+  const parts: string[] = [];
+  if (passed.length) parts.push(`No problems with ${passed.join(", ")}.`);
+  if (skipped.length) parts.push(`Not checked from this angle: ${skipped.join(", ")}.`);
+  return parts.join(" ") || null;
 }
 
 // ---------- rule-based coach (no model) ----------
@@ -502,6 +520,7 @@ export async function coachForm(req: FormCoachRequest, o: CoachOptions = {}): Pr
       bottomMs: req.pose.frames[r.bottom].t,
       endMs: req.pose.frames[r.end].t,
       faults: analysis.faults.filter((f) => f.reps.includes(r.n)).map((f) => f.faultId),
+      features: r.features as Record<string, number>,
     })),
     overlay: { side: analysis.quality.side, primary: m.primary },
     measured: analysis.faults,

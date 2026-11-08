@@ -364,3 +364,24 @@ describe("front-view clips", () => {
     expect(detectMovement(syntheticFrontSquat()).movementId).toBe("squat");
   });
 });
+
+describe("front-view knee check details", () => {
+  it("catches knees caving on the way down or up, not only at the deepest frame", async () => {
+    const { syntheticFrontSquat } = await import("./synthetic");
+    const a = analyzeMovement(syntheticFrontSquat({ bottomKneeRatio: 1.05, midKneeRatio: 0.65 }), MOVEMENTS.squat);
+    expect(a.faults.map((f) => f.faultId)).toEqual(["squat_knee_valgus"]);
+  });
+
+  it("doesn't flag a wide stance where the knees sit inside the feet while standing", async () => {
+    const { syntheticFrontSquat } = await import("./synthetic");
+    const a = analyzeMovement(syntheticFrontSquat({ standingKneeRatio: 0.6, bottomKneeRatio: 1.0 }), MOVEMENTS.squat);
+    expect(a.faults).toEqual([]);
+  });
+
+  it("only praises checks that actually ran", async () => {
+    const { syntheticFrontSquat } = await import("./synthetic");
+    const r = await coachForm(request({ pose: syntheticFrontSquat() }), { ruleBased: true, references: {} });
+    expect(r.feedback.praise).toMatch(/No problems with knees caving in\./);
+    expect(r.feedback.praise).toMatch(/Not checked from this angle: above-parallel depth, excessive forward lean, heels lifting\./);
+  });
+});

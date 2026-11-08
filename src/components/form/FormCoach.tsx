@@ -258,6 +258,11 @@ export function FormCoach() {
       if (!r.ok) throw new Error(data.error || `Request failed (${r.status})`);
       const res = data as FormCoachResponse;
       setResult(res);
+      if (process.env.NODE_ENV !== "production") {
+        // For debugging thresholds: open the browser console to see what was measured on each rep.
+        console.info(`Form coach: ${res.quality.view} view, ${res.repCount} reps`);
+        console.table(res.reps.map((r) => ({ rep: r.n, ...r.features, faults: r.faults.join(", ") })));
+      }
       setMsgs((xs) => xs.map((m) => (m.id === traceId && m.kind === "trace" ? { ...m, trace: res.trace ?? [], generatedBy: res.generatedBy } : m)));
       push({ from: "coach", kind: "result", result: res });
       if (res.safety) coach(res.safety, "safety");

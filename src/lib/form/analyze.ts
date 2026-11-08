@@ -58,6 +58,8 @@ export interface Trend {
 
 export interface FormAnalysis {
   movementId: string;
+  /** Which fault checks this clip's camera angle allowed. */
+  checks: { ran: string[]; skipped: { id: string; label: string; needs: CameraView }[] };
   quality: Quality;
   reps: Rep[];
   /** Median of each feature across reps. */
@@ -328,7 +330,21 @@ function repFeatures(
     set("max_hip_sag", Math.max(0, ...line));
     set("max_hip_pike", Math.max(0, ...line.map((v) => -v)));
   }
-  if (view === "front") set("knee_ankle_width_ratio", sig.kneeAnkleRatio[r.bottom]);
+  if (view === "front") {
+    // Knees can cave anywhere in the deepest third of the rep (often on the way up), not just at the deepest frame.
+    // Standing frames are left out: with a wide stance the knees sit inside the feet even with good form.
+    const pv = seriesIn(primary, r.start, r.end);
+    if (pv.length) {
+      const top = Math.max(...pv), low = Math.min(...pv);
+      const cut = low + 0.35 * (top - low);
+      const ratios: number[] = [];
+      for (let i = r.start; i <= r.end; i++) {
+        const pr = primary[i], kr = sig.kneeAnkleRatio[i];
+        if (pr !== null && kr !== null && pr <= cut) ratios.push(kr);
+      }
+      if (ratios.length) set("knee_ankle_width_ratio", Math.min(...ratios));
+    }
+  }
   set("descent_s", t(r.bottom) - t(r.start));
   set("ascent_s", t(r.end) - t(r.bottom));
   const pv = seriesIn(primary, r.start, r.end);
@@ -461,8 +477,15 @@ export function analyzeMovement(seq: PoseSequence, movement: MovementGuide): For
     issues,
   };
 
+  const seen = seq.view === "unknown" ? "side" : seq.view;
+  const checks = {
+    ran: movement.faults.filter((f) => (f.view ?? "side") === seen).map((f) => f.id),
+    skipped: movement.faults.filter((f) => (f.view ?? "side") !== seen).map((f) => ({ id: f.id, label: f.label, needs: f.view ?? ("side" as CameraView) })),
+  };
+
   return {
     movementId: movement.id,
+    checks,
     quality,
     reps,
     summary,

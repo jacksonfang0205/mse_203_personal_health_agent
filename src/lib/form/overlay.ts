@@ -119,7 +119,7 @@ export function drawOverlay(
     const lk = p("l_knee"), rk = p("r_knee"), la = p("l_ankle"), ra = p("r_ankle");
     if (o.view === "front" && o.primary !== "elbow") {
       // Live knee width vs. feet width: below ~85% means the knees are caving in.
-      if (lk && rk && la && ra && Math.abs(la.x - ra.x) > 1) {
+      if (rep && lk && rk && la && ra && Math.abs(la.x - ra.x) > 1) {
         const pct = Math.round((Math.abs(lk.x - rk.x) / Math.abs(la.x - ra.x)) * 100);
         tag(ctx, `Knees ${pct}% of feet width`, Math.min(lk.x, rk.x), (lk.y + rk.y) / 2 - 18 * scale, color, scale);
       }

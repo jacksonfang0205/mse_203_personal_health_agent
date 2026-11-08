@@ -156,12 +156,16 @@ export interface FrontSquatOptions {
   bottomKneeRatio?: number;
   /** How far the hips drop at the bottom, as a share of leg length. */
   depth?: number;
+  /** Knee ratio in the low half of the rep but not at the very bottom (caving on the way down and up). */
+  midKneeRatio?: number;
+  /** Knee spread ÷ ankle spread when standing (a wide stance puts the knees inside the feet). */
+  standingKneeRatio?: number;
   seed?: number;
 }
 
 /** A squat filmed from the front. */
 export function syntheticFrontSquat(o: FrontSquatOptions = {}): PoseSequence {
-  const { reps = 6, fps = 30, bottomKneeRatio = 1.1, depth = 0.4, seed = 3 } = o;
+  const { reps = 6, fps = 30, bottomKneeRatio = 1.1, depth = 0.4, seed = 3, midKneeRatio, standingKneeRatio = 1 } = o;
   const repS = 2.4, pause = 0.6;
   const noise = rng(seed);
   const cx = 0.5, ankleY = 0.1, ankleHalf = 0.1, leg = 0.44;
@@ -172,7 +176,9 @@ export function syntheticFrontSquat(o: FrontSquatOptions = {}): PoseSequence {
     const { d } = envelope(t, repS, pause, reps);
     const hipY = ankleY + leg * (1 - depth * d);
     const kneeY = ankleY + (hipY - ankleY) * 0.5 + 0.02 * d;
-    const kneeHalf = ankleHalf * (1 + (bottomKneeRatio - 1) * d);
+    let ratio = standingKneeRatio + (bottomKneeRatio - standingKneeRatio) * d;
+    if (midKneeRatio !== undefined && d > 0.55 && d < 0.9) ratio = midKneeRatio;
+    const kneeHalf = ankleHalf * ratio;
     const hipHalf = 0.08, shHalf = 0.13;
     const shY = hipY + 0.28;
     const P = (x: number, y: number) => ({ x, y });
