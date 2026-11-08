@@ -12,7 +12,7 @@
 import { z } from "zod";
 
 /** Read at call time, so scripts (e.g. the eval runner) can load env files first. */
-function config() {
+export function config() {
   const env = process.env;
   const provider = env.LLM_PROVIDER || (env.LLM_API_KEY ? "openai" : "anthropic");
   return {
@@ -48,7 +48,7 @@ export interface LlmResult<T> {
   usage: { model: string; inputTokens: number; outputTokens: number };
 }
 
-function jsonSchema(schema: z.ZodType) {
+export function jsonSchema(schema: z.ZodType) {
   const out = z.toJSONSchema(schema) as Record<string, unknown>;
   delete out.$schema;
   return out;
@@ -70,7 +70,7 @@ interface RawResult {
   usage: { inputTokens: number; outputTokens: number };
 }
 
-async function postJson(url: string, headers: Record<string, string>, body: unknown) {
+export async function postJson(url: string, headers: Record<string, string>, body: unknown) {
   const r = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json", ...headers },
@@ -82,7 +82,7 @@ async function postJson(url: string, headers: Record<string, string>, body: unkn
   return data;
 }
 
-type Config = ReturnType<typeof config>;
+export type Config = ReturnType<typeof config>;
 
 async function callAnthropic(call: ToolCall<z.ZodType>, cfg: Config): Promise<RawResult> {
   const data = await postJson(

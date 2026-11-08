@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "eval": "tsx evals/src/run.ts",
-    "eval:freeze-baselines": "tsx evals/scripts/freeze-baselines.ts"
+    "eval:freeze-baselines": "tsx evals/scripts/freeze-baselines.ts",
+    "form:references": "tsx scripts/form/build-references.ts",
+    "form:eval": "tsx scripts/form/eval-faults.ts"
   },
   "dependencies": {
     "next": "16.4.3",
