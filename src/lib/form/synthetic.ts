@@ -148,3 +148,46 @@ export function syntheticPushUp(o: PushUpOptions = {}): PoseSequence {
   }
   return { version: 1, source: "synthetic", fps, width: 1000, height: 1000, view: "side", frames };
 }
+
+export interface FrontSquatOptions {
+  reps?: number;
+  fps?: number;
+  /** Knee spread ÷ ankle spread at the bottom. 1.1 = knees out over toes, 0.7 = knees caving in. */
+  bottomKneeRatio?: number;
+  /** How far the hips drop at the bottom, as a share of leg length. */
+  depth?: number;
+  seed?: number;
+}
+
+/** A squat filmed from the front. */
+export function syntheticFrontSquat(o: FrontSquatOptions = {}): PoseSequence {
+  const { reps = 6, fps = 30, bottomKneeRatio = 1.1, depth = 0.4, seed = 3 } = o;
+  const repS = 2.4, pause = 0.6;
+  const noise = rng(seed);
+  const cx = 0.5, ankleY = 0.1, ankleHalf = 0.1, leg = 0.44;
+  const total = pause + reps * (repS + pause);
+  const frames: PoseFrame[] = [];
+  for (let i = 0; i <= Math.round(total * fps); i++) {
+    const t = i / fps;
+    const { d } = envelope(t, repS, pause, reps);
+    const hipY = ankleY + leg * (1 - depth * d);
+    const kneeY = ankleY + (hipY - ankleY) * 0.5 + 0.02 * d;
+    const kneeHalf = ankleHalf * (1 + (bottomKneeRatio - 1) * d);
+    const hipHalf = 0.08, shHalf = 0.13;
+    const shY = hipY + 0.28;
+    const P = (x: number, y: number) => ({ x, y });
+    const pts: Partial<Record<Joint, P>> = {
+      nose: P(cx, shY + 0.1),
+      l_shoulder: P(cx + shHalf, shY), r_shoulder: P(cx - shHalf, shY),
+      l_elbow: P(cx + shHalf + 0.02, shY - 0.12), r_elbow: P(cx - shHalf - 0.02, shY - 0.12),
+      l_wrist: P(cx + 0.05, shY - 0.1), r_wrist: P(cx - 0.05, shY - 0.1),
+      l_hip: P(cx + hipHalf, hipY), r_hip: P(cx - hipHalf, hipY),
+      l_knee: P(cx + kneeHalf, kneeY), r_knee: P(cx - kneeHalf, kneeY),
+      l_ankle: P(cx + ankleHalf, ankleY), r_ankle: P(cx - ankleHalf, ankleY),
+      l_heel: P(cx + ankleHalf - 0.01, ankleY - 0.02), r_heel: P(cx - ankleHalf + 0.01, ankleY - 0.02),
+      l_toe: P(cx + ankleHalf + 0.03, ankleY - 0.03), r_toe: P(cx - ankleHalf - 0.03, ankleY - 0.03),
+    };
+    frames.push(frame(Math.round(t * 1000), pts, noise, 0.95));
+  }
+  return { version: 1, source: "synthetic", fps, width: 1000, height: 1000, view: "front", frames };
+}

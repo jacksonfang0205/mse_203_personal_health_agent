@@ -4,7 +4,7 @@
  */
 import { angleAt } from "./analyze";
 import type { MovementGuide } from "./movements";
-import { JOINT_INDEX, type Joint, type PoseFrame, type PoseSequence } from "./pose";
+import { JOINT_INDEX, type CameraView, type Joint, type PoseFrame, type PoseSequence } from "./pose";
 
 const BONES: [Joint, Joint][] = [
   ["l_shoulder", "r_shoulder"],
@@ -47,6 +47,8 @@ export interface OverlayOptions {
   primary: MovementGuide["primary"];
   reps: OverlayRep[];
   faultLabels: Record<string, string>;
+  /** From the front, the live label shows knee width instead of a joint angle. */
+  view?: CameraView;
   /** Rep numbers the user selected; highlighted with a ring. */
   focusRep?: number | null;
 }
@@ -114,11 +116,19 @@ export function drawOverlay(
       ctx.stroke();
     }
 
-    // Live angle at the movement's main joint.
+    const lk = p("l_knee"), rk = p("r_knee"), la = p("l_ankle"), ra = p("r_ankle");
+    if (o.view === "front" && o.primary !== "elbow") {
+      // Live knee width vs. feet width: below ~85% means the knees are caving in.
+      if (lk && rk && la && ra && Math.abs(la.x - ra.x) > 1) {
+        const pct = Math.round((Math.abs(lk.x - rk.x) / Math.abs(la.x - ra.x)) * 100);
+        tag(ctx, `Knees ${pct}% of feet width`, Math.min(lk.x, rk.x), (lk.y + rk.y) / 2 - 18 * scale, color, scale);
+      }
+    }
+    // Live angle at the movement's main joint (side view).
     const s = o.side === "left" ? "l" : "r";
     const [a, b, c, label] = PRIMARY_JOINTS[o.primary];
     const pa = p(`${s}_${a}` as Joint), pb = p(`${s}_${b}` as Joint), pc = p(`${s}_${c}` as Joint);
-    if (pa && pb && pc) {
+    if (o.view !== "front" && pa && pb && pc) {
       const deg = Math.round(angleAt(pa, pb, pc));
       tag(ctx, `${label} ${deg}°`, pb.x + 14 * scale, pb.y - 14 * scale, color, scale);
     }

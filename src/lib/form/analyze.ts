@@ -147,6 +147,8 @@ interface Signals {
   heelY: Series;
   hipLine: Series;
   kneeAnkleRatio: Series;
+  /** Front view: hip height above the ankles as a share of leg length, ×180 so it behaves like an angle for rep counting. */
+  hipHeight: Series;
   legLen: number;
   usable: boolean[];
 }
@@ -169,6 +171,7 @@ function computeSignals(seq: PoseSequence, side: "l" | "r"): Signals {
     heelY: [],
     hipLine: [],
     kneeAnkleRatio: [],
+    hipHeight: [],
     legLen: NaN,
     usable: [],
   };
@@ -203,8 +206,13 @@ function computeSignals(seq: PoseSequence, side: "l" | "r"): Signals {
     const kneeR = rh && rk && ra ? angleAt(rh, rk, ra) : null;
     out.minKnee.push(kneeL === null ? kneeR : kneeR === null ? kneeL : Math.min(kneeL, kneeR));
     out.kneeAnkleRatio.push(lk && rk && la && ra && Math.abs(la.x - ra.x) > 1 ? Math.abs(lk.x - rk.x) / Math.abs(la.x - ra.x) : null);
+    const hips = [lh, rh].filter(Boolean) as Pt[];
+    const ankles = [la, ra].filter(Boolean) as Pt[];
+    out.hipHeight.push(hips.length && ankles.length ? ankles.reduce((a, p) => a + p.y, 0) / ankles.length - hips.reduce((a, p) => a + p.y, 0) / hips.length : null);
   }
-  out.legLen = median(legLens);
+  // Segment lengths shrink on screen when a joint bends toward the camera, so use a high quantile (the standing length).
+  out.legLen = quantile(legLens, 0.9);
+  out.hipHeight = out.hipHeight.map((v) => (v === null || !(out.legLen > 0) ? null : (v / out.legLen) * 180));
   return out;
 }
 
@@ -218,7 +226,9 @@ export function pickSide(seq: PoseSequence): "l" | "r" {
   return score("l") >= score("r") ? "l" : "r";
 }
 
-function primarySeries(sig: Signals, m: MovementGuide): Series {
+function primarySeries(sig: Signals, m: MovementGuide, view: CameraView): Series {
+  // From the front, knee and hip angles barely change as you squat (the bend points at the camera), so count reps by hip height.
+  if (view === "front" && m.primary !== "elbow") return sig.hipHeight;
   switch (m.primary) {
     case "knee":
       return sig.knee;
@@ -332,8 +342,10 @@ const breaks = (v: number, rule: Pick<FaultRule, "op" | "threshold">) => (rule.o
 
 export function detectFaults(reps: Rep[], movement: MovementGuide, view: CameraView): FaultFinding[] {
   const out: FaultFinding[] = [];
+  const seen = view === "unknown" ? "side" : view;
   for (const rule of movement.faults) {
-    if (rule.view && rule.view !== view) continue;
+    // Each rule only runs on the camera angle that can see it (side unless stated).
+    if ((rule.view ?? "side") !== seen) continue;
     const measured = reps.filter((r) => r.features[rule.feature] !== undefined);
     const bad = measured.filter((r) => breaks(r.features[rule.feature]!, rule));
     if (!bad.length) continue;
@@ -404,8 +416,9 @@ export function analyzeMovement(seq: PoseSequence, movement: MovementGuide): For
     heelY: smooth(raw.heelY, win, gap),
     hipLine: smooth(raw.hipLine, win, gap),
     kneeAnkleRatio: smooth(raw.kneeAnkleRatio, win, gap),
+    hipHeight: smooth(raw.hipHeight, win, gap),
   };
-  const primary = primarySeries(sig, movement);
+  const primary = primarySeries(sig, movement, seq.view);
   const segments = segmentReps(primary, movement.minRomDeg);
 
   // Heel baseline: median heel height while standing at the top of reps (or the first frames).
@@ -459,3 +472,22 @@ export function analyzeMovement(seq: PoseSequence, movement: MovementGuide): For
   };
 }
 
+
+/**
+ * Side or front camera, from how wide the shoulders and hips look compared with the torso.
+ * Side-on, the left and right joints overlap; from the front, they are far apart.
+ */
+export function detectView(seq: PoseSequence): "side" | "front" {
+  const ratios: number[] = [];
+  for (const f of seq.frames) {
+    const g = (j: Joint) => {
+      const k = f.kp[JOINT_INDEX[j]];
+      return k && k[2] >= MIN_VIS ? { x: k[0] * seq.width, y: k[1] * seq.height } : null;
+    };
+    const ls = g("l_shoulder"), rs = g("r_shoulder"), lh = g("l_hip"), rh = g("r_hip");
+    if (!ls || !rs || !lh || !rh) continue;
+    const torso = (dist(ls, lh) + dist(rs, rh)) / 2;
+    if (torso > 0) ratios.push((Math.abs(ls.x - rs.x) + Math.abs(lh.x - rh.x)) / 2 / torso);
+  }
+  return ratios.length && median(ratios) > 0.35 ? "front" : "side";
+}

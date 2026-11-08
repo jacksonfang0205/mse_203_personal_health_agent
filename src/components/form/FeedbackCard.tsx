@@ -23,7 +23,7 @@ export function FeedbackCard({ result, videoUrl, pose }: { result: FormCoachResp
   const guide = MOVEMENTS[result.movement.id];
   const faultLabels = useMemo(() => Object.fromEntries((guide?.faults ?? []).map((x) => [x.id, x.label])), [guide]);
   const overlay = useMemo(
-    () => ({ side: result.overlay.side, primary: result.overlay.primary, reps: result.reps, faultLabels }),
+    () => ({ side: result.overlay.side, primary: result.overlay.primary, reps: result.reps, faultLabels, view: result.quality.view }),
     [result, faultLabels],
   );
   const jump = (n: number) => {

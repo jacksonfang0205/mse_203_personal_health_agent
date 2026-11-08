@@ -7,7 +7,7 @@
  *   big knee bend                      → squat
  *   big hip bend with little knee bend → hinge
  */
-import { analyzeMovement, angleAt, fromVertical, median, pickSide } from "./analyze";
+import { analyzeMovement, angleAt, detectView, fromVertical, median, pickSide } from "./analyze";
 import { MOVEMENTS } from "./movements";
 import { JOINT_INDEX, type Joint, type PoseSequence } from "./pose";
 
@@ -50,6 +50,14 @@ export function detectMovement(seq: PoseSequence): MovementGuess {
       reason: `Your body is close to horizontal${a.reps.length ? ` and your elbows bend and straighten ${a.reps.length} times` : ""}.`,
       reps: a.reps.length,
     };
+  }
+  const front = detectView(seq) === "front";
+  if (front) {
+    // From the front only the squat is supported: count reps by hip height.
+    const a = reps("squat");
+    return a.reps.length
+      ? { movementId: "squat", confidence: "medium", reason: "You're facing the camera and your hips drop and rise like a squat.", reps: a.reps.length }
+      : { movementId: null, confidence: "low", reason: "You're facing the camera, and I couldn't make out the movement from this angle.", reps: 0 };
   }
   if (spread.length && median(spread) > 0.45) {
     const a = reps("lunge");

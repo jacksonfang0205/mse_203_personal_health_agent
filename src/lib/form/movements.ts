@@ -55,7 +55,7 @@ export interface FaultRule {
   feature: FeatureId;
   op: "<" | ">";
   threshold: number;
-  /** Faults that only a front view can see are skipped on side clips. */
+  /** The camera angle that can see this fault. Defaults to side; rules run only on clips filmed from that angle. */
   view?: CameraView;
   severity: "minor" | "moderate" | "major";
   meaning: string;

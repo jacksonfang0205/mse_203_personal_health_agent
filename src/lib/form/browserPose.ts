@@ -7,6 +7,7 @@
  * handlers or effects.
  */
 import type { PoseLandmarker } from "@mediapipe/tasks-vision";
+import { detectView } from "./analyze";
 import { fromBlazePose, JOINTS, type CameraView, type PoseFrame, type PoseSequence } from "./pose";
 
 /** Keep in sync with the @mediapipe/tasks-vision version in package.json. */
@@ -89,7 +90,7 @@ export async function extractPose(videoUrl: string, o: ExtractOptions = {}): Pro
   if (testPose) {
     o.onProgress?.(1, "tracking");
     const last = testPose.frames[testPose.frames.length - 1];
-    return { pose: testPose, durationS: last.t / 1000, detectedFraction: 1 };
+    return { pose: { ...testPose, view: o.view ?? detectView(testPose) }, durationS: last.t / 1000, detectedFraction: 1 };
   }
   const fps = o.fps ?? 15;
   o.onProgress?.(0, "model");
@@ -127,16 +128,19 @@ export async function extractPose(videoUrl: string, o: ExtractOptions = {}): Pro
 
   video.removeAttribute("src");
   video.load();
+  const pose: PoseSequence = {
+    version: 1,
+    source: "mediapipe_blazepose",
+    fps,
+    width: video.videoWidth || 1,
+    height: video.videoHeight || 1,
+    view: "side",
+    frames,
+  };
+  // Side or front changes which checks can run, so work it out from the clip unless the caller says.
+  pose.view = o.view ?? detectView(pose);
   return {
-    pose: {
-      version: 1,
-      source: "mediapipe_blazepose",
-      fps,
-      width: video.videoWidth || 1,
-      height: video.videoHeight || 1,
-      view: o.view ?? "side",
-      frames,
-    },
+    pose,
     durationS,
     detectedFraction: found / total,
   };

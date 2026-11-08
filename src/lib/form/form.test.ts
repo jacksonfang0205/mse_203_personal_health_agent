@@ -339,3 +339,28 @@ describe("every measured fault is shown", () => {
     expect(r.feedback.findings.map((f) => f.faultId)).toEqual(["squat_heel_lift", "squat_shallow", "squat_forward_lean"]);
   });
 });
+
+describe("front-view clips", () => {
+  it("detects the camera angle", async () => {
+    const { detectView } = await import("./analyze");
+    const { syntheticFrontSquat } = await import("./synthetic");
+    expect(detectView(syntheticFrontSquat())).toBe("front");
+    expect(detectView(syntheticSquat())).toBe("side");
+  });
+
+  it("counts reps by hip height and flags knees caving in, only from the front", async () => {
+    const { syntheticFrontSquat } = await import("./synthetic");
+    const good = analyzeMovement(syntheticFrontSquat({ bottomKneeRatio: 1.1 }), MOVEMENTS.squat);
+    expect(good.reps).toHaveLength(6);
+    expect(good.faults).toEqual([]);
+    const caving = analyzeMovement(syntheticFrontSquat({ bottomKneeRatio: 0.7 }), MOVEMENTS.squat);
+    expect(caving.faults.map((f) => f.faultId)).toEqual(["squat_knee_valgus"]);
+    expect(caving.faults[0].reps).toHaveLength(6);
+  });
+
+  it("guesses a squat from the front", async () => {
+    const { detectMovement } = await import("./detect");
+    const { syntheticFrontSquat } = await import("./synthetic");
+    expect(detectMovement(syntheticFrontSquat()).movementId).toBe("squat");
+  });
+});

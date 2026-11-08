@@ -129,7 +129,7 @@ export function FormCoach() {
         from: "coach",
         kind: "text",
         tone: "muted",
-        text: "Filming tips: phone at hip height, 2–3 m away, exactly from the side, whole body in frame including your feet. One set, under 90 seconds. The video stays on your device; only the joint positions are sent.",
+        text: "Filming tips: phone at hip height, 2–3 m away, whole body in frame including your feet. Film from the side to check depth and lean, or from the front to check whether your knees cave in. One set, under 90 seconds. The video stays on your device; only the joint positions are sent.",
       },
     ]);
   }, []);
@@ -202,6 +202,12 @@ export function FormCoach() {
         choiceRef.current = null;
         setStage("upload");
         return;
+      }
+      if (r.pose.view === "front") {
+        coach(
+          "You filmed from the front, so I'll check whether your knees cave in. Depth, forward lean and heel lift need a side view, so send a side-on clip too if you want those checked.",
+          "muted",
+        );
       }
       if (r.detectedFraction < 0.5) {
         coach(`I could only find you in ${Math.round(r.detectedFraction * 100)}% of the frames, so the review may be rough. Better light and your whole body in frame help a lot.`, "muted");
