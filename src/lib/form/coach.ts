@@ -23,21 +23,12 @@ import { analyzeMovement, type FaultFinding, type FormAnalysis } from "./analyze
 import { compareToGolden, type GoldenComparison, type GoldenReference } from "./golden";
 import { DRILLS, FEATURES, findFault, getMovement, MOVEMENT_IDS, type Fix, type MovementGuide } from "./movements";
 import { PoseSequence } from "./pose";
+import { FormSessionSummary } from "./schemas";
 import { REFERENCES } from "./references";
 
 // ---------- request ----------
 
-export const FormSessionSummary = z.object({
-  date: IsoDate,
-  movementId: z.string(),
-  exerciseId: z.string().optional(),
-  loadKg: z.number().min(0).max(500).optional(),
-  reps: z.number().int().min(0).max(100).optional(),
-  rpe: z.number().min(1).max(10).optional(),
-  faults: z.array(z.string()).max(10),
-  summary: z.record(z.string(), z.number()).optional(),
-});
-export type FormSessionSummary = z.infer<typeof FormSessionSummary>;
+export { FormSessionSummary } from "./schemas";
 
 export const FormCoachRequest = z.object({
   movementId: z.enum(MOVEMENT_IDS),
@@ -121,6 +112,9 @@ export interface FormCoachResponse {
   movement: { id: string; name: string; recording: string };
   quality: FormAnalysis["quality"];
   repCount: number;
+  /** Rep timing for the video overlay. */
+  reps: { n: number; startMs: number; bottomMs: number; endMs: number; faults: string[] }[];
+  overlay: { side: "left" | "right"; primary: MovementGuide["primary"] };
   measured: FaultFinding[];
   golden: Pick<GoldenComparison, "available" | "deviations" | "shapeSimilarity" | "note">;
   feedback: {
@@ -211,7 +205,7 @@ function historySignals(req: FormCoachRequest, analysis: FormAnalysis) {
 
 // ---------- tools ----------
 
-function buildTools(req: FormCoachRequest, m: MovementGuide, analysis: FormAnalysis, golden: GoldenComparison, filter: ExerciseFilter) {
+export function buildTools(req: FormCoachRequest, m: MovementGuide, analysis: FormAnalysis, golden: GoldenComparison, filter: ExerciseFilter) {
   return [
     tool({
       name: "get_movement_guide",
@@ -380,7 +374,7 @@ export function gate(out: CoachOutput, m: MovementGuide, analysis: FormAnalysis,
 
 export function ruleBasedCoach(req: FormCoachRequest, m: MovementGuide, analysis: FormAnalysis, filter: ExerciseFilter): CoachOutput {
   if (!analysis.quality.ok)
-    return { headline: "Let's film that again.", findings: [], cues: [], changes: [{ kind: "retest", reason: m.recording }], retest: m.recording, cannot_assess: [] };
+    return { headline: "Let's film that again.", findings: [], cues: [], changes: [], retest: m.recording, cannot_assess: [] };
   const top = analysis.faults[0];
   if (!top)
     return {
@@ -419,7 +413,7 @@ export function ruleBasedCoach(req: FormCoachRequest, m: MovementGuide, analysis
     else if (f.kind === "regress_exercise") changes.push({ kind: "regress_exercise", exercise_id: (f as { exercise_id?: string }).exercise_id, reason: f.why });
   }
   return {
-    headline: `Main thing to fix: ${rule.label.toLowerCase()} (reps ${top.reps.join(", ")}).`,
+    headline: `Main thing to fix: ${rule.label.toLowerCase()} (${top.reps.length === 1 ? "rep" : "reps"} ${top.reps.join(", ")}).`,
     findings: [{ fault_id: top.faultId, reps: top.reps, likely_cause: cause, cause_evidence: evidence, confidence: cause === "unclear" ? "low" : "medium" }],
     cues: rule.cues.slice(0, 1),
     changes,
@@ -451,6 +445,14 @@ export async function coachForm(req: FormCoachRequest, o: CoachOptions = {}): Pr
     movement: { id: m.id, name: m.name, recording: m.recording },
     quality: analysis.quality,
     repCount: analysis.reps.length,
+    reps: analysis.reps.map((r) => ({
+      n: r.n,
+      startMs: req.pose.frames[r.start].t,
+      bottomMs: req.pose.frames[r.bottom].t,
+      endMs: req.pose.frames[r.end].t,
+      faults: analysis.faults.filter((f) => f.reps.includes(r.n)).map((f) => f.faultId),
+    })),
+    overlay: { side: analysis.quality.side, primary: m.primary },
     measured: analysis.faults,
     golden: { available: golden.available, deviations: golden.deviations, shapeSimilarity: golden.shapeSimilarity, note: golden.note },
     safety,
@@ -479,3 +481,58 @@ export async function coachForm(req: FormCoachRequest, o: CoachOptions = {}): Pr
   return { generatedBy: "rule_based", ...base, feedback, dropped };
 }
 
+
+// ---------- follow-up chat ----------
+
+export const FormChatRequest = FormCoachRequest.extend({
+  /** What the coach already told the user, as plain text. */
+  previousFeedback: z.string().max(4000),
+  messages: z
+    .array(z.object({ role: z.enum(["user", "coach"]), content: z.string().trim().min(1).max(1500) }))
+    .min(1)
+    .max(20),
+});
+export type FormChatRequest = z.infer<typeof FormChatRequest>;
+
+const ChatReply = z.object({
+  message: z.string().max(1200).describe("Your reply to the user: conversational, specific to their clip, at most about 120 words."),
+  followups: z.array(z.string().max(80)).max(3).describe("Up to three short follow-up questions the user might tap next."),
+});
+
+export interface FormChatResponse {
+  message: string;
+  followups: string[];
+  safety: string | null;
+  trace: TraceStep[];
+  usage: { model: string; inputTokens: number; outputTokens: number };
+}
+
+const CHAT_SYSTEM = `You are Pivot's form coach, in a conversation about one set the user filmed. You already gave feedback (below). Now answer their follow-up questions.
+
+Use the tools to look up the measured numbers, the movement guide, history and fixes before answering anything specific. Rules:
+- Only state measurements and faults the tools return. If something can't be seen from this clip, say so.
+- Only suggest exercises and drills that find_fixes returns for this user.
+- No medical or rehab advice and no injury diagnosis. If they mention pain, tell them to stop the movement and see a professional.
+- Be warm, direct and brief, like a good coach between sets. Use rep numbers and numbers from the data when they help.
+- Finish by calling reply.`;
+
+export async function chatAboutForm(req: FormChatRequest, o: Pick<CoachOptions, "client" | "references" | "model"> = {}): Promise<FormChatResponse> {
+  const m = getMovement(req.movementId);
+  if (!m) throw new Error(`Unknown movement ${req.movementId}.`);
+  const analysis = analyzeMovement(req.pose, m);
+  const golden = compareToGolden(analysis, (o.references ?? REFERENCES)[m.id]);
+  const filter = filterFromProfile(req.profile);
+  const last = req.messages[req.messages.length - 1];
+  const transcript = req.messages.map((x) => `${x.role === "user" ? "User" : "Coach"}: ${x.content}`).join("\n");
+  const run = await runToolLoop({
+    system: CHAT_SYSTEM,
+    user: `${userPrompt(req, m, analysis, golden)}\n\nFeedback you already gave:\n${req.previousFeedback}\n\nConversation so far:\n${transcript}\n\nAnswer the user's last message, then call reply.`,
+    tools: buildTools(req, m, analysis, golden, filter),
+    final: { name: "reply", description: "Send your reply to the user. This ends your turn.", schema: ChatReply },
+    maxSteps: 6,
+    model: o.model,
+    client: o.client,
+  });
+  const safety = last.role === "user" && PAIN.test(last.content) ? SAFETY_NOTE : null;
+  return { message: run.output.message, followups: run.output.followups, safety, trace: run.trace, usage: run.usage };
+}

@@ -87,9 +87,24 @@ The golden comparison is leave-one-out: the clip being scored is never part of i
 
 **Baseline still to build:** send sampled video frames straight to a multimodal model with the same movement description and ask for faults and causes. Comparing that with this pipeline on the same labeled clips is the "our scaffolding beats a generic model" result for the report.
 
+## The Form correction page (`/form`)
+
+A chat-style flow, linked from the header and the home page:
+
+1. The coach greets the user and gives filming tips. The user uploads or drops a clip.
+2. While MediaPipe tracks the joints in the browser (`src/lib/form/browserPose.ts`), the coach asks which movement it is. The user can pick one or tap "Detect it for me" (`detect.ts`), and the coach asks them to confirm its guess.
+3. The coach asks about the set (weight, effort, anything that hurt). Load and RPE are read from the text (`parseSetNote`), and the whole note goes to the agent.
+4. `/api/form-coach` runs the review. While it works, the page shows the steps; afterwards it lists the tools the agent actually called.
+5. The result: the user's video with the skeleton drawn on top (`SkeletonPlayer.tsx`), a live joint angle, a rep counter, faulty reps in red, rep chips that jump to each rep, the feedback, and a button that renders a downloadable annotated video.
+6. Follow-up questions go to `/api/form-coach/chat`, which runs the same tools in a loop. This needs the AI; without a key, the page says so.
+
+Each reviewed set is saved in the browser (`formHistory.ts`: date, movement, load, RPE, faults, never video or keypoints), so the next review can see load changes and recurring faults.
+
+**Browser test hook:** in development only, setting `window.__pivotTestPose` to a `PoseSequence` skips MediaPipe. Browser tests use it because test videos have no real person in them.
+
 ## Not built yet
 
-- A browser page that runs MediaPipe on the user's clip (`@mediapipe/tasks-vision`, `fromBlazePose` in `pose.ts` already converts its output) and calls `/api/form-coach`.
 - Writing `changes` back into the weekly plan through `applyOperations` and the existing validation gate.
-- Saving each reviewed set as a `FormSessionSummary`, so `get_history_signals` has real history.
-- A live run of the agent against the model. The loop, tools and gate are tested with a scripted model only.
+- A live run of the agent against the model. The loop, tools, gate and chat are tested with a scripted model only.
+- A tested run on a real person's video. The page has only been tested with injected keypoints, and MediaPipe was only run on a clip with no person in it.
+- YOLO in the browser. The page uses MediaPipe; YOLO is available in the offline extraction script.

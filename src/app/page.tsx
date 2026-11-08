@@ -1,6 +1,6 @@
-import { CategoryIcon, Shield, Sparkle } from "@/components/icons";
+import { ArrowRight, CategoryIcon, Shield, Sparkle } from "@/components/icons";
 import { StartButton } from "@/components/StartButton";
-import { Card, Eyebrow, cx } from "@/components/ui";
+import { ButtonLink, Card, Eyebrow, cx } from "@/components/ui";
 import { CATEGORY_STYLE } from "@/lib/labels";
 import type { WorkoutCategory } from "@/lib/schemas";
 
@@ -80,6 +80,36 @@ export default function Home() {
                 <span className="rounded-full bg-paper/10 px-2.5 py-1">Move to Friday</span>
                 <span className="rounded-full bg-paper/10 px-2.5 py-1">Yoga instead</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-line">
+        <div className="mx-auto grid max-w-6xl items-center gap-8 px-5 py-14 sm:px-8 md:grid-cols-[1.2fr_1fr]">
+          <div>
+            <Eyebrow className="text-coral-deep">New: form correction</Eyebrow>
+            <h2 className="mt-3 font-display text-4xl font-medium tracking-tight">Film a set. Find out why a rep went wrong.</h2>
+            <p className="mt-3 max-w-lg text-ink-soft">
+              Pivot tracks your joints in the browser, measures every rep, and works out the likely cause, like fatigue, load or
+              mobility. Then it tells you what to change, and you can ask follow-up questions.
+            </p>
+            <ButtonLink href="/form" className="mt-6">
+              Try form correction <ArrowRight width={16} height={16} />
+            </ButtonLink>
+          </div>
+          <div className="rounded-2xl bg-ink p-5 text-paper shadow-lift" aria-hidden>
+            <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-coral">
+              <Sparkle width={14} height={14} /> Form coach
+            </p>
+            <p className="mt-2 font-display text-xl">Depth dropped on reps 5 and 6.</p>
+            <p className="mt-1 text-sm text-paper/75">Early reps hit 88° at the knee, so this looks like fatigue, not mobility. Try one fewer rep next set.</p>
+            <div className="mt-3 flex gap-1.5 text-[11px] font-semibold">
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <span key={n} className={cx("flex h-7 w-7 items-center justify-center rounded-full", n > 4 ? "bg-coral text-white" : "bg-paper/15")}>
+                  {n}
+                </span>
+              ))}
             </div>
           </div>
         </div>

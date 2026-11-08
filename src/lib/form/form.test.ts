@@ -256,3 +256,51 @@ describe("form coach", () => {
     expect(r.error).toMatch(/gateway down/);
   });
 });
+
+describe("movement detection", () => {
+  it("recognizes squats and push-ups", async () => {
+    const { detectMovement } = await import("./detect");
+    expect(detectMovement(syntheticSquat()).movementId).toBe("squat");
+    expect(detectMovement(syntheticPushUp()).movementId).toBe("push_up");
+  });
+
+  it("gives up when no one is visible", async () => {
+    const { detectMovement } = await import("./detect");
+    const pose = syntheticSquat();
+    pose.frames = pose.frames.map((f) => ({ ...f, kp: f.kp.map(() => null) }));
+    expect(detectMovement(pose).movementId).toBeNull();
+  });
+});
+
+describe("set notes", () => {
+  it("parses load and effort", async () => {
+    const { parseSetNote } = await import("./formHistory");
+    expect(parseSetNote("20 kg goblet squat, RPE 8")).toEqual({ loadKg: 20, rpe: 8 });
+    expect(parseSetNote("45 lbs, felt like 7/10")).toEqual({ loadKg: 20.4, rpe: 7 });
+    expect(parseSetNote("felt fine")).toEqual({});
+  });
+});
+
+describe("form chat", () => {
+  it("answers through the tool loop and flags pain", async () => {
+    const { chatAboutForm } = await import("./coach");
+    const { client } = scripted([
+      { text: "", calls: [{ id: "1", name: "get_rep_metrics", input: { reps: [6] } }] },
+      { text: "", calls: [{ id: "2", name: "reply", input: { message: "Rep 6 got shallower as you tired.", followups: ["How many reps next time?"] } }] },
+    ]);
+    const r = await chatAboutForm(
+      { ...request({ pose: syntheticSquat({ fatigueDeg: 35 }) }), previousFeedback: "Depth dropped on rep 6.", messages: [{ role: "user", content: "Why? Also my knee hurts a bit" }] },
+      { client, references: {} },
+    );
+    expect(r.message).toMatch(/Rep 6/);
+    expect(r.trace.map((t) => t.tool)).toEqual(["get_rep_metrics", "reply"]);
+    expect(r.safety).toBe(SAFETY_NOTE);
+  });
+
+  it("returns rep timing for the video overlay", async () => {
+    const r = await coachForm(request({ pose: syntheticSquat({ bottomKneeDeg: 120 }) }), { ruleBased: true, references: {} });
+    expect(r.reps).toHaveLength(r.repCount);
+    expect(r.reps[0].startMs).toBeLessThan(r.reps[0].bottomMs);
+    expect(r.reps[0].faults).toContain("squat_shallow");
+  });
+});

@@ -70,7 +70,7 @@ export interface FormAnalysis {
 
 // ---------- geometry ----------
 
-function angleAt(a: Pt, b: Pt, c: Pt): number {
+export function angleAt(a: Pt, b: Pt, c: Pt): number {
   const v1 = { x: a.x - b.x, y: a.y - b.y };
   const v2 = { x: c.x - b.x, y: c.y - b.y };
   const cos = (v1.x * v2.x + v1.y * v2.y) / (Math.hypot(v1.x, v1.y) * Math.hypot(v2.x, v2.y) || 1);
@@ -78,7 +78,7 @@ function angleAt(a: Pt, b: Pt, c: Pt): number {
 }
 
 /** Angle of the segment from `lower` to `upper` away from straight up (image y points down). */
-function fromVertical(lower: Pt, upper: Pt): number {
+export function fromVertical(lower: Pt, upper: Pt): number {
   const dx = upper.x - lower.x;
   const dy = lower.y - upper.y;
   return (Math.atan2(Math.abs(dx), dy) * 180) / Math.PI;
@@ -208,7 +208,7 @@ function computeSignals(seq: PoseSequence, side: "l" | "r"): Signals {
   return out;
 }
 
-function pickSide(seq: PoseSequence): "l" | "r" {
+export function pickSide(seq: PoseSequence): "l" | "r" {
   const score = (side: "l" | "r") => {
     let sum = 0;
     for (const f of seq.frames)
