@@ -381,7 +381,7 @@ describe("front-view knee check details", () => {
   it("only praises checks that actually ran", async () => {
     const { syntheticFrontSquat } = await import("./synthetic");
     const r = await coachForm(request({ pose: syntheticFrontSquat() }), { ruleBased: true, references: {} });
-    expect(r.feedback.praise).toMatch(/No problems with excessive forward lean, knees caving in\./);
+    expect(r.feedback.praise).toMatch(/No problems with shallow depth \(front view\), excessive forward lean, knees caving in\./);
     expect(r.feedback.praise).toMatch(/Not checked from this angle: above-parallel depth, heels lifting\./);
   });
 });
@@ -424,13 +424,21 @@ describe("mixed clips and drifting standing height", () => {
     expect(a.checks.skipped).toEqual([]);
   });
 
+  it("flags shallow depth from the front when the hips barely drop", async () => {
+    const { syntheticFrontSquat } = await import("./synthetic");
+    const shallow = analyzeMovement(syntheticFrontSquat({ reps: 3, depth: 0.3 }), MOVEMENTS.squat);
+    expect(shallow.faults.map((f) => f.faultId)).toContain("squat_shallow_front");
+    const deep = analyzeMovement(syntheticFrontSquat({ reps: 3, depth: 0.55 }), MOVEMENTS.squat);
+    expect(deep.faults.map((f) => f.faultId)).not.toContain("squat_shallow_front");
+  });
+
   it("estimates forward lean from the front", async () => {
     const { syntheticFrontSquat } = await import("./synthetic");
     const seq = syntheticFrontSquat({ reps: 3 });
     // Tip the torso toward the camera at the bottom: the shoulders drop toward the hips on screen.
     for (const f of seq.frames) {
       const lh = f.kp[JOINT_INDEX.l_hip]!, la = f.kp[JOINT_INDEX.l_ankle]!;
-      const d = Math.max(0, Math.min(1, (0.44 - (la[1] - lh[1])) / 0.176)); // 0 standing, 1 at the bottom
+      const d = Math.max(0, Math.min(1, (0.44 - (la[1] - lh[1])) / 0.242)); // 0 standing, 1 at the bottom
       for (const j of ["l_shoulder", "r_shoulder"] as const) {
         const k = f.kp[JOINT_INDEX[j]]!;
         k[1] = lh[1] - 0.28 * Math.cos((65 * d * Math.PI) / 180);

@@ -165,7 +165,7 @@ export interface FrontSquatOptions {
 
 /** A squat filmed from the front. */
 export function syntheticFrontSquat(o: FrontSquatOptions = {}): PoseSequence {
-  const { reps = 6, fps = 30, bottomKneeRatio = 1.1, depth = 0.4, seed = 3, midKneeRatio, standingKneeRatio = 1 } = o;
+  const { reps = 6, fps = 30, bottomKneeRatio = 1.1, depth = 0.55, seed = 3, midKneeRatio, standingKneeRatio = 1 } = o;
   const repS = 2.4, pause = 0.6;
   const noise = rng(seed);
   const cx = 0.5, ankleY = 0.1, ankleHalf = 0.1, leg = 0.44;

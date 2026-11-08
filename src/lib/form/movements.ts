@@ -22,6 +22,7 @@ export const FEATURES = {
   torso_lean_at_bottom: "Torso angle from vertical at the deepest point. Higher = more forward lean.",
   max_torso_lean: "Largest torso angle from vertical during the rep. From the front it is estimated from how much shorter the torso looks as it tips toward the camera.",
   hip_depth_at_bottom: "Hip height relative to the knee at the bottom, as a fraction of thigh length. Positive = hip below knee.",
+  hip_drop_ratio: "Front view: how far the hips drop at the bottom, as a share of their standing height above the ankles. About 0.5 or more = thighs at parallel.",
   max_heel_lift: "How far the heel rises from its starting height, as a fraction of leg length.",
   max_hip_sag: "Largest drop of the hips below the shoulder-ankle line, in degrees (push-up).",
   max_hip_pike: "Largest rise of the hips above the shoulder-ankle line, in degrees (push-up).",
@@ -113,7 +114,7 @@ const SQUAT: MovementGuide = {
     "Ascent: hips and chest rise at the same rate; finish standing tall.",
   ],
   checkpoints: ["Depth at or below parallel", "Heels stay down", "Torso lean moderate and steady", "Knees track over toes (front view)"],
-  features: ["min_knee_angle", "hip_depth_at_bottom", "torso_lean_at_bottom", "max_torso_lean", "max_heel_lift", "knee_ankle_width_ratio", "descent_s", "ascent_s", "rom_deg"],
+  features: ["min_knee_angle", "hip_depth_at_bottom", "hip_drop_ratio", "torso_lean_at_bottom", "max_torso_lean", "max_heel_lift", "knee_ankle_width_ratio", "descent_s", "ascent_s", "rom_deg"],
   faults: [
     {
       id: "squat_shallow",
@@ -123,6 +124,28 @@ const SQUAT: MovementGuide = {
       threshold: 105,
       severity: "moderate",
       meaning: "The rep stops before the thighs reach parallel.",
+      causes: [
+        { id: "ankle_mobility", label: "Limited ankle mobility", signals: "Shallow from the first rep and often paired with heel lift or a big forward lean." },
+        { id: "load_too_heavy", label: "Load too heavy", signals: "Depth was fine at lighter loads or in earlier sessions, and this session's load went up." },
+        { id: "fatigue", label: "Fatigue", signals: "Early reps reach depth and the last reps get shallower or slower." },
+        { id: "technique_unfamiliar", label: "Unfamiliar with the pattern", signals: "Beginner, consistent across all reps, no load change." },
+      ],
+      cues: ["Sit down between your heels, not just back.", "Aim your hips at a chair just below knee height."],
+      fixes: [
+        { kind: "drill", ref: "box_squat_to_target", text: "Squat to a target at the depth you want." },
+        { kind: "drill", ref: "ankle_rocks", text: "Ankle rocks before squatting." },
+        { kind: "load", text: "Drop the load 10–20% until depth is consistent." },
+      ],
+    },
+    {
+      id: "squat_shallow_front",
+      label: "Shallow depth (front view)",
+      feature: "hip_drop_ratio",
+      op: "<",
+      threshold: 0.45,
+      view: "front",
+      severity: "moderate",
+      meaning: "Seen from the front, the hips drop less than about half of their standing height, which means the thighs stop above parallel.",
       causes: [
         { id: "ankle_mobility", label: "Limited ankle mobility", signals: "Shallow from the first rep and often paired with heel lift or a big forward lean." },
         { id: "load_too_heavy", label: "Load too heavy", signals: "Depth was fine at lighter loads or in earlier sessions, and this session's load went up." },

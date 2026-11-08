@@ -412,13 +412,21 @@ function repFeatures(
       const ratios: number[] = [];
       const tallTop: number[] = [];
       const tallLow: number[] = [];
+      const hipTop: number[] = [];
+      let hipLow = Infinity;
       for (let i = r.start; i <= r.end; i++) {
         const pr = primary[i], kr = sig.kneeAnkleRatio[i], tt = sig.torsoTall[i];
         if (pr === null || !facing(i)) continue;
         if (kr !== null && pr <= deep) ratios.push(kr);
         if (tt !== null && pr >= high) tallTop.push(tt);
         if (tt !== null && pr <= deep) tallLow.push(tt);
+        const hh = sig.hipHeight[i];
+        if (hh !== null && pr >= high) hipTop.push(hh);
+        if (hh !== null) hipLow = Math.min(hipLow, hh);
       }
+      // Depth from the front: at parallel the hips sit at about shin height, roughly half their standing height.
+      const hipStand = median(hipTop);
+      if (hipStand > 0 && Number.isFinite(hipLow)) set("hip_drop_ratio", (hipStand - hipLow) / hipStand);
       if (ratios.length) set("knee_ankle_width_ratio", Math.min(...ratios));
       // Forward lean from the front: the torso looks shorter as it tips toward the camera. lean = acos(height at the bottom ÷ height standing).
       const stand = median(tallTop);

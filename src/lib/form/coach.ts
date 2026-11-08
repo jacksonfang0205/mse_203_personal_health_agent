@@ -110,6 +110,7 @@ const MEASURES: Partial<Record<string, { name: string; value: (v: number) => str
   max_hip_sag: { name: "Hip drop below the body line", value: deg },
   max_hip_pike: { name: "Hip rise above the body line", value: deg },
   knee_ankle_width_ratio: { name: "Knee width vs. ankle width", value: pct },
+  hip_drop_ratio: { name: "How far the hips drop (share of standing hip height)", value: pct },
 };
 
 function describeMeasure(f: FaultFinding): string {
