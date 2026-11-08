@@ -66,8 +66,8 @@ const CoachOutput = z.object({
         confidence: z.enum(["low", "medium", "high"]),
       }),
     )
-    .max(3)
-    .describe("Most important first. Empty if nothing was measured."),
+    .max(5)
+    .describe("Every measured fault, most important first. Empty if nothing was measured."),
   cues: z.array(z.string().max(160)).max(2).describe("At most two short coaching cues for the next set."),
   changes: z
     .array(
@@ -94,6 +94,27 @@ export interface CoachFinding {
   cause: { id: string; label: string } | null;
   evidence: string;
   confidence: "low" | "medium" | "high";
+  /** The worst measured value and the rule it broke, in plain words. */
+  measured?: { feature: string; worst: number; threshold: number; op: "<" | ">"; text: string };
+}
+
+const deg = (v: number) => `${Math.round(v)}°`;
+const pct = (v: number) => `${Math.round(v * 100)}%`;
+const MEASURES: Partial<Record<string, { name: string; value: (v: number) => string }>> = {
+  min_knee_angle: { name: "Knee angle at the bottom", value: deg },
+  min_hip_angle: { name: "Hip angle at the bottom", value: deg },
+  min_elbow_angle: { name: "Elbow angle at the bottom", value: deg },
+  torso_lean_at_bottom: { name: "Torso lean from vertical", value: deg },
+  max_torso_lean: { name: "Torso lean from vertical", value: deg },
+  max_heel_lift: { name: "Heel lift (share of leg length)", value: pct },
+  max_hip_sag: { name: "Hip drop below the body line", value: deg },
+  max_hip_pike: { name: "Hip rise above the body line", value: deg },
+  knee_ankle_width_ratio: { name: "Knee width vs. ankle width", value: pct },
+};
+
+function describeMeasure(f: FaultFinding): string {
+  const m = MEASURES[f.feature] ?? { name: f.feature, value: (v: number) => String(v) };
+  return `${m.name}: ${m.value(f.worst)} at worst (limit: ${f.op === ">" ? "at most" : "at least"} ${m.value(f.threshold)})`;
 }
 
 export interface CoachChange {
@@ -271,7 +292,7 @@ const SYSTEM = `You are Pivot's form coach. You review one set of an exercise th
 
 How to work:
 1. Read the movement guide and the measured faults. Look at rep metrics, the golden comparison and history signals as needed.
-2. Pick the one or two faults that matter most. Report only faults returned by get_measured_faults, using their fault_id.
+2. Report every fault returned by get_measured_faults, most important first, using their fault_id. Never report a fault it didn't return.
 3. For each, choose the most likely cause from that fault's causes in the guide, and cite the evidence (rep numbers, values, load change, trends, history). If the evidence doesn't separate the causes, use "unclear" and low confidence.
 4. Call find_fixes and suggest at most three changes from what it returns. Prefer the smallest change that addresses the cause: a cue or drill for technique, a load drop for load, fewer reps or rest for fatigue.
 5. Ask for a specific retest clip next session.
@@ -300,7 +321,7 @@ function userPrompt(req: FormCoachRequest, m: MovementGuide, analysis: FormAnaly
 
 // ---------- gate ----------
 
-export function gate(out: CoachOutput, m: MovementGuide, analysis: FormAnalysis, filter: ExerciseFilter): { feedback: FormCoachResponse["feedback"]; dropped: string[] } {
+export function gate(out: CoachOutput, m: MovementGuide, analysis: FormAnalysis, filter: ExerciseFilter, req: FormCoachRequest): { feedback: FormCoachResponse["feedback"]; dropped: string[] } {
   const dropped: string[] = [];
   const measured = new Map(analysis.faults.map((f) => [f.faultId, f]));
   const findings: CoachFinding[] = [];
@@ -325,6 +346,19 @@ export function gate(out: CoachOutput, m: MovementGuide, analysis: FormAnalysis,
         evidence: f.cause_evidence,
         confidence: cause ? f.confidence : "low",
       });
+    }
+    // Every measured fault is shown, even ones the model left out.
+    for (const fault of analysis.faults) {
+      if (findings.some((x) => x.faultId === fault.faultId)) continue;
+      const rule = findFault(m, fault.faultId)!;
+      const h = heuristicCause(req, m, analysis, fault);
+      const cause = rule.causes.find((c) => c.id === h.likely_cause) ?? null;
+      dropped.push(`finding ${fault.faultId}: measured but not reported by the model, added back`);
+      findings.push({ faultId: fault.faultId, label: rule.label, reps: fault.reps, cause: cause ? { id: cause.id, label: cause.label } : null, evidence: h.cause_evidence, confidence: h.confidence });
+    }
+    for (const f of findings) {
+      const fault = measured.get(f.faultId)!;
+      f.measured = { feature: fault.feature, worst: fault.worst, threshold: fault.threshold, op: fault.op, text: describeMeasure(fault) };
     }
   } else if (out.findings.length) dropped.push("all findings: clip quality too low to measure faults");
 
@@ -372,53 +406,70 @@ export function gate(out: CoachOutput, m: MovementGuide, analysis: FormAnalysis,
 
 // ---------- rule-based coach (no model) ----------
 
+/** Deterministic guess at the cause of one measured fault, from its pattern and the user's history. */
+export function heuristicCause(req: FormCoachRequest, m: MovementGuide, analysis: FormAnalysis, fault: FaultFinding) {
+  const rule = findFault(m, fault.faultId)!;
+  const signals = historySignals(req, analysis);
+  const has = (id: string) => rule.causes.some((c) => c.id === id);
+  const repWord = fault.reps.length === 1 ? "Only rep" : "Only reps";
+  if (fault.pattern === "late_reps" && has("fatigue"))
+    return { likely_cause: "fatigue", cause_evidence: `${repWord} ${fault.reps.join(", ")} of ${analysis.reps.length} broke the rule; the early reps were fine.`, confidence: "medium" as const };
+  if ((signals.load.changePct ?? 0) >= 10 && has("load_too_heavy"))
+    return { likely_cause: "load_too_heavy", cause_evidence: `Load went up ${signals.load.changePct}% since ${signals.load.lastSessionDate}.`, confidence: "medium" as const };
+  if (fault.pattern === "consistent" && req.profile.experience === "beginner" && has("technique_unfamiliar"))
+    return { likely_cause: "technique_unfamiliar", cause_evidence: "Consistent from the first rep at your experience level, with no load change.", confidence: "medium" as const };
+  if (fault.pattern === "consistent" && has("ankle_mobility") && analysis.faults.some((f) => f.faultId === "squat_heel_lift"))
+    return {
+      likely_cause: "ankle_mobility",
+      cause_evidence:
+        fault.faultId === "squat_heel_lift"
+          ? "Your heels come up on every rep, a common sign of stiff ankles."
+          : "Shows up on every rep alongside the heel lift, so stiff ankles are the likely root.",
+      confidence: "low" as const,
+    };
+  return { likely_cause: "unclear", cause_evidence: "The data doesn't separate the possible causes yet.", confidence: "low" as const };
+}
+
 export function ruleBasedCoach(req: FormCoachRequest, m: MovementGuide, analysis: FormAnalysis, filter: ExerciseFilter): CoachOutput {
   if (!analysis.quality.ok)
-    return { headline: "Let's film that again.", findings: [], cues: [], changes: [], retest: m.recording, cannot_assess: [] };
-  const top = analysis.faults[0];
-  if (!top)
+    return { headline: "I couldn't measure this clip reliably.", findings: [], cues: [], changes: [], retest: null, cannot_assess: [] };
+  if (!analysis.faults.length)
     return {
       headline: `Solid set: ${analysis.reps.length} reps with no measured faults.`,
       praise: "Every rep passed the checks this view can measure.",
       findings: [],
       cues: [],
-      changes: [{ kind: "keep_going", reason: "Nothing measured to fix." }],
+      changes: [{ kind: "keep_going", reason: "Nothing measured to fix. Keep this form as the weight goes up." }],
       retest: null,
-      cannot_assess: m.cannotAssess.slice(0, 2),
+      cannot_assess: [],
     };
-  const rule = findFault(m, top.faultId)!;
-  const signals = historySignals(req, analysis);
-  const has = (id: string) => rule.causes.some((c) => c.id === id);
-  let cause = "unclear";
-  let evidence = "The data doesn't separate the possible causes yet.";
-  if (top.pattern === "late_reps" && has("fatigue")) {
-    cause = "fatigue";
-    evidence = `Only reps ${top.reps.join(", ")} of ${analysis.reps.length} broke the rule; the early reps were fine.`;
-  } else if ((signals.load.changePct ?? 0) >= 10 && has("load_too_heavy")) {
-    cause = "load_too_heavy";
-    evidence = `Load went up ${signals.load.changePct}% since ${signals.load.lastSessionDate}.`;
-  } else if (top.pattern === "consistent" && req.profile.experience === "beginner" && has("technique_unfamiliar")) {
-    cause = "technique_unfamiliar";
-    evidence = "Consistent from the first rep at your experience level, with no load change.";
-  }
-  const fixes = allowedFixes(m, top.faultId, filter)?.fixes ?? [];
+  const findings = analysis.faults.map((f) => ({ fault_id: f.faultId, reps: f.reps, ...heuristicCause(req, m, analysis, f) }));
   const changes: CoachOutput["changes"] = [];
-  const pick = (kind: string) => fixes.find((f) => f.kind === kind);
-  const preferred = cause === "load_too_heavy" ? ["reduce_load", "add_drill"] : cause === "fatigue" ? ["reduce_load"] : ["add_drill", "regress_exercise"];
-  for (const k of preferred) {
-    const f = pick(k);
-    if (!f) continue;
-    if (f.kind === "reduce_load") changes.push({ kind: "reduce_load", load_change_pct: -10, reason: f.why });
-    else if (f.kind === "add_drill") changes.push({ kind: "add_drill", drill_id: (f as { drill_id?: string }).drill_id, reason: f.why });
-    else if (f.kind === "regress_exercise") changes.push({ kind: "regress_exercise", exercise_id: (f as { exercise_id?: string }).exercise_id, reason: f.why });
+  const used = new Set<string>();
+  for (const f of findings) {
+    const fixes = allowedFixes(m, f.fault_id, filter)?.fixes ?? [];
+    const preferred = f.likely_cause === "load_too_heavy" || f.likely_cause === "fatigue" ? ["reduce_load", "add_drill", "regress_exercise"] : ["add_drill", "regress_exercise", "reduce_load"];
+    for (const k of preferred) {
+      const x = fixes.find((y) => y.kind === k) as { kind: string; why: string; drill_id?: string; exercise_id?: string } | undefined;
+      if (!x) continue;
+      const key = `${x.kind}:${x.drill_id ?? x.exercise_id ?? ""}`;
+      if (used.has(key)) continue;
+      used.add(key);
+      if (x.kind === "reduce_load") changes.push({ kind: "reduce_load", load_change_pct: -10, reason: x.why });
+      else if (x.kind === "add_drill") changes.push({ kind: "add_drill", drill_id: x.drill_id, reason: x.why });
+      else changes.push({ kind: "regress_exercise", exercise_id: x.exercise_id, reason: x.why });
+      break;
+    }
   }
+  const labels = analysis.faults.map((f) => findFault(m, f.faultId)!.label.toLowerCase());
+  const list = labels.length === 1 ? labels[0] : `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
   return {
-    headline: `Main thing to fix: ${rule.label.toLowerCase()} (${top.reps.length === 1 ? "rep" : "reps"} ${top.reps.join(", ")}).`,
-    findings: [{ fault_id: top.faultId, reps: top.reps, likely_cause: cause, cause_evidence: evidence, confidence: cause === "unclear" ? "low" : "medium" }],
-    cues: rule.cues.slice(0, 1),
-    changes,
-    retest: `Film the same ${m.name.toLowerCase()} from the ${m.view} next session so we can compare.`,
-    cannot_assess: m.cannotAssess.slice(0, 2),
+    headline: labels.length === 1 ? `One thing to fix: ${list}.` : `${labels.length} things to fix: ${list}.`,
+    findings,
+    cues: [],
+    changes: changes.slice(0, 3),
+    retest: null,
+    cannot_assess: [],
   };
 }
 
@@ -470,14 +521,14 @@ export async function coachForm(req: FormCoachRequest, o: CoachOptions = {}): Pr
         model: o.model,
         client: o.client,
       });
-      const { feedback, dropped } = gate(run.output, m, analysis, filter);
+      const { feedback, dropped } = gate(run.output, m, analysis, filter, req);
       return { generatedBy: "agent", ...base, feedback, dropped, trace: run.trace, usage: run.usage };
     } catch (e) {
-      const { feedback, dropped } = gate(ruleBasedCoach(req, m, analysis, filter), m, analysis, filter);
+      const { feedback, dropped } = gate(ruleBasedCoach(req, m, analysis, filter), m, analysis, filter, req);
       return { generatedBy: "rule_based", ...base, feedback, dropped, error: `AI coach failed, showing rule-based feedback: ${(e as Error).message}` };
     }
   }
-  const { feedback, dropped } = gate(ruleBasedCoach(req, m, analysis, filter), m, analysis, filter);
+  const { feedback, dropped } = gate(ruleBasedCoach(req, m, analysis, filter), m, analysis, filter, req);
   return { generatedBy: "rule_based", ...base, feedback, dropped };
 }
 

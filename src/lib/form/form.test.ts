@@ -304,3 +304,38 @@ describe("form chat", () => {
     expect(r.reps[0].faults).toContain("squat_shallow");
   });
 });
+
+describe("every measured fault is shown", () => {
+  const messy = () => syntheticSquat({ bottomKneeDeg: 118, leanDeg: 62, heelLift: 0.08 });
+
+  it("rule-based coach lists them all, with the measured value", async () => {
+    const r = await coachForm(request({ pose: messy() }), { ruleBased: true, references: {} });
+    expect(r.feedback.findings.map((f) => f.faultId).sort()).toEqual(["squat_forward_lean", "squat_heel_lift", "squat_shallow"]);
+    expect(r.feedback.findings.find((f) => f.faultId === "squat_forward_lean")?.measured?.text).toMatch(/Torso lean from vertical: \d+° at worst \(limit: at most 55°\)/);
+    const keys = r.feedback.changes.map((c) => `${c.kind}:${c.drillId ?? c.exerciseId ?? ""}`);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("adds back faults the model left out", async () => {
+    const { client } = scripted([
+      {
+        text: "",
+        calls: [
+          {
+            id: "1",
+            name: "submit_coaching",
+            input: {
+              headline: "Heels.",
+              findings: [{ fault_id: "squat_heel_lift", reps: [1], likely_cause: "ankle_mobility", cause_evidence: "x", confidence: "medium" }],
+              cues: [],
+              changes: [],
+              cannot_assess: [],
+            },
+          },
+        ],
+      },
+    ]);
+    const r = await coachForm(request({ pose: messy() }), { client, references: {} });
+    expect(r.feedback.findings.map((f) => f.faultId)).toEqual(["squat_heel_lift", "squat_shallow", "squat_forward_lean"]);
+  });
+});

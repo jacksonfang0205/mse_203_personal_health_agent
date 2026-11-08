@@ -113,7 +113,7 @@ const SQUAT: MovementGuide = {
     "Ascent: hips and chest rise at the same rate; finish standing tall.",
   ],
   checkpoints: ["Depth at or below parallel", "Heels stay down", "Torso lean moderate and steady", "Knees track over toes (front view)"],
-  features: ["min_knee_angle", "hip_depth_at_bottom", "torso_lean_at_bottom", "max_heel_lift", "knee_ankle_width_ratio", "descent_s", "ascent_s", "rom_deg"],
+  features: ["min_knee_angle", "hip_depth_at_bottom", "torso_lean_at_bottom", "max_torso_lean", "max_heel_lift", "knee_ankle_width_ratio", "descent_s", "ascent_s", "rom_deg"],
   faults: [
     {
       id: "squat_shallow",
@@ -139,7 +139,7 @@ const SQUAT: MovementGuide = {
     {
       id: "squat_forward_lean",
       label: "Excessive forward lean",
-      feature: "torso_lean_at_bottom",
+      feature: "max_torso_lean",
       op: ">",
       threshold: 55,
       severity: "moderate",
