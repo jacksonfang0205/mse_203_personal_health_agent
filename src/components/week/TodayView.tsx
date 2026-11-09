@@ -19,7 +19,7 @@ export function prescription(we: WorkoutExercise): string {
 }
 
 /** Sets done per exercise: stored ticks, or every set when the workout is marked complete. */
-function setsDone(w: Workout, ticks: Record<string, number[]>): number[] {
+export function setsDone(w: Workout, ticks: Record<string, number[]>): number[] {
   return w.exercises.map((we, i) => {
     const total = setCount(we);
     return Math.min(total, ticks[w.id]?.[i] ?? (w.status === "completed" ? total : 0));

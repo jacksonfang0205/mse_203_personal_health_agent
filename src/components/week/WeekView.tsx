@@ -4,16 +4,18 @@ import { useMemo, useState, type ReactNode } from "react";
 import { agentSnapshot, requestPlan, useAiStatus, type AiStatus } from "@/lib/agentClient";
 import { CALENDAR_PRESETS } from "@/lib/calendar";
 import { computeInsights, learnedTimeOrder } from "@/lib/insights";
-import type { BusyBlock, ChangeRecord, IsoDate, WeeklyPlan, WorkoutStatus } from "@/lib/schemas";
+import { getExercise } from "@/lib/catalog";
+import type { BusyBlock, ChangeRecord, IsoDate, WeeklyPlan, Workout, WorkoutStatus } from "@/lib/schemas";
 import { buildSamplePlan, calendarForWeek, carryOver } from "@/lib/session";
-import { pivot, useNow, usePivotState } from "@/lib/store";
+import { pivot, setCount, useNow, usePivotState } from "@/lib/store";
 import { track } from "@/lib/telemetry";
 import { addDays, dayOfMonth, dayShort, formatTime, localNow, monthDay, planCovers, toMinutes, weekDates } from "@/lib/time";
 import { CONSTRAINT_LABELS, validatePlan, type ValidationResult } from "@/lib/validation";
-import { CalendarIcon, Shield, Sparkle } from "../icons";
+import { CalendarIcon, Check, Shield, Sparkle } from "../icons";
 import { Button, ButtonLink, Card, Eyebrow, MockBadge, Skeleton, cx } from "../ui";
 import { LifeHappens } from "./LifeHappens";
-import { SwitchButton, TodayView } from "./TodayView";
+import { ExerciseVisual } from "./ExerciseVisual";
+import { prescription, setsDone, SwitchButton, TodayView } from "./TodayView";
 import { WorkoutCard } from "./WorkoutCard";
 import { WorkoutDialog } from "./WorkoutDialog";
 
@@ -193,6 +195,7 @@ export function WeekView() {
                 planned={planCovers(plan, date)}
                 plan={plan}
                 busy={showCalendar ? shown.busy.filter((b) => b.date === date) : []}
+                ticks={state.ticks}
                 onOpen={setOpenId}
               />
             ))}
@@ -232,6 +235,7 @@ function DayColumn(props: {
   planned: boolean;
   plan: WeeklyPlan;
   busy: BusyBlock[];
+  ticks: Record<string, number[]>;
   onOpen: (id: string) => void;
 }) {
   const workouts = props.plan.workouts
@@ -259,11 +263,14 @@ function DayColumn(props: {
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         {workouts.length > 0 ? (
-          <div className="grid gap-3 md:grid-cols-2">
-            {workouts.map((w) => (
-              <WorkoutCard key={w.id} workout={w} onOpen={() => props.onOpen(w.id)} />
-            ))}
-          </div>
+          workouts.map((w) => (
+            <div key={w.id} className="flex flex-col gap-3 lg:flex-row">
+              <div className="lg:w-64 lg:shrink-0">
+                <WorkoutCard workout={w} onOpen={() => props.onOpen(w.id)} />
+              </div>
+              <MovementList workout={w} done={setsDone(w, props.ticks)} />
+            </div>
+          ))
         ) : (
           <p className="pt-2 text-sm text-ink-faint italic">{props.planned ? "Rest day" : "Not planned yet"}</p>
         )}
@@ -288,6 +295,48 @@ function DayColumn(props: {
         )}
       </div>
     </div>
+  );
+}
+
+/** Every movement of a workout, shown right in the week view: photo, name, and sets. */
+function MovementList({ workout, done }: { workout: Workout; done: number[] }) {
+  return (
+    <ol className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+      {workout.exercises.map((we, i) => {
+        const ex = getExercise(we.exerciseId);
+        const complete = done[i] >= setCount(we);
+        return (
+          <li
+            key={`${we.exerciseId}-${i}`}
+            className={cx(
+              "flex flex-col overflow-hidden rounded-xl border bg-card",
+              complete ? "border-sage ring-1 ring-sage/40" : "border-line",
+              workout.status === "skipped" && "opacity-60",
+            )}
+          >
+            <div className="relative">
+              <ExerciseVisual exerciseId={we.exerciseId} className="w-full rounded-none" sizes="200px" />
+              {complete && (
+                <span
+                  className="absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-full bg-sage text-white"
+                  aria-label="Done"
+                >
+                  <Check width={14} height={14} />
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col gap-0.5 px-2.5 py-2">
+              <p
+                className={cx("text-sm leading-snug font-semibold", complete && "text-ink-soft line-through decoration-sage/60")}
+              >
+                {ex?.name ?? we.exerciseId}
+              </p>
+              <p className="font-mono text-xs text-ink-soft">{prescription(we)}</p>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
