@@ -23,6 +23,7 @@ import {
   EXPERIENCE_LEVELS,
   FitnessProfile,
   GOALS,
+  type Goal,
   MUSCLE_GROUPS,
   TIMES_OF_DAY,
   WEEKDAYS,
@@ -56,8 +57,38 @@ export function draftFromProfile(p: FitnessProfile): ProfileDraft {
   return { ...rest, name: rest.name ?? "" };
 }
 
+/** Quick-pick goals implied by a goal typed in the user's own words. */
+const GOAL_WORDS: [Goal, RegExp][] = [
+  ["strength", /strong|strength|muscle|lift|bulk|tone|pull-?up|push-?up|squat|bench/i],
+  ["endurance", /run|marathon|\b\d+\s?k\b|endurance|cardio|stamina|hike|cycl|bike|swim|row/i],
+  ["mobility", /flexib|mobil|stretch|posture|yoga|pilates|back pain|stiff|range of motion/i],
+  ["stress_relief", /stress|relax|calm|anxi|mental|sleep|mood/i],
+];
+
+export function goalsFromText(text: string): Goal[] {
+  return GOAL_WORDS.filter(([, re]) => re.test(text)).map(([g]) => g);
+}
+
 export function finalizeDraft(d: ProfileDraft, updatedAt: string) {
-  return FitnessProfile.safeParse({ ...d, name: d.name?.trim() || undefined, version: 1, updatedAt });
+  const goalNotes = d.goalNotes?.trim() || undefined;
+  // A goal typed in words is enough: pick the closest quick-picks so the template planner has something to go on.
+  const goals = d.goals.length
+    ? d.goals
+    : goalNotes
+      ? goalsFromText(goalNotes).length
+        ? goalsFromText(goalNotes)
+        : ["general_fitness" as Goal]
+      : [];
+  const extraEquipment = d.extraEquipment?.length ? d.extraEquipment : undefined;
+  return FitnessProfile.safeParse({
+    ...d,
+    goals,
+    goalNotes,
+    extraEquipment,
+    name: d.name?.trim() || undefined,
+    version: 1,
+    updatedAt,
+  });
 }
 
 export interface SectionProps {
@@ -348,7 +379,7 @@ export function BoundariesSection({ draft, set }: SectionProps) {
 
 /** Per-step completeness, shared by onboarding and the preferences page. */
 export const SECTION_CHECKS = {
-  goals: (d: ProfileDraft) => (d.goals.length ? null : "Pick at least one goal."),
+  goals: (d: ProfileDraft) => (d.goals.length || d.goalNotes?.trim() ? null : "Describe your goal or pick one."),
   style: (d: ProfileDraft) => (d.workoutTypes.length ? null : "Pick at least one kind of workout."),
   equipment: () => null,
   schedule: (d: ProfileDraft) =>

@@ -120,11 +120,15 @@ export const FitnessProfile = z.object({
   version: z.literal(1),
   name: z.string().trim().max(60).optional(),
   goals: z.array(Goal).min(1),
+  /** The goal in the user's own words. Passed to the agent; quick-pick goals above drive the template planner. */
+  goalNotes: z.string().max(300).optional(),
   targetMuscles: z.array(MuscleGroup),
   experience: ExperienceLevel,
   workoutTypes: z.array(WorkoutType).min(1),
   /** Equipment the user can reliably access. Bodyweight is always available. */
   equipment: z.array(Equipment),
+  /** Equipment the user added that isn't in Pivot's list. Context for the agent only; the catalog can't use it. */
+  extraEquipment: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
   /** Preferred session length; treated as the hard per-session maximum. */
   sessionMinutes: z.number().int().min(10).max(120),
   frequencyPerWeek: z.number().int().min(1).max(7),

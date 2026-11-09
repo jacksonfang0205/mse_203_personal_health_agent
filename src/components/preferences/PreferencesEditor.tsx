@@ -7,10 +7,11 @@ import { GOALS, MUSCLE_GROUPS, TIMES_OF_DAY, WEEKDAYS, type Equipment, type Fitn
 import { buildSamplePlan, carryOver } from "@/lib/session";
 import { pivot, usePivotState, type AppState } from "@/lib/store";
 import { clearEvents, downloadJson, getEvents, track } from "@/lib/telemetry";
+import { isAllDay } from "@/lib/memoryRules";
 import { localNow } from "@/lib/time";
 import { Check } from "../icons";
-import { Button, ButtonLink, Card, Chip, Eyebrow, OptionCard, Skeleton } from "../ui";
-import { MemorySection } from "./MemorySection";
+import { Button, ButtonLink, Card, Chip, Eyebrow, OptionCard, Skeleton, cx } from "../ui";
+import { BlockedEditor, NotesEditor, Removable, useLearned } from "./MemorySection";
 import {
   BoundariesSection,
   EquipmentSection,
@@ -50,6 +51,8 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
   const [rebuild, setRebuild] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [minutesText, setMinutesText] = useState<string | null>(null);
+  const learned = useLearned(state);
 
   const set = (patch: Partial<ProfileDraft>) => {
     setDraft((d) => ({ ...d, ...patch }));
@@ -104,21 +107,23 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
       </header>
 
       <Card className="divide-y divide-line">
-        <Row label="Name">
-          <input
-            className="w-full max-w-xs rounded-full border border-line-strong bg-card px-4 py-2 text-sm focus:border-ink focus:outline-none"
-            value={draft.name}
-            maxLength={60}
-            placeholder="Optional"
-            onChange={(e) => set({ name: e.target.value })}
-          />
-        </Row>
         <Row label="Goal">
-          {GOALS.map((g) => (
-            <Chip key={g} selected={draft.goals.includes(g)} onClick={() => set({ goals: toggle(draft.goals, g) })}>
-              {GOAL_LABELS[g].label}
-            </Chip>
-          ))}
+          <div className="flex w-full flex-col gap-2.5">
+            <input
+              className={TEXT}
+              value={draft.goalNotes ?? ""}
+              maxLength={300}
+              placeholder="In your words, e.g. run a 10K by spring without getting hurt"
+              onChange={(e) => set({ goalNotes: e.target.value })}
+            />
+            <div className="flex flex-wrap gap-2">
+              {GOALS.map((g) => (
+                <Chip key={g} selected={draft.goals.includes(g)} onClick={() => set({ goals: toggle(draft.goals, g) })}>
+                  {GOAL_LABELS[g].label}
+                </Chip>
+              ))}
+            </div>
+          </div>
         </Row>
         <Row label="Workouts a week">
           <div className="flex items-center gap-3">
@@ -145,6 +150,25 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
               {m}
             </Chip>
           ))}
+          <label className="inline-flex items-center gap-2 text-sm text-ink-soft">
+            or
+            <input
+              type="number"
+              inputMode="numeric"
+              min={10}
+              max={120}
+              aria-label="Minutes per workout"
+              className={cx(TEXT, "w-20 text-center", !DURATIONS.includes(draft.sessionMinutes) && "border-ink")}
+              value={minutesText ?? draft.sessionMinutes}
+              onChange={(e) => {
+                setMinutesText(e.target.value);
+                const n = Math.round(Number(e.target.value));
+                if (n >= 10 && n <= 120) set({ sessionMinutes: n });
+              }}
+              onBlur={() => setMinutesText(null)}
+            />
+            min
+          </label>
         </Row>
         <Row label="Days that work">
           {WEEKDAYS.map((d) => (
@@ -181,6 +205,29 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
             </Chip>
           )}
         </Row>
+        <Row label="Can't work out" hint="Saves right away. Life Happens adds to this when you tell it.">
+          <BlockedEditor
+            state={state}
+            onAdd={(b) => {
+              // A whole day that's out stops being a day that works (one day always stays).
+              if (b.date || !isAllDay(b)) return;
+              const days = draft.preferredDays.filter((d) => !b.days.includes(d));
+              if (days.length) set({ preferredDays: days });
+            }}
+          />
+        </Row>
+        <Row label="Notes for Pivot" hint="Lasting preferences in your words.">
+          <NotesEditor state={state} />
+        </Row>
+        {learned.length > 0 && (
+          <Row label="What Pivot noticed">
+            <ul className="flex flex-col gap-1 text-sm text-ink-soft">
+              {learned.map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ul>
+          </Row>
+        )}
       </Card>
 
       <More title="More options" hint="Workout style, exact equipment, things to avoid, and calendar. All optional.">
@@ -192,6 +239,7 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
           <section className="flex flex-col gap-4">
             <h3 className="text-xs font-semibold tracking-wider text-ink-faint uppercase">Equipment details</h3>
             <EquipmentSection draft={draft} set={set} />
+            <ExtraEquipment draft={draft} set={set} />
           </section>
           <section className="flex flex-col gap-4">
             <h3 className="text-xs font-semibold tracking-wider text-ink-faint uppercase">Things to avoid</h3>
@@ -231,9 +279,6 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
           </section>
         </div>
       </More>
-      <More title="What Pivot remembers" hint="Times you can't work out and notes. Changes here save right away.">
-        <MemorySection state={state} />
-      </More>
       <More title="Study tools" hint="Export or clear the user-testing log, or reset everything.">
         <StudyTools state={state} />
       </More>
@@ -259,13 +304,60 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
   );
 }
 
-const DURATIONS = [20, 30, 45, 60, 75, 90];
+const DURATIONS = [20, 30, 45, 60];
+const TEXT = "w-full rounded-full border border-line-strong bg-card px-4 py-2 text-sm focus:border-ink focus:outline-none";
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+/** Equipment that isn't in Pivot's list. The AI planner sees it; the exercise library can't use it yet. */
+function ExtraEquipment({ draft, set }: { draft: ProfileDraft; set: (patch: Partial<ProfileDraft>) => void }) {
+  const [text, setText] = useState("");
+  const items = draft.extraEquipment ?? [];
+  const add = () => {
+    const name = text.trim().slice(0, 40);
+    if (!name || items.some((x) => x.toLowerCase() === name.toLowerCase()) || items.length >= 20) return;
+    set({ extraEquipment: [...items, name] });
+    setText("");
+  };
   return (
-    <div className="flex flex-col gap-2.5 px-5 py-4 sm:flex-row sm:items-center sm:gap-6 sm:px-6">
-      <span className="shrink-0 text-sm font-semibold sm:w-36">{label}</span>
-      <div className="flex flex-wrap items-center gap-2">{children}</div>
+    <Field label="Something not listed?" hint="Add it and the AI planner will know you have it.">
+      {items.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {items.map((x) => (
+            <Removable key={x} onRemove={() => set({ extraEquipment: items.filter((y) => y !== x) })}>
+              {x}
+            </Removable>
+          ))}
+        </div>
+      )}
+      <form
+        className="flex max-w-md gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          add();
+        }}
+      >
+        <input
+          className={TEXT}
+          value={text}
+          maxLength={40}
+          placeholder="e.g. TRX straps, foam roller"
+          onChange={(e) => setText(e.target.value)}
+        />
+        <Button type="submit" variant="dark" className="h-10" disabled={!text.trim()}>
+          Add
+        </Button>
+      </form>
+    </Field>
+  );
+}
+
+function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2.5 px-5 py-4 sm:flex-row sm:items-start sm:gap-6 sm:px-6">
+      <span className="flex shrink-0 flex-col gap-0.5 sm:w-36 sm:pt-2">
+        <span className="text-sm font-semibold">{label}</span>
+        {hint && <span className="text-xs text-ink-faint">{hint}</span>}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">{children}</div>
     </div>
   );
 }

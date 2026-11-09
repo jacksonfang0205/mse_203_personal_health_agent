@@ -21,6 +21,7 @@ import {
   type WorkoutExercise,
   type WorkoutStatus,
 } from "./schemas";
+import { isAllDay } from "./memoryRules";
 import { localNow } from "./time";
 
 const AppState = z.object({
@@ -197,7 +198,13 @@ export const pivot = {
     update((s) => ({ ...s, calendarPreset }));
   },
   addBlocked(items: BlockedTime[]) {
-    update((s) => ({ ...s, blocked: [...s.blocked, ...items] }));
+    update((s) => {
+      // A weekday that's now unavailable all day stops being a "day that works" (one day always stays).
+      const out = new Set(items.filter((b) => !b.date && isAllDay(b)).flatMap((b) => b.days));
+      const days = s.profile?.preferredDays.filter((d) => !out.has(d)) ?? [];
+      const profile = s.profile && out.size && days.length ? { ...s.profile, preferredDays: days } : s.profile;
+      return { ...s, profile, blocked: [...s.blocked, ...items] };
+    });
   },
   removeBlocked(id: string) {
     update((s) => ({ ...s, blocked: s.blocked.filter((b) => b.id !== id) }));

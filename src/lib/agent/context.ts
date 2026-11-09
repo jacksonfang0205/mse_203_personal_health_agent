@@ -122,9 +122,11 @@ export function catalogFor(filter: ExerciseFilter) {
 export function profileContext(p: FitnessProfile) {
   return {
     goals: p.goals,
+    goal_in_own_words: p.goalNotes || undefined,
     experience: p.experience,
     enjoys: p.workoutTypes,
     equipment: p.equipment.length ? p.equipment : ["bodyweight only"],
+    other_equipment_not_in_catalog: p.extraEquipment?.length ? p.extraEquipment : undefined,
     max_session_minutes: p.sessionMinutes,
     workouts_per_week: p.frequencyPerWeek,
     preferred_days: p.preferredDays,
