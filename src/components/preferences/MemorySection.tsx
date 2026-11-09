@@ -6,7 +6,7 @@ import { WEEKDAY_LABELS } from "@/lib/labels";
 import { WEEKDAYS, type BlockedTime, type Weekday } from "@/lib/schemas";
 import { pivot, useNow, type AppState } from "@/lib/store";
 import { dayLong, formatTime, monthDay } from "@/lib/time";
-import { Button, Card, Chip, cx } from "../ui";
+import { Button, Chip, cx } from "../ui";
 import { Field } from "./sections";
 
 const INPUT = "rounded-2xl border border-line-strong bg-card px-4 py-2.5 text-sm focus:border-ink focus:outline-none";
@@ -51,11 +51,9 @@ export function MemorySection({ state }: { state: AppState }) {
   };
 
   return (
-    <Card className="p-6 sm:p-8">
-      <h2 className="font-display text-2xl font-medium">Memory</h2>
-      <p className="mt-1 mb-6 text-sm text-ink-soft">
-        What Pivot remembers between weeks. Changes here save right away. Life Happens can suggest additions, and you approve
-        each one.
+    <div>
+      <p className="mb-6 text-sm text-ink-soft">
+        What Pivot remembers between weeks. Life Happens can suggest additions, and you approve each one.
       </p>
 
       <div className="flex flex-col gap-8">
@@ -69,7 +67,11 @@ export function MemorySection({ state }: { state: AppState }) {
                     {b.label && <span className="text-ink-soft"> · {b.label}</span>}
                     {b.source === "agent" && <span className="ml-2 text-xs text-ink-faint">(from Life Happens)</span>}
                   </span>
-                  <button type="button" onClick={() => pivot.removeBlocked(b.id)} className="text-xs font-medium text-coral-deep hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => pivot.removeBlocked(b.id)}
+                    className="text-xs font-medium text-coral-deep hover:underline"
+                  >
                     Remove
                   </button>
                 </li>
@@ -114,7 +116,11 @@ export function MemorySection({ state }: { state: AppState }) {
               {state.notes.map((n) => (
                 <li key={n.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
                   <span>{n.text}</span>
-                  <button type="button" onClick={() => pivot.removeNote(n.id)} className="shrink-0 text-xs font-medium text-coral-deep hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => pivot.removeNote(n.id)}
+                    className="shrink-0 text-xs font-medium text-coral-deep hover:underline"
+                  >
                     Remove
                   </button>
                 </li>
@@ -128,7 +134,13 @@ export function MemorySection({ state }: { state: AppState }) {
               addNote();
             }}
           >
-            <input value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} placeholder="Add a note" className={cx(INPUT, "flex-1")} />
+            <input
+              value={note}
+              maxLength={300}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add a note"
+              className={cx(INPUT, "flex-1")}
+            />
             <Button type="submit" variant="dark" className="h-10" disabled={!note.trim()}>
               Add
             </Button>
@@ -149,6 +161,6 @@ export function MemorySection({ state }: { state: AppState }) {
           )}
         </Field>
       </div>
-    </Card>
+    </div>
   );
 }
