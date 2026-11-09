@@ -183,7 +183,7 @@ export function WeekView() {
               Your plan runs through {monthDay(addDays(plan.weekStart, 6))}. Replan to fill in the days after it.
             </p>
           )}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
+          <div className="flex flex-col gap-3">
             {weekDates(today).map((date, i) => (
               <DayColumn
                 key={date}
@@ -234,53 +234,59 @@ function DayColumn(props: {
   busy: BusyBlock[];
   onOpen: (id: string) => void;
 }) {
-  const workouts = props.plan.workouts.filter((w) => w.date === props.date);
-  const items: { start: string; el: ReactNode }[] = [
-    ...props.busy.map((b) => ({
-      start: b.start,
-      el: (
-        <div
-          key={b.id}
-          title={b.source === "blocked" ? "You told Pivot you can't work out now" : undefined}
-          className={cx(
-            "rounded-xl border px-3 py-2 text-[11px]",
-            b.source === "blocked"
-              ? "border-dashed border-coral/40 bg-coral-soft/40 text-coral-ink"
-              : "border-line bg-paper-deep/60 text-ink-faint",
-          )}
-        >
-          <span className="font-semibold">{formatTime(b.start)}</span> {b.source === "blocked" ? "⊘ " : ""}
-          {b.title}
-        </div>
-      ),
-    })),
-    ...workouts.map((w) => ({
-      start: w.start,
-      el: <WorkoutCard key={w.id} workout={w} onOpen={() => props.onOpen(w.id)} />,
-    })),
-  ].sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+  const workouts = props.plan.workouts
+    .filter((w) => w.date === props.date)
+    .sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+  const busy = [...props.busy].sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
 
+  // One row per day, stacked top to bottom: date on the left, the day's workouts and calendar on the right.
   return (
     <div
       style={{ animationDelay: `${props.index * 40}ms` }}
       className={cx(
-        "animate-rise flex flex-col gap-2 rounded-2xl p-2.5 lg:min-h-64",
+        "animate-rise flex flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:gap-5 sm:p-4",
         props.isToday ? "bg-card ring-2 ring-coral/60" : "bg-paper-deep/50",
         !props.planned && "opacity-70",
       )}
     >
-      <div className="flex items-baseline justify-between px-1.5 pt-1 pb-1">
+      <div className="flex shrink-0 items-baseline gap-2 sm:w-20 sm:flex-col sm:gap-0 sm:pt-1">
         <span
           className={cx("text-xs font-semibold uppercase tracking-wider", props.isToday ? "text-coral-deep" : "text-ink-faint")}
         >
           {props.isToday ? "Today" : dayShort(props.date)}
         </span>
-        <span className="font-display text-xl font-medium">{dayOfMonth(props.date)}</span>
+        <span className="font-display text-3xl font-medium">{dayOfMonth(props.date)}</span>
       </div>
-      {items.map((it) => it.el)}
-      {workouts.length === 0 && (
-        <p className="px-1.5 pb-2 text-xs text-ink-faint italic">{props.planned ? "Rest day" : "Not planned yet"}</p>
-      )}
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        {workouts.length > 0 ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            {workouts.map((w) => (
+              <WorkoutCard key={w.id} workout={w} onOpen={() => props.onOpen(w.id)} />
+            ))}
+          </div>
+        ) : (
+          <p className="pt-2 text-sm text-ink-faint italic">{props.planned ? "Rest day" : "Not planned yet"}</p>
+        )}
+        {busy.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {busy.map((b) => (
+              <span
+                key={b.id}
+                title={b.source === "blocked" ? "You told Pivot you can't work out now" : undefined}
+                className={cx(
+                  "rounded-full border px-2.5 py-0.5 text-[11px]",
+                  b.source === "blocked"
+                    ? "border-dashed border-coral/40 bg-coral-soft/40 text-coral-ink"
+                    : "border-line bg-paper-deep/60 text-ink-faint",
+                )}
+              >
+                <span className="font-semibold">{formatTime(b.start)}</span> {b.source === "blocked" ? "⊘ " : ""}
+                {b.title}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -423,7 +429,7 @@ function WeekSkeleton() {
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 sm:px-8" aria-busy="true">
       <Skeleton className="h-16 w-80" />
       <Skeleton className="h-48 w-full" />
-      <div className="grid gap-3 lg:grid-cols-7">
+      <div className="flex flex-col gap-3">
         {Array.from({ length: 7 }, (_, i) => (
           <Skeleton key={i} className="h-40" />
         ))}
