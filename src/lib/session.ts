@@ -4,8 +4,8 @@
  */
 import { blockedToBusy, presetProvider, type CalendarPresetId } from "./calendar";
 import { generateMockWeek } from "./planner/generate";
-import type { BlockedTime, ClockTime, FitnessProfile, IsoDate, TimeOfDay, Workout } from "./schemas";
-import { mondayOf } from "./time";
+import type { BlockedTime, ClockTime, FitnessProfile, IsoDate, TimeOfDay, WeeklyPlan, Workout } from "./schemas";
+import { planCovers } from "./time";
 import type { ValidationContext } from "./validation";
 
 /** Calendar events plus the user's blocked times. Pivot treats both as busy. */
@@ -13,6 +13,11 @@ export function calendarForWeek(preset: CalendarPresetId, weekStart: IsoDate, bl
   const provider = presetProvider(preset, weekStart);
   const knownRange = provider.knownRange();
   return { busy: [...provider.getBusySync(knownRange), ...blockedToBusy(blocked, knownRange)], knownRange };
+}
+
+/** Completed workouts from an old plan that fall inside a new window, so replanning never drops finished work. */
+export function carryOver(plan: WeeklyPlan | null | undefined, weekStart: IsoDate): Workout[] {
+  return plan?.workouts.filter((w) => w.status === "completed" && planCovers({ weekStart }, w.date)) ?? [];
 }
 
 export function buildSamplePlan(args: {
@@ -24,8 +29,10 @@ export function buildSamplePlan(args: {
   blocked?: BlockedTime[];
   /** Preferred windows in the order the user actually shows up (from insights). */
   timeOrder?: TimeOfDay[];
+  /** First day of the 7-day window. Defaults to today. */
+  weekStart?: IsoDate;
 }) {
-  const weekStart = mondayOf(args.now.date);
+  const weekStart = args.weekStart ?? args.now.date;
   const { busy } = calendarForWeek(args.preset, weekStart, args.blocked);
   return generateMockWeek({
     profile: args.profile,

@@ -18,8 +18,10 @@ import {
   MemoryNote,
   WeeklyPlan,
   WorkoutLogEntry,
+  type WorkoutExercise,
   type WorkoutStatus,
 } from "./schemas";
+import { isAllDay } from "./memoryRules";
 import { localNow } from "./time";
 
 const AppState = z.object({
@@ -32,6 +34,8 @@ const AppState = z.object({
   blocked: z.array(BlockedTime).default([]),
   notes: z.array(MemoryNote).default([]),
   log: z.array(WorkoutLogEntry).default([]),
+  /** Sets ticked off on the Today view: workout id → sets done per exercise, by index. */
+  ticks: z.record(z.string(), z.array(z.number().int().min(0))).default({}),
 });
 export type AppState = z.infer<typeof AppState>;
 
@@ -44,6 +48,7 @@ const EMPTY: AppState = {
   blocked: [],
   notes: [],
   log: [],
+  ticks: {},
 };
 
 export interface PivotRepository {
@@ -114,6 +119,34 @@ function update(fn: (s: AppState) => AppState) {
   emit();
 }
 
+/** Sets in a prescription; timed blocks count as one. */
+export function setCount(we: WorkoutExercise): number {
+  return we.minutes ? 1 : Math.max(1, we.sets ?? 1);
+}
+
+function withStatus(s: AppState, workoutId: string, status: WorkoutStatus): AppState {
+  if (!s.plan) return s;
+  const w = s.plan.workouts.find((x) => x.id === workoutId);
+  // The log outlives the weekly plan, so later weeks can learn from this one.
+  const log = s.log.filter((e) => e.workoutId !== workoutId);
+  if (w && status !== "planned") {
+    log.unshift({
+      workoutId,
+      date: w.date,
+      start: w.start,
+      durationMin: w.durationMin,
+      category: w.category,
+      status,
+      at: new Date().toISOString(),
+    });
+  }
+  return {
+    ...s,
+    plan: { ...s.plan, workouts: s.plan.workouts.map((x) => (x.id === workoutId ? { ...x, status } : x)) },
+    log: log.slice(0, 300),
+  };
+}
+
 export const pivot = {
   get: snapshot,
   setRepository(r: PivotRepository) {
@@ -125,30 +158,37 @@ export const pivot = {
     update((s) => ({ ...s, profile }));
   },
   setPlan(plan: WeeklyPlan) {
-    update((s) => ({ ...s, plan }));
+    update((s) => ({
+      ...s,
+      plan,
+      // Keep ticks only for workouts that are still in the plan.
+      ticks: Object.fromEntries(Object.entries(s.ticks).filter(([id]) => plan.workouts.some((w) => w.id === id))),
+    }));
   },
   setWorkoutStatus(workoutId: string, status: WorkoutStatus) {
     update((s) => {
-      if (!s.plan) return s;
-      const w = s.plan.workouts.find((x) => x.id === workoutId);
-      // The log outlives the weekly plan, so later weeks can learn from this one.
-      const log = s.log.filter((e) => e.workoutId !== workoutId);
-      if (w && status !== "planned") {
-        log.unshift({
-          workoutId,
-          date: w.date,
-          start: w.start,
-          durationMin: w.durationMin,
-          category: w.category,
-          status,
-          at: new Date().toISOString(),
-        });
-      }
-      return {
-        ...s,
-        plan: { ...s.plan, workouts: s.plan.workouts.map((x) => (x.id === workoutId ? { ...x, status } : x)) },
-        log: log.slice(0, 300),
-      };
+      // An explicit status resets the per-set ticks; a completed workout reads as every set done.
+      const ticks = { ...s.ticks };
+      delete ticks[workoutId];
+      return withStatus({ ...s, ticks }, workoutId, status);
+    });
+  },
+  /**
+   * Tick sets off on the Today view. Finishing every set completes the
+   * workout; unticking a set of a completed workout reopens it.
+   */
+  setSetsDone(workoutId: string, exerciseIndex: number, done: number) {
+    update((s) => {
+      const w = s.plan?.workouts.find((x) => x.id === workoutId);
+      if (!w) return s;
+      const totals = w.exercises.map(setCount);
+      const row = totals.map((t, i) => Math.min(t, s.ticks[workoutId]?.[i] ?? (w.status === "completed" ? t : 0)));
+      row[exerciseIndex] = Math.max(0, Math.min(totals[exerciseIndex] ?? 0, done));
+      const next = { ...s, ticks: { ...s.ticks, [workoutId]: row } };
+      const allDone = row.every((n, i) => n >= totals[i]);
+      if (allDone && w.status !== "completed") return withStatus(next, workoutId, "completed");
+      if (!allDone && w.status === "completed") return withStatus(next, workoutId, "planned");
+      return next;
     });
   },
   recordChange(record: ChangeRecord) {
@@ -158,7 +198,13 @@ export const pivot = {
     update((s) => ({ ...s, calendarPreset }));
   },
   addBlocked(items: BlockedTime[]) {
-    update((s) => ({ ...s, blocked: [...s.blocked, ...items] }));
+    update((s) => {
+      // A weekday that's now unavailable all day stops being a "day that works" (one day always stays).
+      const out = new Set(items.filter((b) => !b.date && isAllDay(b)).flatMap((b) => b.days));
+      const days = s.profile?.preferredDays.filter((d) => !out.has(d)) ?? [];
+      const profile = s.profile && out.size && days.length ? { ...s.profile, preferredDays: days } : s.profile;
+      return { ...s, profile, blocked: [...s.blocked, ...items] };
+    });
   },
   removeBlocked(id: string) {
     update((s) => ({ ...s, blocked: s.blocked.filter((b) => b.id !== id) }));

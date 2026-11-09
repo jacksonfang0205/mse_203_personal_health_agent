@@ -3,7 +3,8 @@ import { blockedToBusy } from "../calendar";
 import { computeInsights, learnedTimeOrder } from "../insights";
 import { filterFromProfile } from "../planner/generate";
 import type { BlockedTime, FitnessProfile, WorkoutLogEntry } from "../schemas";
-import { buildSamplePlan, calendarForWeek } from "../session";
+import { buildSamplePlan, calendarForWeek, carryOver } from "../session";
+import { planCovers } from "../time";
 import { validatePlan } from "../validation";
 import { assembleWorkout, freeWindows, repairStart } from "./context";
 
@@ -131,5 +132,25 @@ describe("agent workout assembly", () => {
   it("lists free windows around busy time", () => {
     const { busy } = calendarForWeek("open", WEEK);
     expect(freeWindows("2026-11-04", busy, [], NOW)).toEqual(["06:00-11:45", "13:15-22:00"]);
+  });
+});
+
+describe("rolling 7-day window", () => {
+  const SUNDAY = { date: "2026-11-08", time: "07:00" };
+
+  it("plans from today through the next six days", () => {
+    const plan = buildSamplePlan({ profile, preset: "open", now: SUNDAY, createdAt: "x" });
+    expect(plan.weekStart).toBe("2026-11-08");
+    expect(plan.workouts.length).toBe(profile.frequencyPerWeek);
+    for (const w of plan.workouts) expect(planCovers(plan, w.date)).toBe(true);
+    expect(plan.workouts.some((w) => w.date > "2026-11-08")).toBe(true);
+  });
+
+  it("carries completed workouts into a new window and drops ones before it", () => {
+    const old = buildSamplePlan({ profile, preset: "open", now: NOW, createdAt: "x" });
+    const done = old.workouts.map((w) => ({ ...w, status: "completed" as const }));
+    const kept = carryOver({ ...old, workouts: done }, "2026-11-04");
+    expect(kept.every((w) => w.date >= "2026-11-04")).toBe(true);
+    expect(kept.length).toBe(done.filter((w) => w.date >= "2026-11-04").length);
   });
 });

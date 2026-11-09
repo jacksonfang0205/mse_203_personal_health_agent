@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { MemorySuggestions } from "@/lib/agent/lifeHappens";
+import { isAllDay, rememberFromMessage } from "@/lib/memoryRules";
 import { agentSnapshot, requestLifeHappens } from "@/lib/agentClient";
 import type { DateRange } from "@/lib/calendar";
 import { applyOperations, proposeRuleBasedAlternatives } from "@/lib/planner/alternatives";
@@ -44,7 +45,8 @@ interface Props {
 
 function describeBlocked(b: MemorySuggestions["blocked"][number]) {
   const when = b.date ? `${dayShort(b.date)} ${monthDay(b.date)} only,` : b.days.map((d) => WEEKDAY_LABELS[d].short).join(", ");
-  return `Can't work out ${when} ${formatTime(b.start)}–${formatTime(b.end)}${b.label ? ` (${b.label})` : ""}`;
+  const hours = isAllDay(b) ? "all day" : `${formatTime(b.start)}–${formatTime(b.end)}`;
+  return `Can't work out ${when} ${hours}${b.label ? ` (${b.label})` : ""}`;
 }
 
 export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props) {
@@ -76,6 +78,11 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
       createdAt: new Date().toISOString(),
     });
 
+  const ruleMemory = (userMessage: string): MemorySuggestions | null => {
+    const blocked = rememberFromMessage(userMessage, pivot.get().blocked);
+    return blocked.length ? { blocked, notes: [] } : null;
+  };
+
   const submit = async (text: string) => {
     markOpened();
     const userMessage = text.trim();
@@ -91,16 +98,19 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
       try {
         const res = await requestLifeHappens({ ...agentSnapshot(pivot.get(), now), message: userMessage });
         p = res.proposal;
-        setMemory(res.memory.blocked.length || res.memory.notes.length ? res.memory : null);
+        const blocked = res.memory.blocked.length ? res.memory.blocked : rememberFromMessage(userMessage, pivot.get().blocked);
+        setMemory(blocked.length || res.memory.notes.length ? { ...res.memory, blocked } : null);
         setNote(res.fallback ?? null);
       } catch (e) {
         p = ruleBased(userMessage);
+        setMemory(ruleMemory(userMessage));
         setNote(`The AI couldn't answer (${(e as Error).message}). These are rule-based options.`);
       } finally {
         setLoading(false);
       }
     } else {
       p = ruleBased(userMessage);
+      setMemory(ruleMemory(userMessage));
     }
     setProposal(p);
     track("life_happens_submitted", { chars: userMessage.length, alternatives: p.alternatives.length, source: p.generatedBy });

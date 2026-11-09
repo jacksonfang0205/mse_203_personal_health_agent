@@ -7,6 +7,7 @@ import { cx } from "./ui";
 
 const NAV = [
   { href: "/week", label: "My week" },
+  { href: "/form", label: "Form correction" },
   { href: "/preferences", label: "Preferences" },
 ];
 
