@@ -5,14 +5,15 @@ import { agentSnapshot, requestPlan, useAiStatus, type AiStatus } from "@/lib/ag
 import { CALENDAR_PRESETS } from "@/lib/calendar";
 import { computeInsights, learnedTimeOrder } from "@/lib/insights";
 import type { BusyBlock, ChangeRecord, IsoDate, WeeklyPlan, WorkoutStatus } from "@/lib/schemas";
-import { buildSamplePlan, calendarForWeek } from "@/lib/session";
+import { buildSamplePlan, calendarForWeek, carryOver } from "@/lib/session";
 import { pivot, useNow, usePivotState } from "@/lib/store";
 import { track } from "@/lib/telemetry";
-import { dayOfMonth, dayShort, formatTime, localNow, monthDay, mondayOf, toMinutes, weekDates } from "@/lib/time";
+import { addDays, dayOfMonth, dayShort, formatTime, localNow, monthDay, planCovers, toMinutes, weekDates } from "@/lib/time";
 import { CONSTRAINT_LABELS, validatePlan, type ValidationResult } from "@/lib/validation";
 import { CalendarIcon, Shield, Sparkle } from "../icons";
 import { Button, ButtonLink, Card, Eyebrow, MockBadge, Skeleton, cx } from "../ui";
 import { LifeHappens } from "./LifeHappens";
+import { SwitchButton, TodayView } from "./TodayView";
 import { WorkoutCard } from "./WorkoutCard";
 import { WorkoutDialog } from "./WorkoutDialog";
 
@@ -26,14 +27,23 @@ export function WeekView() {
   const now = useNow();
   const [openId, setOpenId] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(true);
+  // Today is the default; the week is one click away.
+  const [view, setView] = useState<"today" | "week">("today");
   const [planning, setPlanning] = useState(false);
   const [planNote, setPlanNote] = useState<string | null>(null);
   const ai = useAiStatus();
 
-  const weekStart = now ? mondayOf(now.date) : null;
+  const today = now?.date ?? null;
+  // The plan's own 7-day window (it starts on the day it was made); a fresh plan starts today.
+  const weekStart = today ? (state?.plan && planCovers(state.plan, today) ? state.plan.weekStart : today) : null;
   const calendar = useMemo(
     () => (state && weekStart ? calendarForWeek(state.calendarPreset, weekStart, state.blocked) : null),
     [state, weekStart],
+  );
+  // What the week view shows: today and the six days after it.
+  const shown = useMemo(
+    () => (state && today ? calendarForWeek(state.calendarPreset, today, state.blocked) : null),
+    [state, today],
   );
   const checks = useMemo(
     () =>
@@ -43,7 +53,7 @@ export function WeekView() {
     [state, calendar],
   );
 
-  if (!state || !now || !weekStart || !calendar) return <WeekSkeleton />;
+  if (!state || !now || !today || !weekStart || !calendar || !shown) return <WeekSkeleton />;
 
   if (!state.profile) {
     return (
@@ -78,7 +88,7 @@ export function WeekView() {
     // Template planner, still aware of blocked times and past completion.
     const now = localNow(at);
     const insights = computeInsights({ log: state.log, history: state.history, plan: state.plan, now });
-    const keep = state.plan?.weekStart === weekStart ? state.plan.workouts.filter((w) => w.status === "completed") : [];
+    const keep = carryOver(state.plan, now.date);
     const next = buildSamplePlan({
       profile,
       preset: state.calendarPreset,
@@ -92,11 +102,11 @@ export function WeekView() {
     track("plan_generated", { source: "mock_template", workouts: next.workouts.length });
   };
 
-  if (!plan || plan.weekStart !== weekStart) {
+  if (!plan || !planCovers(plan, today)) {
     return (
       <EmptyState
         title="A fresh week."
-        body="Pivot will plan the rest of this week around your simulated calendar and the times you can't make."
+        body="Pivot will plan the next seven days, starting today, around your simulated calendar and the times you can't make."
         action={
           <div className="flex flex-col items-center gap-3">
             <Button onClick={buildPlan} disabled={planning || !ai}>
@@ -122,7 +132,7 @@ export function WeekView() {
       <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="animate-rise">
           <Eyebrow>
-            Week of {monthDay(weekStart)} – {monthDay(weekDates(weekStart)[6])}
+            {view === "today" ? `Today · ${monthDay(today)}` : `${monthDay(today)} – ${monthDay(addDays(today, 6))}`}
           </Eyebrow>
           <h1 className="mt-2 font-display text-4xl font-medium tracking-tight sm:text-5xl">
             {greeting(now.time)}
@@ -140,8 +150,54 @@ export function WeekView() {
         <Progress plan={plan} />
       </header>
 
-      {planNote && (
-        <Card className="border-coral/30 bg-coral-soft p-4 text-sm text-coral-ink shadow-none">{planNote}</Card>
+      {planNote && <Card className="border-coral/30 bg-coral-soft p-4 text-sm text-coral-ink shadow-none">{planNote}</Card>}
+
+      {view === "today" ? (
+        <TodayView
+          today={today}
+          plan={plan}
+          ticks={state.ticks}
+          busy={shown.busy.filter((b) => b.date === today)}
+          onOpen={setOpenId}
+          onSwitchToWeek={() => setView("week")}
+        />
+      ) : (
+        <section aria-label="This week" className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-2xl font-medium">Your next 7 days</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <SwitchButton onClick={() => setView("today")}>Back to today</SwitchButton>
+              <button
+                type="button"
+                onClick={() => setShowCalendar((v) => !v)}
+                aria-pressed={showCalendar}
+                className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-card px-3.5 py-1.5 text-xs font-medium text-ink-soft hover:text-ink"
+              >
+                <CalendarIcon width={14} height={14} />
+                {showCalendar ? "Hide" : "Show"} calendar · {CALENDAR_PRESETS[state.calendarPreset].label} (simulated)
+              </button>
+            </div>
+          </div>
+          {!planCovers(plan, addDays(today, 6)) && (
+            <p className="text-sm text-ink-soft">
+              Your plan runs through {monthDay(addDays(plan.weekStart, 6))}. Replan to fill in the days after it.
+            </p>
+          )}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
+            {weekDates(today).map((date, i) => (
+              <DayColumn
+                key={date}
+                date={date}
+                index={i}
+                isToday={date === now.date}
+                planned={planCovers(plan, date)}
+                plan={plan}
+                busy={showCalendar ? shown.busy.filter((b) => b.date === date) : []}
+                onOpen={setOpenId}
+              />
+            ))}
+          </div>
+        </section>
       )}
 
       <LifeHappens
@@ -161,35 +217,6 @@ export function WeekView() {
         </Card>
       )}
 
-      <section aria-label="This week" className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-2xl font-medium">Your week</h2>
-          <button
-            type="button"
-            onClick={() => setShowCalendar((v) => !v)}
-            aria-pressed={showCalendar}
-            className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-card px-3.5 py-1.5 text-xs font-medium text-ink-soft hover:text-ink"
-          >
-            <CalendarIcon width={14} height={14} />
-            {showCalendar ? "Hide" : "Show"} calendar · {CALENDAR_PRESETS[state.calendarPreset].label} (simulated)
-          </button>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
-          {weekDates(weekStart).map((date, i) => (
-            <DayColumn
-              key={date}
-              date={date}
-              index={i}
-              isToday={date === now.date}
-              isPast={date < now.date}
-              plan={plan}
-              busy={showCalendar ? calendar.busy.filter((b) => b.date === date) : []}
-              onOpen={setOpenId}
-            />
-          ))}
-        </div>
-      </section>
-
       <History records={state.history} />
 
       <WorkoutDialog workout={openWorkout} onClose={() => setOpenId(null)} onStatus={setStatus} />
@@ -201,7 +228,8 @@ function DayColumn(props: {
   date: IsoDate;
   index: number;
   isToday: boolean;
-  isPast: boolean;
+  /** False for days after the plan's window ends. */
+  planned: boolean;
   plan: WeeklyPlan;
   busy: BusyBlock[];
   onOpen: (id: string) => void;
@@ -238,17 +266,21 @@ function DayColumn(props: {
       className={cx(
         "animate-rise flex flex-col gap-2 rounded-2xl p-2.5 lg:min-h-64",
         props.isToday ? "bg-card ring-2 ring-coral/60" : "bg-paper-deep/50",
-        props.isPast && "opacity-70",
+        !props.planned && "opacity-70",
       )}
     >
       <div className="flex items-baseline justify-between px-1.5 pt-1 pb-1">
-        <span className={cx("text-xs font-semibold uppercase tracking-wider", props.isToday ? "text-coral-deep" : "text-ink-faint")}>
+        <span
+          className={cx("text-xs font-semibold uppercase tracking-wider", props.isToday ? "text-coral-deep" : "text-ink-faint")}
+        >
           {props.isToday ? "Today" : dayShort(props.date)}
         </span>
         <span className="font-display text-xl font-medium">{dayOfMonth(props.date)}</span>
       </div>
       {items.map((it) => it.el)}
-      {workouts.length === 0 && <p className="px-1.5 pb-2 text-xs text-ink-faint italic">Rest day</p>}
+      {workouts.length === 0 && (
+        <p className="px-1.5 pb-2 text-xs text-ink-faint italic">{props.planned ? "Rest day" : "Not planned yet"}</p>
+      )}
     </div>
   );
 }
@@ -321,7 +353,9 @@ function ChecksBadge({ result }: { result: ValidationResult | null }) {
         )}
       >
         <Shield width={13} height={13} />
-        {result.ok ? `${result.checked.length} checks passed` : `${result.violations.length} issue${result.violations.length > 1 ? "s" : ""}`}
+        {result.ok
+          ? `${result.checked.length} checks passed`
+          : `${result.violations.length} issue${result.violations.length > 1 ? "s" : ""}`}
       </button>
       {open && (
         <Card className="absolute top-9 left-0 z-20 w-80 animate-rise p-4 text-sm">

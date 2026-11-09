@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { CALENDAR_PRESETS, CALENDAR_PRESET_IDS, type CalendarPresetId } from "@/lib/calendar";
 import type { FitnessProfile } from "@/lib/schemas";
-import { buildSamplePlan } from "@/lib/session";
+import { buildSamplePlan, carryOver } from "@/lib/session";
 import { pivot, usePivotState, type AppState } from "@/lib/store";
 import { clearEvents, downloadJson, getEvents, track } from "@/lib/telemetry";
 import { localNow } from "@/lib/time";
@@ -73,7 +73,7 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
     }
     pivot.setCalendarPreset(preset);
     if (rebuild) {
-      const keep = state.plan?.workouts.filter((w) => w.status === "completed") ?? [];
+      const keep = carryOver(state.plan, localNow(at).date);
       pivot.setPlan(
         buildSamplePlan({ profile: parsed.data, preset, now: localNow(at), createdAt: at.toISOString(), keep, blocked: state.blocked }),
       );

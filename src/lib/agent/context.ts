@@ -28,7 +28,7 @@ import {
   type WorkoutCategory,
 } from "../schemas";
 import { calendarForWeek } from "../session";
-import { fromMinutes, mondayOf, overlaps, toMinutes, weekDates, weekdayOf } from "../time";
+import { fromMinutes, mondayOf, overlaps, planCovers, toMinutes, weekDates, weekdayOf } from "../time";
 
 /** Everything the server needs, sent by the browser (the server stores nothing). */
 export const AgentRequest = z.object({
@@ -53,8 +53,17 @@ const DAY_START = 6 * 60;
 const DAY_END = 22 * 60;
 const BUFFER_MIN = 15;
 
-export function weekContext(req: AgentRequest, extraBusy: BusyBlock[] = []) {
-  const weekStart = mondayOf(req.now.date);
+/**
+ * The 7-day window an agent call works in. The eval harness pins its own
+ * reference week. Otherwise a fresh plan starts today, and edits to an
+ * existing plan keep that plan's window while it still covers today.
+ */
+export function weekContext(req: AgentRequest, extraBusy: BusyBlock[] = [], opts: { fresh?: boolean } = {}) {
+  const weekStart = req.calendar
+    ? mondayOf(req.now.date)
+    : !opts.fresh && req.plan && planCovers(req.plan, req.now.date)
+      ? req.plan.weekStart
+      : req.now.date;
   const cal = req.calendar
     ? { busy: [...req.calendar.busy, ...blockedToBusy(req.blocked, req.calendar.knownRange)], knownRange: req.calendar.knownRange }
     : calendarForWeek(req.calendarPreset, weekStart, req.blocked);

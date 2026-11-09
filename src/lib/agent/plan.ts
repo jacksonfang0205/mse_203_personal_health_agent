@@ -8,7 +8,8 @@ import { z } from "zod";
 import { learnedTimeOrder, computeInsights } from "../insights";
 import { filterFromProfile } from "../planner/generate";
 import { ClockTime, IsoDate, MuscleGroup, WorkoutCategory, type WeeklyPlan, type Workout } from "../schemas";
-import { buildSamplePlan } from "../session";
+import { buildSamplePlan, carryOver } from "../session";
+import { addDays } from "../time";
 import { validatePlan } from "../validation";
 import {
   assembleWorkout,
@@ -60,15 +61,15 @@ export interface PlanResult {
 }
 
 export async function agentPlanWeek(req: AgentRequest): Promise<PlanResult> {
-  const { weekStart, busy, knownRange } = weekContext(req);
-  const keep = req.plan?.weekStart === weekStart ? req.plan.workouts.filter((w) => w.status === "completed") : [];
+  const { weekStart, busy, knownRange } = weekContext(req, [], { fresh: true });
+  const keep = carryOver(req.plan, weekStart);
   const target = Math.max(0, req.profile.frequencyPerWeek - keep.length);
   const dates = remainingDates(weekStart, req.now.date).filter((d) => !keep.some((k) => k.date === d));
   const filter = filterFromProfile(req.profile);
   const createdAt = new Date().toISOString();
 
   const user = [
-    `Today is ${req.now.date} (${req.now.time}). Plan ${target} session${target === 1 ? "" : "s"} for the rest of the week starting ${weekStart}.`,
+    `Today is ${req.now.date} (${req.now.time}). Plan ${target} session${target === 1 ? "" : "s"} for the 7 days from ${weekStart} to ${addDays(weekStart, 6)}.`,
     `<profile>${JSON.stringify(profileContext(req.profile))}</profile>`,
     `<memory>${JSON.stringify(memoryContext(req))}</memory>`,
     `<days>${JSON.stringify(daysContext(dates, busy, keep, req.now))}</days>`,
@@ -106,14 +107,15 @@ export async function agentPlanWeek(req: AgentRequest): Promise<PlanResult> {
 
 /** The template planner, ordered by what past weeks show. Used when AI is off or fails. */
 export function templatePlanWeek(req: AgentRequest, reason?: string): PlanResult {
-  const weekStart = weekContext(req).weekStart;
+  const weekStart = weekContext(req, [], { fresh: true }).weekStart;
   const insights = computeInsights({ log: req.log, history: req.history, plan: req.plan, now: req.now });
   const plan = buildSamplePlan({
     profile: req.profile,
     preset: req.calendarPreset,
     now: req.now,
     createdAt: new Date().toISOString(),
-    keep: req.plan?.weekStart === weekStart ? req.plan.workouts.filter((w) => w.status === "completed") : [],
+    weekStart,
+    keep: carryOver(req.plan, weekStart),
     blocked: req.blocked,
     timeOrder: learnedTimeOrder(req.profile.preferredTimes, insights),
   });

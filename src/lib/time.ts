@@ -39,6 +39,14 @@ export function mondayOf(date: IsoDate): IsoDate {
   return addDays(date, -WEEKDAYS.indexOf(weekdayOf(date)));
 }
 
+/**
+ * Whether a date falls in a plan's 7-day window. A plan starts on the day it
+ * was made and runs six more days, so the week always starts from "today".
+ */
+export function planCovers(plan: { weekStart: IsoDate }, date: IsoDate): boolean {
+  return date >= plan.weekStart && date <= addDays(plan.weekStart, 6);
+}
+
 export function weekDates(weekStart: IsoDate): IsoDate[] {
   return WEEKDAYS.map((_, i) => addDays(weekStart, i));
 }

@@ -203,7 +203,7 @@ export type Workout = z.infer<typeof Workout>;
 
 export const WeeklyPlan = z.object({
   id: z.string(),
-  /** Monday of the plan's week. */
+  /** First day of the plan's 7-day window: the day it was planned. */
   weekStart: IsoDate,
   workouts: z.array(Workout),
   generatedBy: z.enum(["mock_template", "agent", "fixture"]),
