@@ -127,7 +127,8 @@ export function AccountGate({ children }: { children: ReactNode }) {
   const state = usePivotState();
   const pathname = usePathname();
   const router = useRouter();
-  const open = pathname === "/";
+  // Public pages: the home page, and the privacy policy and terms Google's consent screen links to.
+  const open = pathname === "/" || pathname === "/privacy" || pathname === "/terms";
   const toSetup = Boolean(enabled && user && ready && state && !state.profile && NEEDS_PROFILE.includes(pathname));
 
   useEffect(() => {

@@ -41,7 +41,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <footer className="border-t border-line px-5 py-6 text-xs text-ink-faint sm:px-8">
           <div className="mx-auto flex max-w-6xl flex-col gap-1 sm:flex-row sm:justify-between">
             <span>Pivot is a student prototype for Stanford MS&amp;E 203.</span>
-            <span>General fitness suggestions only, not medical advice.</span>
+            <span className="flex flex-wrap gap-x-4">
+              <span>General fitness suggestions only, not medical advice.</span>
+              <a href="/privacy" className="underline-offset-4 hover:underline">
+                Privacy
+              </a>
+              <a href="/terms" className="underline-offset-4 hover:underline">
+                Terms
+              </a>
+            </span>
           </div>
         </footer>
       </body>
