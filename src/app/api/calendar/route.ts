@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { auth, authConfigured } from "@/auth";
-import { importBusy } from "@/lib/googleCalendar";
+import { CalendarScopeMissing, importBusy } from "@/lib/googleCalendar";
 import { IsoDate } from "@/lib/schemas";
 
 /**
@@ -25,6 +25,7 @@ export async function GET(request: Request) {
   try {
     return Response.json({ blocked: await importBusy(session.user.id, start.data, days, tz) });
   } catch (e) {
+    if (e instanceof CalendarScopeMissing) return Response.json({ error: e.message, needsCalendarAccess: true }, { status: 403 });
     return Response.json({ error: (e as Error).message }, { status: 502 });
   }
 }

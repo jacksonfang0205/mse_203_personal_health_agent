@@ -13,6 +13,10 @@ import { addDays, weekdayOf } from "./time";
 /** Ids of imported blocks start with this, so a re-import replaces them. */
 export const CALENDAR_BLOCK_PREFIX = "gcal-";
 export const CALENDAR_LABEL = "Google Calendar";
+const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+
+/** The user signed in without granting calendar access; the client asks for it and retries. */
+export class CalendarScopeMissing extends Error {}
 
 export interface CalendarEvent {
   id: string;
@@ -55,6 +59,7 @@ export async function googleAccessToken(userId: string): Promise<string> {
     .from(accounts)
     .where(and(eq(accounts.userId, userId), eq(accounts.provider, "google")));
   if (!account?.access_token) throw new Error("No Google account linked. Sign in with Google again.");
+  if (!account.scope?.split(" ").includes(CALENDAR_SCOPE)) throw new CalendarScopeMissing("Calendar access hasn't been granted yet.");
   const fresh = account.expires_at && account.expires_at * 1000 > Date.now() + 60_000;
   if (fresh) return account.access_token;
   if (!account.refresh_token) throw new Error("Google access expired. Sign in with Google again.");

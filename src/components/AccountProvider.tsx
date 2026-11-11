@@ -14,6 +14,7 @@ import { signIn, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAiStatus } from "@/lib/agentClient";
+import { clearDemoFlag, useDemo } from "@/lib/demo";
 import { pivot, usePivotState } from "@/lib/store";
 import { PivotMark } from "./icons";
 import { Button, Skeleton } from "./ui";
@@ -31,11 +32,13 @@ interface AccountState {
   user: Account | null | undefined;
   /** The user's saved data has been loaded (or there was none). */
   ready: boolean;
+  /** Demo mode: sample data in this browser only, no account. */
+  demo: boolean;
   signIn: (redirectTo?: string) => void;
   signOut: () => void;
 }
 
-const Ctx = createContext<AccountState>({ enabled: null, user: undefined, ready: false, signIn: () => {}, signOut: () => {} });
+const Ctx = createContext<AccountState>({ enabled: null, user: undefined, ready: false, demo: false, signIn: () => {}, signOut: () => {} });
 export const useAccount = () => useContext(Ctx);
 
 /** Pages that need a profile; without one, a signed-in user goes to setup. */
@@ -51,6 +54,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const enabled = status ? Boolean(status.accounts) : null;
   const [user, setUser] = useState<Account | null | undefined>(undefined);
   const [ready, setReady] = useState(false);
+  const demo = useDemo();
 
   // Who is signed in.
   useEffect(() => {
@@ -96,7 +100,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     enabled,
     user: enabled ? user : null,
     ready: enabled === false || ready,
-    signIn: (redirectTo = "/week") => signIn("google", { redirectTo }),
+    demo,
+    signIn: (redirectTo = "/week") => {
+      // Signing in leaves demo mode; the account's own data (or setup) replaces the sample.
+      clearDemoFlag();
+      void signIn("google", { redirectTo });
+    },
     signOut: () => {
       // Clear this browser so the next person doesn't see this account's data.
       pivot.reset();
@@ -106,15 +115,15 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-/** Renders its children only once the user may use the app: signed in, or accounts are off. */
+/** Renders its children only once the user may use the app: signed in, in the demo, or accounts are off. */
 export function SignedInOnly({ children }: { children: ReactNode }) {
-  const { enabled, user } = useAccount();
-  return enabled === false || user ? children : null;
+  const { enabled, user, demo } = useAccount();
+  return enabled === false || user || demo ? children : null;
 }
 
 /** Wraps page content: asks for sign-in, waits for saved data, and sends new users to setup. */
 export function AccountGate({ children }: { children: ReactNode }) {
-  const { enabled, user, ready, signIn } = useAccount();
+  const { enabled, user, ready, demo, signIn } = useAccount();
   const state = usePivotState();
   const pathname = usePathname();
   const router = useRouter();
@@ -125,7 +134,7 @@ export function AccountGate({ children }: { children: ReactNode }) {
     if (toSetup) router.replace("/onboarding");
   }, [toSetup, router]);
 
-  if (open || enabled === false) return children;
+  if (open || enabled === false || (demo && !user)) return children;
   if (enabled === null || user === undefined || (user && !ready) || toSetup) {
     return (
       <div className="mx-auto max-w-3xl px-5 py-12" aria-busy="true">

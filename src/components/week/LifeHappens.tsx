@@ -167,9 +167,14 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
   };
 
   // The coach's reply: what it understood, or why nothing fits, in one or two short lines.
+  // Rule-based options don't read the message, so they get a plain line instead of their internal note.
   const reply = proposal
     ? proposal.infeasibleReason ??
-      (proposal.alternatives.length ? proposal.understood[0] ?? "Here's what we can do." : "Nothing fits this week.")
+      (!proposal.alternatives.length
+        ? "Nothing fits this week."
+        : proposal.generatedBy === "agent"
+          ? proposal.understood[0] ?? "Here's what we can do."
+          : "Here are a few options for your next workout.")
     : null;
 
   return (
