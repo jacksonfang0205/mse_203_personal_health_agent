@@ -61,7 +61,6 @@ export function TodayView(props: {
       {workouts.length === 0 && (
         <Card className="flex flex-col gap-3 p-6 sm:p-8">
           <p className="font-display text-2xl font-medium">Rest day.</p>
-          <p className="text-ink-soft">Nothing is planned for today. Recovery is part of the plan.</p>
           {next && (
             <button
               type="button"
@@ -81,7 +80,7 @@ export function TodayView(props: {
       {props.busy.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-xs text-ink-faint">
           <CalendarIcon width={14} height={14} />
-          <span className="font-semibold">Also today (simulated calendar):</span>
+          <span className="font-semibold">Also today:</span>
           {props.busy
             .slice()
             .sort((a, b) => toMinutes(a.start) - toMinutes(b.start))

@@ -2,7 +2,7 @@ import { AgentRequest } from "@/lib/agent/context";
 import { aiEnabled } from "@/lib/agent/llm";
 import { agentPlanWeek, templatePlanWeek } from "@/lib/agent/plan";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(request: Request) {
   const parsed = AgentRequest.safeParse(await request.json().catch(() => null));

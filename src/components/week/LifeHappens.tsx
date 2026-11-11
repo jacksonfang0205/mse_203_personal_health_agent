@@ -12,22 +12,8 @@ import { track } from "@/lib/telemetry";
 import { WEEKDAY_LABELS } from "@/lib/labels";
 import { dayShort, formatTime, monthDay } from "@/lib/time";
 import { validatePlan } from "@/lib/validation";
-import { ArrowRight, Shield, Sparkle } from "../icons";
-import { Button, MockBadge, cx } from "../ui";
-
-const EXAMPLES = [
-  "I have a midterm tomorrow and missed today's workout",
-  "Only 20 minutes free on Friday",
-  "My gym is closed this week, I just have bands",
-  "A meeting got added Thursday evening",
-];
-
-const KIND_LABEL: Record<Alternative["kind"], string> = {
-  shorter: "Shorter",
-  move: "Reschedule",
-  swap_format: "Different format",
-  skip: "Rest",
-};
+import { ArrowRight, Sparkle } from "../icons";
+import { Button } from "../ui";
 
 function msSince(start: number | null) {
   return start === null ? null : Date.now() - start;
@@ -87,6 +73,7 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
     markOpened();
     const userMessage = text.trim();
     if (!userMessage || loading) return;
+    setMessage("");
     setDone(null);
     setNote(null);
     setMemory(null);
@@ -104,7 +91,7 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
       } catch (e) {
         p = ruleBased(userMessage);
         setMemory(ruleMemory(userMessage));
-        setNote(`The AI couldn't answer (${(e as Error).message}). These are rule-based options.`);
+        setNote(`Couldn't reach the AI (${(e as Error).message}), so these are simpler options.`);
       } finally {
         setLoading(false);
       }
@@ -132,7 +119,7 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
     setMemory(null);
     setNote(null);
     setMessage("");
-    setDone(saved ? `${summary} Remembered ${saved} thing${saved > 1 ? "s" : ""} for next time.` : summary);
+    setDone(saved ? `${summary} I'll remember that.` : summary);
     openedAt.current = null;
   };
 
@@ -161,7 +148,7 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
       kind: alt.kind,
       msSinceOpen: msSince(openedAt.current),
     });
-    finish(`Updated: ${alt.summary}`);
+    finish(`Done. ${alt.summary}`);
   };
 
   const rejectAll = () => {
@@ -176,144 +163,45 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
       offeredKinds: proposal.alternatives.map((a) => a.kind),
     });
     track("alternatives_rejected", { offered: proposal.alternatives.length });
-    finish("No changes made. Your plan stays as it was.");
+    finish("Okay, your plan stays as it is.");
   };
 
+  // The coach's reply: what it understood, or why nothing fits, in one or two short lines.
+  const reply = proposal
+    ? proposal.infeasibleReason ??
+      (proposal.alternatives.length ? proposal.understood[0] ?? "Here's what we can do." : "Nothing fits this week.")
+    : null;
+
   return (
-    <section
-      aria-labelledby="life-happens-title"
-      className="relative overflow-hidden rounded-[var(--radius-card)] bg-ink p-6 text-paper shadow-lift sm:p-8"
-    >
-      <div aria-hidden className="pointer-events-none absolute -top-20 -right-16 h-64 w-64 rounded-full bg-coral/30 blur-3xl" />
-      <div className="relative flex flex-col gap-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="mb-1 inline-flex items-center gap-1.5 text-sm font-semibold text-coral">
-              <Sparkle width={16} height={16} /> Life Happens
-            </p>
-            <h2 id="life-happens-title" className="font-display text-3xl font-medium tracking-tight sm:text-4xl">
-              Plans changed? Pivot with them.
-            </h2>
-          </div>
-          <span className="rounded-full border border-paper/20 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-paper/70">
-            {ai ? "Live AI · every option checked" : "Preview · AI not configured"}
-          </span>
-        </div>
-
-        <form
-          className="flex flex-col gap-3 sm:flex-row"
-          onSubmit={(e) => {
-            e.preventDefault();
-            submit(message);
-          }}
-        >
-          <label htmlFor="life-happens-input" className="sr-only">
-            What changed?
-          </label>
-          <input
-            id="life-happens-input"
-            value={message}
-            onFocus={markOpened}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="What changed this week?"
-            className="h-12 flex-1 rounded-full border border-paper/15 bg-paper/10 px-5 text-paper placeholder:text-paper/45 focus:border-coral focus:outline-none"
-          />
-          <Button type="submit" disabled={!message.trim() || loading} className="h-12">
-            {loading ? "Thinking…" : "Find options"} <ArrowRight />
-          </Button>
-        </form>
-
-        {loading && (
-          <p role="status" className="animate-pulse rounded-2xl bg-paper/10 px-4 py-3 text-sm text-paper/80">
-            Reading your week and checking options against your calendar…
-          </p>
-        )}
-
-        {!proposal && !loading && (
-          <div className="flex flex-wrap gap-2">
-            {EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                type="button"
-                onClick={() => {
-                  setMessage(ex);
-                  submit(ex);
-                }}
-                className="rounded-full border border-paper/15 px-3.5 py-1.5 text-xs text-paper/75 transition hover:border-paper/40 hover:text-paper"
-              >
-                {ex}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {done && (
-          <p role="status" className="animate-rise rounded-2xl bg-paper/10 px-4 py-3 text-sm text-paper">
-            {done}
-          </p>
-        )}
+    <section aria-label="Coach" className="rounded-[var(--radius-card)] bg-ink p-5 text-paper shadow-lift sm:p-6">
+      <div className="flex flex-col gap-4">
+        <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-coral">
+          <Sparkle width={16} height={16} /> Coach
+        </p>
 
         {proposal && (
-          <div className="animate-rise flex flex-col gap-4 rounded-2xl bg-card p-5 text-ink sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              {proposal.generatedBy === "agent" && !note ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-lilac-soft px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-lilac-ink">
-                  <Sparkle width={13} height={13} /> AI options
-                </span>
-              ) : (
-                <MockBadge>Rule-based preview · not AI</MockBadge>
-              )}
-              <button type="button" onClick={() => setProposal(null)} className="text-sm text-ink-soft hover:text-ink">
-                Close
-              </button>
-            </div>
-            <ul className="flex flex-col gap-1 text-sm text-ink-soft">
-              {proposal.understood.map((u) => (
-                <li key={u}>{u}</li>
-              ))}
-            </ul>
-            {note && <p className="text-xs text-ink-faint">{note}</p>}
-            {proposal.infeasibleReason && <p className="text-sm font-medium">{proposal.infeasibleReason}</p>}
-
-            <div className="grid gap-3 md:grid-cols-3">
-              {proposal.alternatives.map((alt, i) => (
-                <article
-                  key={alt.id}
-                  style={{ animationDelay: `${i * 70}ms` }}
-                  className="animate-rise flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4"
-                >
-                  <span
-                    className={cx(
-                      "self-start rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                      alt.kind === "skip" ? "bg-ink/10 text-ink-soft" : "bg-coral-soft text-coral-ink",
-                    )}
-                  >
-                    {KIND_LABEL[alt.kind]}
-                  </span>
-                  <h3 className="font-display text-lg leading-snug font-semibold">{alt.title}</h3>
-                  <p className="text-sm">{alt.summary}</p>
-                  <ul className="flex flex-col gap-1 text-xs text-ink-soft">
-                    {alt.tradeoffs.map((t) => (
-                      <li key={t}>• {t}</li>
-                    ))}
-                  </ul>
-                  <p className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-sage-ink">
-                    <Shield width={14} height={14} /> Passes all schedule checks
-                  </p>
-                  <Button variant="dark" className="h-10" onClick={() => accept(alt)}>
-                    Use this
+          <div className="animate-rise flex flex-col gap-3">
+            <p className="self-end rounded-2xl rounded-br-sm bg-paper/15 px-4 py-2.5 text-sm">{proposal.userMessage}</p>
+            <div className="flex flex-col gap-3 self-start rounded-2xl rounded-bl-sm bg-card p-4 text-ink sm:max-w-[85%]">
+              <p className="text-sm">{reply}</p>
+              {note && <p className="text-xs text-ink-faint">{note}</p>}
+              {proposal.alternatives.map((alt) => (
+                <div key={alt.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-paper px-3.5 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">{alt.title}</p>
+                    <p className="text-xs text-ink-soft">{alt.summary}</p>
+                  </div>
+                  <Button variant="dark" className="h-9 shrink-0 px-4" onClick={() => accept(alt)}>
+                    Use
                   </Button>
-                </article>
+                </div>
               ))}
-            </div>
-            {memory && (
-              <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-line-strong p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Remember for next time?</p>
-                {[
+              {memory &&
+                [
                   ...memory.blocked.map((b) => ({ id: b.id, text: describeBlocked(b) })),
                   ...memory.notes.map((n) => ({ id: n.id, text: n.text })),
                 ].map((item) => (
-                  <label key={item.id} className="flex items-start gap-2 text-sm">
+                  <label key={item.id} className="flex items-start gap-2 text-xs text-ink-soft">
                     <input
                       type="checkbox"
                       className="mt-0.5 accent-coral"
@@ -327,24 +215,58 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
                         })
                       }
                     />
-                    {item.text}
+                    Remember: {item.text}
                   </label>
                 ))}
-                <p className="text-xs text-ink-faint">Saved when you pick an option. You can edit memory in Preferences.</p>
-                {proposal.alternatives.length === 0 && (
-                  <Button variant="dark" className="h-9 self-start" onClick={() => finish("No changes to your plan.")}>
-                    Save to memory
+              {proposal.alternatives.length > 0 ? (
+                <button type="button" onClick={rejectAll} className="self-start text-xs text-ink-soft hover:text-ink">
+                  Keep my plan
+                </button>
+              ) : (
+                memory && (
+                  <Button variant="dark" className="h-9 self-start" onClick={() => finish("Got it.")}>
+                    Remember
                   </Button>
-                )}
-              </div>
-            )}
-            {proposal.alternatives.length > 0 && (
-              <button type="button" onClick={rejectAll} className="self-start text-sm font-medium text-ink-soft underline-offset-4 hover:underline">
-                None of these work
-              </button>
-            )}
+                )
+              )}
+            </div>
           </div>
         )}
+
+        {loading && (
+          <p role="status" className="animate-pulse self-start text-sm text-paper/70">
+            Thinking…
+          </p>
+        )}
+
+        {done && !proposal && (
+          <p role="status" className="self-start rounded-2xl rounded-bl-sm bg-paper/10 px-4 py-2.5 text-sm">
+            {done}
+          </p>
+        )}
+
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit(message);
+          }}
+        >
+          <label htmlFor="coach-input" className="sr-only">
+            Message your coach
+          </label>
+          <input
+            id="coach-input"
+            value={message}
+            onFocus={markOpened}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="What changed?"
+            className="h-12 flex-1 rounded-full border border-paper/15 bg-paper/10 px-5 text-paper placeholder:text-paper/45 focus:border-coral focus:outline-none"
+          />
+          <Button type="submit" disabled={!message.trim() || loading} className="h-12 w-12 px-0" aria-label="Send">
+            <ArrowRight />
+          </Button>
+        </form>
       </div>
     </section>
   );

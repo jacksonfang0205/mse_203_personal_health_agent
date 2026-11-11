@@ -97,9 +97,15 @@ export function eligibleExercises(category: WorkoutCategory, f: ExerciseFilter):
   );
 }
 
+/** Equipment that only makes sense for strength work. Having it means strength is on the table. */
+const STRENGTH_EQUIPMENT: Equipment[] = ["dumbbells", "kettlebell", "barbell", "bench", "squat_rack", "cable_machine", "resistance_bands", "pull_up_bar"];
+
 export function allowedCategories(profile: FitnessProfile, f: ExerciseFilter): WorkoutCategory[] {
   const fromTypes = new Set(profile.workoutTypes.flatMap((t) => TYPE_CATEGORIES[t]));
   fromTypes.add("mobility"); // bodyweight mobility is always an option
+  // The workout-type list is set at onboarding and tucked away in Preferences. A strength goal or
+  // strength equipment chosen later must still reach the plan, so they unlock strength too.
+  if (profile.goals.includes("strength") || f.equipment.some((e) => STRENGTH_EQUIPMENT.includes(e))) fromTypes.add("strength");
   return [...fromTypes].filter((c) => eligibleExercises(c, f).length > 0);
 }
 

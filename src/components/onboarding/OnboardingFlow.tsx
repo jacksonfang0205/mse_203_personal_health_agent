@@ -196,10 +196,6 @@ function ReviewSection({ draft, set, jump }: SectionProps) {
           </div>
         ))}
       </dl>
-      <p className="text-sm text-ink-soft">
-        Next, Pivot builds a <strong>sample week</strong> around a simulated calendar. Live AI planning arrives in the next
-        milestone.
-      </p>
     </div>
   );
 }

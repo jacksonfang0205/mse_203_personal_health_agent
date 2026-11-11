@@ -9,35 +9,14 @@
  * outdated data is discarded rather than crashing the app.
  */
 import { useSyncExternalStore } from "react";
-import { z } from "zod";
-import { CALENDAR_PRESET_IDS, type CalendarPresetId } from "./calendar";
-import {
-  BlockedTime,
-  ChangeRecord,
-  FitnessProfile,
-  MemoryNote,
-  WeeklyPlan,
-  WorkoutLogEntry,
-  type WorkoutExercise,
-  type WorkoutStatus,
-} from "./schemas";
+import type { CalendarPresetId } from "./calendar";
+import type { BlockedTime, ChangeRecord, FitnessProfile, MemoryNote, WeeklyPlan, WorkoutExercise, WorkoutStatus } from "./schemas";
 import { isAllDay } from "./memoryRules";
 import { localNow } from "./time";
 
-const AppState = z.object({
-  version: z.literal(1),
-  profile: FitnessProfile.nullable(),
-  plan: WeeklyPlan.nullable(),
-  history: z.array(ChangeRecord),
-  calendarPreset: z.enum(CALENDAR_PRESET_IDS as [CalendarPresetId, ...CalendarPresetId[]]),
-  // Memory. Defaults keep state saved before these fields existed valid.
-  blocked: z.array(BlockedTime).default([]),
-  notes: z.array(MemoryNote).default([]),
-  log: z.array(WorkoutLogEntry).default([]),
-  /** Sets ticked off on the Today view: workout id → sets done per exercise, by index. */
-  ticks: z.record(z.string(), z.array(z.number().int().min(0))).default({}),
-});
-export type AppState = z.infer<typeof AppState>;
+import { AppState } from "./appState";
+
+export { AppState };
 
 const EMPTY: AppState = {
   version: 1,
@@ -214,6 +193,15 @@ export const pivot = {
   },
   removeNote(id: string) {
     update((s) => ({ ...s, notes: s.notes.filter((n) => n.id !== id) }));
+  },
+  /** Replace everything, e.g. with the copy saved to the user's account. */
+  replaceAll(state: AppState) {
+    update(() => state);
+  },
+  /** Called after every change; returns an unsubscribe function. Used to sync to the account. */
+  onChange(listener: () => void) {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
   },
   reset() {
     update(() => EMPTY);

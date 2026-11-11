@@ -1,6 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import { importGoogleCalendar } from "@/lib/account";
+import { useAccount } from "../AccountProvider";
+import { agentSnapshot, requestPlan, useAiStatus } from "@/lib/agentClient";
 import { CALENDAR_PRESETS, CALENDAR_PRESET_IDS, type CalendarPresetId } from "@/lib/calendar";
 import { EQUIPMENT_PRESETS, GOAL_LABELS, MUSCLE_LABELS, TIME_OF_DAY, WEEKDAY_LABELS } from "@/lib/labels";
 import { GOALS, MUSCLE_GROUPS, TIMES_OF_DAY, WEEKDAYS, type Equipment, type FitnessProfile } from "@/lib/schemas";
@@ -51,6 +55,8 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
   const [rebuild, setRebuild] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const ai = useAiStatus();
   const [minutesText, setMinutesText] = useState<string | null>(null);
   const learned = useLearned(state);
 
@@ -60,7 +66,7 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
     setError(null);
   };
 
-  const save = () => {
+  const save = async () => {
     const problem = Object.values(SECTION_CHECKS)
       .map((check) => check(draft))
       .find(Boolean);
@@ -76,18 +82,30 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
     }
     pivot.setCalendarPreset(calendar);
     if (rebuild) {
-      const keep = carryOver(state.plan, localNow(at).date);
-      pivot.setPlan(
+      const now = localNow(at);
+      const template = () =>
         buildSamplePlan({
           profile: parsed.data,
           preset: calendar,
-          now: localNow(at),
+          now,
           createdAt: at.toISOString(),
-          keep,
+          keep: carryOver(state.plan, now.date),
           blocked: state.blocked,
-        }),
-      );
+        });
+      // Rebuild with the AI when it's on, so the new profile reaches the plan; the template is the fallback.
+      if (ai?.ai) {
+        setSaving(true);
+        try {
+          const snapshot = agentSnapshot({ ...pivot.get(), profile: parsed.data, calendarPreset: calendar }, now);
+          pivot.setPlan((await requestPlan(snapshot)).plan);
+        } catch {
+          pivot.setPlan(template());
+        } finally {
+          setSaving(false);
+        }
+      } else pivot.setPlan(template());
     }
+    // Saved last: it re-keys this form, so it must come after any wait above.
     pivot.saveProfile(parsed.data);
     track("preferences_saved", { rebuilt: rebuild });
     setSaved(true);
@@ -103,7 +121,6 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
       <header>
         <Eyebrow>Preferences</Eyebrow>
         <h1 className="mt-2 font-display text-4xl font-medium tracking-tight">Your plan basics</h1>
-        <p className="mt-2 text-ink-soft">Just what Pivot needs to plan your week. Change anything, then save.</p>
       </header>
 
       <Card className="divide-y divide-line">
@@ -205,7 +222,7 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
             </Chip>
           )}
         </Row>
-        <Row label="Can't work out" hint="Saves right away. Life Happens adds to this when you tell it.">
+        <Row label="Can't work out" hint="Saves right away.">
           <BlockedEditor
             state={state}
             onAdd={(b) => {
@@ -215,6 +232,7 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
               if (days.length) set({ preferredDays: days });
             }}
           />
+          <CalendarImport />
         </Row>
         <Row label="Notes for Pivot" hint="Lasting preferences in your words.">
           <NotesEditor state={state} />
@@ -230,7 +248,7 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
         )}
       </Card>
 
-      <More title="More options" hint="Workout style, exact equipment, things to avoid, and calendar. All optional.">
+      <More title="More options" hint="Optional.">
         <div className="flex flex-col gap-10">
           <section className="flex flex-col gap-4">
             <h3 className="text-xs font-semibold tracking-wider text-ink-faint uppercase">Workout style</h3>
@@ -244,7 +262,7 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
           <section className="flex flex-col gap-4">
             <h3 className="text-xs font-semibold tracking-wider text-ink-faint uppercase">Things to avoid</h3>
             <div className="flex flex-col gap-8">
-              <Field label="Any areas you want to focus on?" hint="Optional. Leave blank for a balanced mix.">
+              <Field label="Any areas you want to focus on?" hint="Optional.">
                 <div className="flex flex-wrap gap-2">
                   {MUSCLE_GROUPS.map((m) => (
                     <Chip
@@ -296,10 +314,40 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
                 <Check width={16} height={16} /> Saved
               </span>
             )}
-            <Button onClick={save}>Save changes</Button>
+            <Button onClick={save} disabled={saving}>
+              {saving ? "Updating plan (up to 30 s)…" : "Save changes"}
+            </Button>
           </div>
         </Card>
       </div>
+    </div>
+  );
+}
+
+/** Signed-in users can pull the next week's busy times from Google Calendar. */
+function CalendarImport() {
+  const { user } = useAccount();
+  const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (!user) return null;
+  const run = async () => {
+    setBusy(true);
+    setStatus(null);
+    try {
+      const n = await importGoogleCalendar(localNow(new Date()).date);
+      setStatus(n ? `Added ${n} busy time${n > 1 ? "s" : ""}.` : "No busy times this week.");
+    } catch (e) {
+      setStatus((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-3">
+      <Button variant="secondary" className="h-9 px-4 text-sm" onClick={run} disabled={busy}>
+        {busy ? "Importing…" : "Import Google Calendar"}
+      </Button>
+      {status && <span className="text-sm text-ink-soft">{status}</span>}
     </div>
   );
 }
@@ -318,7 +366,7 @@ function ExtraEquipment({ draft, set }: { draft: ProfileDraft; set: (patch: Part
     setText("");
   };
   return (
-    <Field label="Something not listed?" hint="Add it and the AI planner will know you have it.">
+    <Field label="Something not listed?">
       {items.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {items.map((x) => (
@@ -395,6 +443,7 @@ function More({ title, hint, children }: { title: string; hint: string; children
 }
 
 function StudyTools({ state }: { state: AppState }) {
+  const router = useRouter();
   const [count, setCount] = useState(() => getEvents().length);
   return (
     <div>
@@ -428,9 +477,11 @@ function StudyTools({ state }: { state: AppState }) {
           variant="ghost"
           className="text-coral-deep"
           onClick={() => {
-            if (window.confirm("Delete your profile, plan, and history from this browser?")) {
+            if (window.confirm("Delete your profile, plan, and history? If you're signed in, this clears your account too.")) {
               pivot.reset();
               clearEvents();
+              // An empty profile sends you back to setup.
+              router.push("/onboarding");
             }
           }}
         >

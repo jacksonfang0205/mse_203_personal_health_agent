@@ -17,9 +17,9 @@ function prescription(we: WorkoutExercise): string {
 }
 
 const ORIGIN_LABEL: Record<Workout["origin"], string> = {
-  mock_template: "Sample workout from a template",
-  rule_based: "Rule-based adjustment (preview)",
-  agent: "Planned by Pivot AI",
+  mock_template: "Planned by Pivot",
+  rule_based: "Adjusted by Pivot",
+  agent: "Planned by Pivot",
   user: "Added by you",
 };
 
@@ -104,9 +104,6 @@ export function WorkoutDialog({
                   );
                 })}
               </ol>
-              <p className="mt-2 text-xs text-ink-faint">
-                Sets and reps are starting points. Pick a weight that leaves a couple of reps in reserve.
-              </p>
             </section>
 
             <div className="grid gap-4 sm:grid-cols-2">
