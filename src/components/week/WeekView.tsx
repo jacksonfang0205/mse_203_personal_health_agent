@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { fixClashes } from "@/lib/account";
 import { agentSnapshot, requestPlan, useAiStatus } from "@/lib/agentClient";
 import { findClashes } from "@/lib/planner/clashes";
@@ -34,6 +34,14 @@ export function WeekView() {
   const [view, setView] = useState<"today" | "week">("today");
   const [planning, setPlanning] = useState(false);
   const [planNote, setPlanNote] = useState<string | null>(null);
+  // "Moved X to …" confirmations fade out on their own; error notes stay until the next action.
+  const [movedNote, setMovedNote] = useState<string | null>(null);
+  const movedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const flashMoved = (message: string) => {
+    setMovedNote(message);
+    clearTimeout(movedTimer.current);
+    movedTimer.current = setTimeout(() => setMovedNote(null), 4000);
+  };
   const ai = useAiStatus();
 
   const today = now?.date ?? null;
@@ -151,6 +159,11 @@ export function WeekView() {
       </header>
 
       {planNote && <Card className="border-coral/30 bg-coral-soft p-4 text-sm text-coral-ink shadow-none">{planNote}</Card>}
+      {movedNote && (
+        <div role="status">
+          <Card className="animate-rise border-sage/40 bg-sage-soft p-4 text-sm text-sage-ink shadow-none">{movedNote}</Card>
+        </div>
+      )}
 
       {clashes.length > 0 && (
         <Card className="flex flex-wrap items-center justify-between gap-3 border-coral/30 bg-coral-soft p-4 text-sm text-coral-ink shadow-none">
@@ -163,7 +176,7 @@ export function WeekView() {
             className="h-9 px-4"
             onClick={() => {
               const r = fixClashes();
-              setPlanNote(
+              flashMoved(
                 r.unresolved.length
                   ? `Moved ${r.moved.length}; ${r.unresolved.length} still clash${r.unresolved.length > 1 ? "" : "es"} with no free time left this week.`
                   : `Moved ${r.moved.map((m) => `${m.title} to ${dayShort(m.to.date)} ${formatTime(m.to.start)}`).join(", ")}.`,
