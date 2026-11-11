@@ -16,8 +16,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useAiStatus } from "@/lib/agentClient";
 import { clearDemoFlag, useDemo } from "@/lib/demo";
 import { pivot, usePivotState } from "@/lib/store";
-import { PivotMark } from "./icons";
-import { Button, Skeleton } from "./ui";
+import { SignInForm } from "./SignInForm";
+import { Skeleton } from "./ui";
 
 export interface Account {
   name?: string | null;
@@ -34,11 +34,22 @@ interface AccountState {
   ready: boolean;
   /** Demo mode: sample data in this browser only, no account. */
   demo: boolean;
+  /** Open the sign-in page (email/password or Google), then go to `redirectTo`. */
   signIn: (redirectTo?: string) => void;
+  /** Go straight to Google sign-in. */
+  signInWithGoogle: (redirectTo?: string) => void;
   signOut: () => void;
 }
 
-const Ctx = createContext<AccountState>({ enabled: null, user: undefined, ready: false, demo: false, signIn: () => {}, signOut: () => {} });
+const Ctx = createContext<AccountState>({
+  enabled: null,
+  user: undefined,
+  ready: false,
+  demo: false,
+  signIn: () => {},
+  signInWithGoogle: () => {},
+  signOut: () => {},
+});
 export const useAccount = () => useContext(Ctx);
 
 /** Pages that need a profile; without one, a signed-in user goes to setup. */
@@ -55,6 +66,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Account | null | undefined>(undefined);
   const [ready, setReady] = useState(false);
   const demo = useDemo();
+  const router = useRouter();
 
   // Who is signed in.
   useEffect(() => {
@@ -102,6 +114,9 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     ready: enabled === false || ready,
     demo,
     signIn: (redirectTo = "/week") => {
+      router.push(`/signin?next=${encodeURIComponent(redirectTo)}`);
+    },
+    signInWithGoogle: (redirectTo = "/week") => {
       // Signing in leaves demo mode; the account's own data (or setup) replaces the sample.
       clearDemoFlag();
       void signIn("google", { redirectTo });
@@ -123,12 +138,12 @@ export function SignedInOnly({ children }: { children: ReactNode }) {
 
 /** Wraps page content: asks for sign-in, waits for saved data, and sends new users to setup. */
 export function AccountGate({ children }: { children: ReactNode }) {
-  const { enabled, user, ready, demo, signIn } = useAccount();
+  const { enabled, user, ready, demo } = useAccount();
   const state = usePivotState();
   const pathname = usePathname();
   const router = useRouter();
   // Public pages: the home page, and the privacy policy and terms Google's consent screen links to.
-  const open = pathname === "/" || pathname === "/privacy" || pathname === "/terms";
+  const open = ["/", "/privacy", "/terms", "/signin"].includes(pathname);
   const toSetup = Boolean(enabled && user && ready && state && !state.profile && NEEDS_PROFILE.includes(pathname));
 
   useEffect(() => {
@@ -143,17 +158,6 @@ export function AccountGate({ children }: { children: ReactNode }) {
       </div>
     );
   }
-  if (!user) {
-    return (
-      <div className="mx-auto flex max-w-md flex-col items-center gap-5 px-5 py-24 text-center">
-        <PivotMark width={40} height={40} className="text-coral" />
-        <h1 className="font-display text-4xl font-medium tracking-tight">Sign in to Pivot</h1>
-        <p className="text-ink-soft">Your plan and preferences are saved to your account.</p>
-        <Button onClick={() => signIn(pathname === "/onboarding" ? "/onboarding" : pathname)} className="h-12 px-6">
-          Continue with Google
-        </Button>
-      </div>
-    );
-  }
+  if (!user) return <SignInForm next={pathname} />;
   return children;
 }

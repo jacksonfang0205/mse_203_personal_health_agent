@@ -58,7 +58,8 @@ export async function googleAccessToken(userId: string): Promise<string> {
     .select()
     .from(accounts)
     .where(and(eq(accounts.userId, userId), eq(accounts.provider, "google")));
-  if (!account?.access_token) throw new Error("No Google account linked. Sign in with Google again.");
+  // Email/password users connect Google just for the calendar: no linked account yet means "ask for access".
+  if (!account?.access_token) throw new CalendarScopeMissing("No Google account connected yet.");
   if (!account.scope?.split(" ").includes(CALENDAR_SCOPE)) throw new CalendarScopeMissing("Calendar access hasn't been granted yet.");
   const fresh = account.expires_at && account.expires_at * 1000 > Date.now() + 60_000;
   if (fresh) return account.access_token;

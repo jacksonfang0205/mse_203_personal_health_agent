@@ -19,6 +19,7 @@ import { BlockedEditor, NotesEditor, Removable, useLearned } from "./MemorySecti
 import {
   BoundariesSection,
   EquipmentSection,
+  ExperienceSection,
   Field,
   SECTION_CHECKS,
   StyleSection,
@@ -253,6 +254,7 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
           <section className="flex flex-col gap-4">
             <h3 className="text-xs font-semibold tracking-wider text-ink-faint uppercase">Workout style</h3>
             <StyleSection draft={draft} set={set} />
+            <ExperienceSection draft={draft} set={set} />
           </section>
           <section className="flex flex-col gap-4">
             <h3 className="text-xs font-semibold tracking-wider text-ink-faint uppercase">Equipment details</h3>
@@ -334,8 +336,11 @@ function CalendarImport() {
     setBusy(true);
     setStatus(null);
     try {
-      const n = await importGoogleCalendar(localNow(new Date()).date);
-      setStatus(n ? `Added ${n} busy time${n > 1 ? "s" : ""}.` : "No busy times this week.");
+      const r = await importGoogleCalendar(localNow(new Date()).date);
+      const parts = [r.added ? `Added ${r.added} busy time${r.added > 1 ? "s" : ""}.` : "No busy times this week."];
+      if (r.moved.length) parts.push(`Moved ${r.moved.map((m) => m.title).join(", ")} away from a clash.`);
+      if (r.unresolved.length) parts.push(`${r.unresolved.length} workout${r.unresolved.length > 1 ? "s" : ""} still clash${r.unresolved.length > 1 ? "" : "es"}, with no free time left this week.`);
+      setStatus(parts.join(" "));
     } catch (e) {
       if (e instanceof NeedsCalendarAccess && !afterConsent) {
         // First import: ask Google for calendar access, then come back here and import.

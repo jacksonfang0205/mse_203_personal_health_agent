@@ -6,9 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   AVOID_TAG_LABELS,
   EQUIPMENT_LABELS,
-  EXPERIENCE_LABELS,
   GOAL_LABELS,
-  MUSCLE_LABELS,
   TIME_OF_DAY,
   WEEKDAY_LABELS,
   WORKOUT_TYPE_LABELS,
@@ -26,6 +24,7 @@ import {
   SECTION_CHECKS,
   ScheduleSection,
   StyleSection,
+  avoidTagsFromText,
   finalizeDraft,
   type ProfileDraft,
   type SectionProps,
@@ -162,14 +161,20 @@ function ReviewSection({ draft, set, jump }: SectionProps) {
   const list = (items: string[], empty = "None") => (items.length ? items.join(", ") : empty);
   const rows: { label: string; value: string; step: number }[] = [
     { label: "Goals", value: list(draft.goals.map((g) => GOAL_LABELS[g].label)), step: 0 },
-    { label: "Focus areas", value: list(draft.targetMuscles.map((m) => MUSCLE_LABELS[m]), "Balanced"), step: 0 },
-    { label: "Experience", value: EXPERIENCE_LABELS[draft.experience].label, step: 1 },
     { label: "Workouts you enjoy", value: list(draft.workoutTypes.map((t) => WORKOUT_TYPE_LABELS[t])), step: 1 },
     { label: "Equipment", value: list(draft.equipment.map((e) => EQUIPMENT_LABELS[e]), "Bodyweight only"), step: 2 },
     { label: "Sessions", value: `${draft.frequencyPerWeek}× a week, up to ${draft.sessionMinutes} min`, step: 3 },
     { label: "Days", value: list(draft.preferredDays.map((d) => WEEKDAY_LABELS[d].short)), step: 3 },
     { label: "Times", value: list(draft.preferredTimes.map((t) => TIME_OF_DAY[t].label)), step: 3 },
-    { label: "Avoiding", value: list(draft.avoidTags.map((t) => AVOID_TAG_LABELS[t].label)), step: 4 },
+    {
+      label: "Avoiding",
+      value: list(
+        [...new Set([...draft.avoidTags, ...avoidTagsFromText(`${draft.avoidNotes}\n${draft.limitations}`)])].map(
+          (t) => AVOID_TAG_LABELS[t].label,
+        ),
+      ),
+      step: 4,
+    },
   ];
   return (
     <div className="flex flex-col gap-8">

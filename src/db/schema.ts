@@ -16,6 +16,8 @@ export const users = pgTable("user", {
   email: text("email").unique(),
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
+  /** bcrypt hash for email/password accounts; null for Google-only accounts. */
+  passwordHash: text("passwordHash"),
 });
 
 export const accounts = pgTable(

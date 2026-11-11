@@ -12,22 +12,19 @@ import {
   EQUIPMENT_PRESETS,
   EXPERIENCE_LABELS,
   GOAL_LABELS,
-  MUSCLE_LABELS,
   TIME_OF_DAY,
   WEEKDAY_LABELS,
   WORKOUT_TYPE_LABELS,
 } from "@/lib/labels";
 import {
-  AVOID_TAGS,
+  type AvoidTag,
   EQUIPMENT,
   EXPERIENCE_LEVELS,
   FitnessProfile,
   GOALS,
   type Goal,
-  MUSCLE_GROUPS,
   TIMES_OF_DAY,
   WEEKDAYS,
-  WORKOUT_TYPES,
 } from "@/lib/schemas";
 import { Chip, OptionCard, cx } from "../ui";
 
@@ -59,6 +56,7 @@ export function draftFromProfile(p: FitnessProfile): ProfileDraft {
 
 /** Quick-pick goals implied by a goal typed in the user's own words. */
 const GOAL_WORDS: [Goal, RegExp][] = [
+  ["fat_loss", /lose (weight|fat)|fat loss|burn fat|lean(er)?\b|slim|weight loss|cut\b/i],
   ["strength", /strong|strength|muscle|lift|bulk|tone|pull-?up|push-?up|squat|bench/i],
   ["endurance", /run|marathon|\b\d+\s?k\b|endurance|cardio|stamina|hike|cycl|bike|swim|row/i],
   ["mobility", /flexib|mobil|stretch|posture|yoga|pilates|back pain|stiff|range of motion/i],
@@ -67,6 +65,27 @@ const GOAL_WORDS: [Goal, RegExp][] = [
 
 export function goalsFromText(text: string): Goal[] {
   return GOAL_WORDS.filter(([, re]) => re.test(text)).map(([g]) => g);
+}
+
+/** Things to avoid, in the user's words, mapped to the tags validation can enforce. */
+const AVOID_WORDS: [AvoidTag, RegExp][] = [
+  ["running", /\b(run|runs|running|jog|jogging)\b/i],
+  ["high_impact", /\b(jump\w*|plyo\w*|high[- ]impact|impact|burpees?|hop\w*)\b/i],
+  ["overhead", /\b(overhead|shoulders?)\b/i],
+  ["floor_work", /\b(floor|kneel\w*|lying down|on the ground)\b/i],
+  ["heavy_barbell", /\b(barbells?|heavy (lifts?|lifting|weights?)|deadlifts?|weight ?lifting)\b/i],
+];
+// Only a negative phrase counts, so "I love running" doesn't rule out running.
+const NEGATIVE = /\b(no|not|never|avoid\w*|can'?t|cannot|don'?t|won'?t|hate\w*|skip|without|stay away|injur\w*|hurt\w*|pain\w*|sore|bad|tweak\w*|strain\w*)\b/i;
+
+export function avoidTagsFromText(text: string): AvoidTag[] {
+  const clauses = text.replace(/’/g, "'").split(/[.;,\n]|\bbut\b/i);
+  const out = new Set<AvoidTag>();
+  for (const c of clauses) {
+    if (!NEGATIVE.test(c)) continue;
+    for (const [tag, re] of AVOID_WORDS) if (re.test(c)) out.add(tag);
+  }
+  return [...out];
 }
 
 export function finalizeDraft(d: ProfileDraft, updatedAt: string) {
@@ -80,9 +99,12 @@ export function finalizeDraft(d: ProfileDraft, updatedAt: string) {
         : ["general_fitness" as Goal]
       : [];
   const extraEquipment = d.extraEquipment?.length ? d.extraEquipment : undefined;
+  // What the user wrote about things to avoid becomes restrictions the schedule checks enforce.
+  const avoidTags = [...new Set([...d.avoidTags, ...avoidTagsFromText(`${d.avoidNotes}\n${d.limitations}`)])];
   return FitnessProfile.safeParse({
     ...d,
     goals,
+    avoidTags,
     goalNotes,
     extraEquipment,
     name: d.name?.trim() || undefined,
@@ -130,48 +152,48 @@ export function GoalsSection({ draft, set }: SectionProps) {
           ))}
         </div>
       </Field>
-      <Field label="Any areas you want to focus on?" hint="Optional. Leave blank for a balanced mix.">
-        <div className="flex flex-wrap gap-2">
-          {MUSCLE_GROUPS.map((m) => (
-            <Chip
-              key={m}
-              selected={draft.targetMuscles.includes(m)}
-              onClick={() => set({ targetMuscles: toggle(draft.targetMuscles, m) })}
-            >
-              {MUSCLE_LABELS[m]}
-            </Chip>
-          ))}
-        </div>
-      </Field>
     </div>
   );
 }
 
+/** Experience level. Not asked during setup (it defaults to beginner, the safe choice); editable in Preferences. */
+export function ExperienceSection({ draft, set }: SectionProps) {
+  return (
+    <Field label="Experience level" hint="Sets how advanced the exercises can be. New profiles start at beginner.">
+      <div className="grid gap-3 sm:grid-cols-3">
+        {EXPERIENCE_LEVELS.map((lvl) => (
+          <OptionCard
+            key={lvl}
+            selected={draft.experience === lvl}
+            onClick={() => set({ experience: lvl })}
+            title={EXPERIENCE_LABELS[lvl].label}
+            blurb={EXPERIENCE_LABELS[lvl].blurb}
+          />
+        ))}
+      </div>
+    </Field>
+  );
+}
+
+/**
+ * Activities offered in "What do you actually enjoy?". Gym vs home is already covered by the equipment
+ * question, and group classes don't change the plan, so strength is one option ("gym" internally).
+ */
+const ENJOY_OPTIONS = ["gym", "running", "cycling", "walking", "hiit", "pilates", "yoga"] as const;
+const ENJOY_LABELS: Partial<Record<(typeof ENJOY_OPTIONS)[number], string>> = { gym: "Strength training" };
+
 export function StyleSection({ draft, set }: SectionProps) {
   return (
     <div className="flex flex-col gap-8">
-      <Field label="How would you describe your experience?">
-        <div className="grid gap-3 sm:grid-cols-3">
-          {EXPERIENCE_LEVELS.map((lvl) => (
-            <OptionCard
-              key={lvl}
-              selected={draft.experience === lvl}
-              onClick={() => set({ experience: lvl })}
-              title={EXPERIENCE_LABELS[lvl].label}
-              blurb={EXPERIENCE_LABELS[lvl].blurb}
-            />
-          ))}
-        </div>
-      </Field>
       <Field label="What do you actually enjoy?" hint="Pivot leans on these when it plans and when it suggests swaps.">
         <div className="flex flex-wrap gap-2">
-          {WORKOUT_TYPES.map((t) => (
+          {ENJOY_OPTIONS.map((t) => (
             <Chip
               key={t}
               selected={draft.workoutTypes.includes(t)}
               onClick={() => set({ workoutTypes: toggle(draft.workoutTypes, t) })}
             >
-              {WORKOUT_TYPE_LABELS[t]}
+              {ENJOY_LABELS[t] ?? WORKOUT_TYPE_LABELS[t]}
             </Chip>
           ))}
         </div>
@@ -298,20 +320,6 @@ export function BoundariesSection({ draft, set }: SectionProps) {
 
   return (
     <div className="flex flex-col gap-8">
-      <Field label="Anything Pivot should steer around?" hint="Pivot will never schedule these.">
-        <div className="grid gap-3 sm:grid-cols-2">
-          {AVOID_TAGS.map((t) => (
-            <OptionCard
-              key={t}
-              selected={draft.avoidTags.includes(t)}
-              onClick={() => set({ avoidTags: toggle(draft.avoidTags, t) })}
-              title={AVOID_TAG_LABELS[t].label}
-              blurb={AVOID_TAG_LABELS[t].blurb}
-            />
-          ))}
-        </div>
-      </Field>
-
       <Field label="Specific exercises to skip" hint="Search Pivot's exercise library.">
         <input
           className={inputClass}
@@ -373,6 +381,30 @@ export function BoundariesSection({ draft, set }: SectionProps) {
           </span>
         </label>
       </div>
+      <AvoidPreview draft={draft} set={set} />
+    </div>
+  );
+}
+
+/** What Pivot will enforce: restrictions read from the text above, plus any saved earlier (removable). */
+function AvoidPreview({ draft, set }: SectionProps) {
+  const fromText = avoidTagsFromText(`${draft.avoidNotes}\n${draft.limitations}`);
+  const tags = [...new Set([...draft.avoidTags, ...fromText])];
+  if (!tags.length) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-sm">
+      <span className="text-ink-soft">Pivot will avoid:</span>
+      {tags.map((t) =>
+        fromText.includes(t) ? (
+          <span key={t} className="rounded-full bg-ink/5 px-3 py-1" title="From what you wrote above">
+            {AVOID_TAG_LABELS[t].label}
+          </span>
+        ) : (
+          <Chip key={t} selected onClick={() => set({ avoidTags: draft.avoidTags.filter((x) => x !== t) })}>
+            {AVOID_TAG_LABELS[t].label} <span aria-hidden>×</span>
+          </Chip>
+        ),
+      )}
     </div>
   );
 }

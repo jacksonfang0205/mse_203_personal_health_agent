@@ -1,5 +1,5 @@
 /**
- * Google sign-in (Auth.js). Sign-in asks only for name and email; read-only
+ * Sign-in (Auth.js): email and password, or Google. Google sign-in asks only for name and email; read-only
  * Google Calendar access is requested later, only when the user imports their
  * calendar (incremental authorization), so sign-in needs no sensitive scope.
  *
@@ -9,10 +9,16 @@
  *
  * Google tokens are stored in the `account` table by the Drizzle adapter and
  * read on the server by /api/calendar. They never reach the browser.
+ *
+ * Sessions are JWTs (the Credentials provider requires it). A Google sign-in while
+ * already signed in links that Google account to the current user, which is how an
+ * email/password user connects Google just for calendar access.
  */
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { and, eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { db } from "@/db";
 import { accounts, sessions, users, verificationTokens } from "@/db/schema";
@@ -28,8 +34,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => ({
   adapter: authConfigured()
     ? DrizzleAdapter(db(), { usersTable: users, accountsTable: accounts, sessionsTable: sessions, verificationTokensTable: verificationTokens })
     : undefined,
-  session: { strategy: authConfigured() ? "database" : "jwt" },
+  session: { strategy: "jwt" },
+  pages: { signIn: "/signin", error: "/signin" },
   providers: [
+    Credentials({
+      credentials: { email: {}, password: {} },
+      async authorize(raw) {
+        const email = String(raw?.email ?? "").trim().toLowerCase();
+        const password = String(raw?.password ?? "");
+        if (!authConfigured() || !email || !password) return null;
+        const [user] = await db().select().from(users).where(eq(users.email, email));
+        // Same answer for "no such email" and "wrong password", so emails can't be probed.
+        if (!user?.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) return null;
+        return { id: user.id, name: user.name, email: user.email, image: user.image };
+      },
+    }),
     Google({
       authorization: {
         params: {
@@ -40,6 +59,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => ({
       },
     }),
   ],
+  callbacks: {
+    // JWT sessions: carry the user id so server routes can find the user's data.
+    session({ session, token }) {
+      if (token.sub && session.user) session.user.id = token.sub;
+      return session;
+    },
+  },
   events: {
     // Auth.js only stores tokens when an account is first linked. When a user signs in again,
     // e.g. to grant calendar access, save the new tokens and scopes so the import can use them.

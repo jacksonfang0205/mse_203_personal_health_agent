@@ -60,6 +60,8 @@ const GOAL_CATEGORIES: Record<Goal, WorkoutCategory[]> = {
   mobility: ["yoga", "pilates", "mobility"],
   general_fitness: ["strength", "cardio", "pilates", "hiit"],
   stress_relief: ["yoga", "cardio", "mobility"],
+  // Cardio and HIIT burn the most; strength keeps muscle while losing fat.
+  fat_loss: ["cardio", "strength", "hiit"],
 };
 
 const STRENGTH_FOCI: { label: string; muscles: MuscleGroup[] }[] = [

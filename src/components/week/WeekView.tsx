@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import { fixClashes } from "@/lib/account";
 import { agentSnapshot, requestPlan, useAiStatus } from "@/lib/agentClient";
+import { findClashes } from "@/lib/planner/clashes";
 import { computeInsights, learnedTimeOrder } from "@/lib/insights";
 import { getExercise } from "@/lib/catalog";
 import type { BusyBlock, IsoDate, WeeklyPlan, Workout, WorkoutStatus } from "@/lib/schemas";
@@ -121,6 +123,7 @@ export function WeekView() {
     );
   }
 
+  const clashes = findClashes(plan, calendar.busy, now);
   const openWorkout = plan.workouts.find((w) => w.id === openId) ?? null;
   const setStatus = (status: WorkoutStatus) => {
     if (!openWorkout) return;
@@ -148,6 +151,29 @@ export function WeekView() {
       </header>
 
       {planNote && <Card className="border-coral/30 bg-coral-soft p-4 text-sm text-coral-ink shadow-none">{planNote}</Card>}
+
+      {clashes.length > 0 && (
+        <Card className="flex flex-wrap items-center justify-between gap-3 border-coral/30 bg-coral-soft p-4 text-sm text-coral-ink shadow-none">
+          <span>
+            {clashes.map((w) => `${w.title} (${dayShort(w.date)} ${formatTime(w.start)})`).join(", ")}{" "}
+            {clashes.length > 1 ? "clash" : "clashes"} with your calendar.
+          </span>
+          <Button
+            variant="dark"
+            className="h-9 px-4"
+            onClick={() => {
+              const r = fixClashes();
+              setPlanNote(
+                r.unresolved.length
+                  ? `Moved ${r.moved.length}; ${r.unresolved.length} still clash${r.unresolved.length > 1 ? "" : "es"} with no free time left this week.`
+                  : `Moved ${r.moved.map((m) => `${m.title} to ${dayShort(m.to.date)} ${formatTime(m.to.start)}`).join(", ")}.`,
+              );
+            }}
+          >
+            Move {clashes.length > 1 ? "them" : "it"}
+          </Button>
+        </Card>
+      )}
 
       {view === "today" ? (
         <TodayView
