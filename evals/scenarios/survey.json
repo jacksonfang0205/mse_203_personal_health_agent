@@ -1,0 +1,275 @@
+{
+  "_comment": "Survey-grounded scenarios. Personas and user messages come from 5 anonymous survey responses collected 2026-11-09; 'source' records verbatim vs derived messages and every assumption. Do not tune prompts on these. Reference week: Mon 2026-11-02 to Sun 2026-11-08.",
+  "split": "survey",
+  "scenarios": [
+    {
+      "id": "SV-01",
+      "split": "survey",
+      "synthetic": false,
+      "category": "initial_plan",
+      "title": "R1 student: plan a week",
+      "personaId": "sv1",
+      "source": {
+        "respondent": "R1",
+        "assumptions": ["Calendar is assumed for the respondent's role (see the persona)."]
+      },
+      "now": { "date": "2026-11-02", "time": "05:00" },
+      "userMessage": "Plan my week.",
+      "expected": {
+        "outcome": "plan",
+        "notes": "Week built from this respondent's real profile answers."
+      }
+    },
+    {
+      "id": "SV-02",
+      "split": "survey",
+      "synthetic": false,
+      "category": "initial_plan",
+      "title": "R2 parent: plan a week",
+      "personaId": "sv2",
+      "source": {
+        "respondent": "R2",
+        "assumptions": ["Calendar is assumed for the respondent's role (see the persona)."]
+      },
+      "now": { "date": "2026-11-02", "time": "05:00" },
+      "userMessage": "Plan my week.",
+      "expected": {
+        "outcome": "plan",
+        "notes": "Week built from this respondent's real profile answers."
+      }
+    },
+    {
+      "id": "SV-03",
+      "split": "survey",
+      "synthetic": false,
+      "category": "initial_plan",
+      "title": "R3 student: plan a week",
+      "personaId": "sv3",
+      "source": {
+        "respondent": "R3",
+        "assumptions": ["Calendar is assumed for the respondent's role (see the persona)."]
+      },
+      "now": { "date": "2026-11-02", "time": "05:00" },
+      "userMessage": "Plan my week.",
+      "expected": {
+        "outcome": "plan",
+        "notes": "Week built from this respondent's real profile answers."
+      }
+    },
+    {
+      "id": "SV-04",
+      "split": "survey",
+      "synthetic": false,
+      "category": "initial_plan",
+      "title": "R4 working: plan a week",
+      "personaId": "sv4",
+      "source": {
+        "respondent": "R4",
+        "assumptions": ["Calendar is assumed for the respondent's role (see the persona)."]
+      },
+      "now": { "date": "2026-11-02", "time": "05:00" },
+      "userMessage": "Plan my week.",
+      "expected": {
+        "outcome": "plan",
+        "notes": "Week built from this respondent's real profile answers."
+      }
+    },
+    {
+      "id": "SV-05",
+      "split": "survey",
+      "synthetic": false,
+      "category": "initial_plan",
+      "title": "R5 working parent with a knee injury: plan a week",
+      "personaId": "sv5",
+      "source": {
+        "respondent": "R5",
+        "assumptions": ["Calendar is assumed for the respondent's role (see the persona)."]
+      },
+      "now": { "date": "2026-11-02", "time": "05:00" },
+      "userMessage": "Plan my week.",
+      "expected": {
+        "outcome": "plan",
+        "notes": "Week built from this respondent's real profile answers."
+      }
+    },
+    {
+      "id": "SV-06",
+      "split": "survey",
+      "synthetic": false,
+      "category": "low_energy",
+      "title": "R1: too lazy to go",
+      "personaId": "sv1",
+      "source": {
+        "respondent": "R1",
+        "message": "verbatim",
+        "surveyAnswers": {
+          "gotInTheWay": "too lazy to go",
+          "whatTheyDid": "Skipped it",
+          "text": "im lazy"
+        },
+        "assumptions": ["Calendar is assumed for the respondent's role (see the persona).", "Day and time of the missed workout are assumed."]
+      },
+      "now": { "date": "2026-11-04", "time": "11:00" },
+      "setup": {
+        "completed": ["sv1-w1"]
+      },
+      "userMessage": "im lazy",
+      "expected": {
+        "outcome": "replan",
+        "mustChange": ["sv1-w2"],
+        "notes": "The respondent actually skipped. A good answer offers a lighter or shorter session today, or another day this week, not only rest."
+      }
+    },
+    {
+      "id": "SV-07",
+      "split": "survey",
+      "synthetic": false,
+      "category": "low_energy",
+      "title": "R3: no energy today",
+      "personaId": "sv3",
+      "source": {
+        "respondent": "R3",
+        "message": "verbatim",
+        "surveyAnswers": {
+          "gotInTheWay": "Lazy",
+          "whatTheyDid": "Skipped it",
+          "text": "I really do not have energy to work out today"
+        },
+        "assumptions": ["Calendar is assumed for the respondent's role (see the persona).", "Day and time of the missed workout are assumed."]
+      },
+      "now": { "date": "2026-11-04", "time": "15:00" },
+      "setup": {
+        "completed": ["sv3-w1"]
+      },
+      "userMessage": "I really do not have energy to work out today",
+      "expected": {
+        "outcome": "replan",
+        "mustChange": ["sv3-w2"],
+        "notes": "The respondent actually skipped. A good answer offers a gentler or shorter session, or moves it, not only rest."
+      }
+    },
+    {
+      "id": "SV-08",
+      "split": "survey",
+      "synthetic": false,
+      "category": "caregiving",
+      "title": "R5: kid is sick",
+      "personaId": "sv5",
+      "source": {
+        "respondent": "R5",
+        "message": "verbatim",
+        "surveyAnswers": {
+          "gotInTheWay": "kids got sick",
+          "whatTheyDid": "Moved it",
+          "text": "Sorry my kid was sick so i need to take care of em"
+        },
+        "assumptions": ["Calendar is assumed for the respondent's role (see the persona).", "Assumes caring for the child takes all of Tuesday."]
+      },
+      "now": { "date": "2026-11-03", "time": "05:30" },
+      "setup": {
+        "completed": ["sv5-w1"]
+      },
+      "userMessage": "Sorry my kid was sick so i need to take care of em",
+      "groundTruth": {
+        "addedBusy": [
+          {
+            "date": "2026-11-03",
+            "start": "06:00",
+            "end": "22:00",
+            "title": "Caring for sick child",
+            "inCalendar": false
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "replan",
+        "mustChange": ["sv5-w2"],
+        "notes": "The respondent moved the workout. Move Tuesday's session to a later free day and keep the knee restriction (no leg exercises)."
+      }
+    },
+    {
+      "id": "SV-09",
+      "split": "survey",
+      "synthetic": false,
+      "category": "unexpected_meeting",
+      "title": "R2: meeting at walk time",
+      "personaId": "sv2",
+      "source": {
+        "respondent": "R2",
+        "message": "derived",
+        "surveyAnswers": {
+          "gotInTheWay": "have a scheduled meeting conflicting with the workout scheduled",
+          "whatTheyDid": "Moved it",
+          "text": "no idea"
+        },
+        "assumptions": [
+          "Calendar is assumed for the respondent's role (see the persona).",
+          "The respondent's text was unusable, so the message is written from their 'what got in the way' answer. The meeting time is assumed."
+        ]
+      },
+      "now": { "date": "2026-11-02", "time": "20:00" },
+      "setup": {
+        "completed": ["sv2-w1"]
+      },
+      "userMessage": "I have a meeting at 6 tomorrow morning, same time as my walk.",
+      "groundTruth": {
+        "addedBusy": [
+          {
+            "date": "2026-11-03",
+            "start": "06:00",
+            "end": "07:00",
+            "title": "Meeting",
+            "inCalendar": false
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "replan",
+        "mustChange": ["sv2-w2"],
+        "notes": "The respondent moved it. Move or shorten Tuesday's walk around the meeting; no lifting or intense options."
+      }
+    },
+    {
+      "id": "SV-10",
+      "split": "survey",
+      "synthetic": false,
+      "category": "unexpected_meeting",
+      "title": "R4: evening meeting clash",
+      "personaId": "sv4",
+      "source": {
+        "respondent": "R4",
+        "message": "derived",
+        "surveyAnswers": {
+          "gotInTheWay": "had a meeting at night so conflicted",
+          "whatTheyDid": "Skipped it",
+          "text": "i dont understand"
+        },
+        "assumptions": [
+          "Calendar is assumed for the respondent's role (see the persona).",
+          "The respondent's text was unusable, so the message is written from their 'what got in the way' answer. The meeting time is assumed."
+        ]
+      },
+      "now": { "date": "2026-11-03", "time": "12:00" },
+      "setup": {
+        "completed": ["sv4-w1"]
+      },
+      "userMessage": "Got a meeting tonight from 6 to 8, so it clashes with my workout.",
+      "groundTruth": {
+        "addedBusy": [
+          {
+            "date": "2026-11-03",
+            "start": "18:00",
+            "end": "20:00",
+            "title": "Meeting",
+            "inCalendar": false
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "replan",
+        "mustChange": ["sv4-w2"],
+        "notes": "The respondent skipped. A good answer moves or shortens Tuesday's session around the meeting."
+      }
+    }
+  ]
+}

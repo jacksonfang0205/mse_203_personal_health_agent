@@ -5,17 +5,22 @@
  * frozen between eval runs.
  *
  *   npx tsx evals/scripts/freeze-baselines.ts
+ *   npx tsx evals/scripts/freeze-baselines.ts --missing-only   # add new personas, keep existing plans byte-for-byte
  */
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { generateMockWeek } from "@/lib/planner/generate";
 import { validatePlan } from "@/lib/validation";
 import { EVALS_DIR, loadPersonas, personaBusy } from "../src/fixtures";
 
 const { referenceWeek, personas } = loadPersonas();
-const plans: Record<string, unknown> = {};
+const file = join(EVALS_DIR, "fixtures/baseline-plans.json");
+const missingOnly = process.argv.includes("--missing-only");
+const existing: Record<string, unknown> = missingOnly && existsSync(file) ? JSON.parse(readFileSync(file, "utf8")).plans : {};
+const plans: Record<string, unknown> = { ...existing };
 
 for (const persona of personas) {
+  if (persona.id in existing) continue;
   const busy = personaBusy(persona, referenceWeek);
   const plan = generateMockWeek({
     profile: persona.profile,
@@ -41,7 +46,7 @@ for (const persona of personas) {
 }
 
 writeFileSync(
-  join(EVALS_DIR, "fixtures/baseline-plans.json"),
+  file,
   JSON.stringify({ generatedWith: "mock_template planner (src/lib/planner/generate.ts)", plans }, null, 2) + "\n",
 );
 console.log("Wrote evals/fixtures/baseline-plans.json");

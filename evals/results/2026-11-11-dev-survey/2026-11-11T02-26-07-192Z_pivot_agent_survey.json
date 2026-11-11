@@ -1,0 +1,453 @@
+{
+  "runId": "2026-11-11T02-26-07-192Z_pivot_agent_survey",
+  "startedAt": "2026-11-11T02:26:07.192Z",
+  "planner": {
+    "id": "pivot_agent",
+    "description": "Pivot agent: filtered catalog, free windows, validation gate, repair round, collateral fixes."
+  },
+  "split": "survey",
+  "gitCommit": "1cc3cb2",
+  "node": "v24.14.1",
+  "model": {
+    "id": "gpt-5.4-mini",
+    "provider": "openai"
+  },
+  "syntheticData": false,
+  "summary": {
+    "scenarios": 10,
+    "errors": 0,
+    "metric1_constraintAdherence": {
+      "passed": 10,
+      "evaluated": 10,
+      "noProposal": 0,
+      "rate": 1,
+      "target": 0.9
+    },
+    "metric3_objectiveReplanning": {
+      "feasible": 5,
+      "total": 5,
+      "rate": 1,
+      "target": 0.8,
+      "note": "Objective feasibility only. User acceptance is measured separately in user studies."
+    },
+    "initialPlans": {
+      "feasible": 5,
+      "total": 5
+    },
+    "latencyMs": {
+      "median": 2862.5,
+      "p90": 4067
+    },
+    "tokens": {
+      "input": 28099,
+      "output": 3406
+    },
+    "estimatedCostUsd": 0.018200625,
+    "byCategory": {
+      "initial_plan": {
+        "total": 5,
+        "constraintPass": 5,
+        "feasible": 5
+      },
+      "low_energy": {
+        "total": 2,
+        "constraintPass": 2,
+        "feasible": 2
+      },
+      "caregiving": {
+        "total": 1,
+        "constraintPass": 1,
+        "feasible": 1
+      },
+      "unexpected_meeting": {
+        "total": 2,
+        "constraintPass": 2,
+        "feasible": 2
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "SV-01",
+      "split": "survey",
+      "category": "initial_plan",
+      "personaId": "sv1",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 3063,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2774,
+      "outputTokens": 266,
+      "costUsd": 0.00163875
+    },
+    {
+      "id": "SV-02",
+      "split": "survey",
+      "category": "initial_plan",
+      "personaId": "sv2",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 2839,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 1732,
+      "outputTokens": 421,
+      "costUsd": 0.00159675
+    },
+    {
+      "id": "SV-03",
+      "split": "survey",
+      "category": "initial_plan",
+      "personaId": "sv3",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 1738,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 1886,
+      "outputTokens": 175,
+      "costUsd": 0.001101
+    },
+    {
+      "id": "SV-04",
+      "split": "survey",
+      "category": "initial_plan",
+      "personaId": "sv4",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 2818,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2811,
+      "outputTokens": 257,
+      "costUsd": 0.001632375
+    },
+    {
+      "id": "SV-05",
+      "split": "survey",
+      "category": "initial_plan",
+      "personaId": "sv5",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 2305,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2610,
+      "outputTokens": 355,
+      "costUsd": 0.0017775
+    },
+    {
+      "id": "SV-06",
+      "split": "survey",
+      "category": "low_energy",
+      "personaId": "sv1",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 2886,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "4557826b-3a13-46e1-8759-a7f3d4caef3a-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "2892c870-059e-4467-93b2-ff70546dc103-shorter",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "ac8c6600-a296-4ccb-9e93-5bf6d32f3d1c-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3616,
+      "outputTokens": 346,
+      "costUsd": 0.0021345
+    },
+    {
+      "id": "SV-07",
+      "split": "survey",
+      "category": "low_energy",
+      "personaId": "sv3",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 4016,
+      "alternativesOffered": 2,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "93b18b89-38b4-41c5-bbf8-53ed361e5c89-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "6c555040-cec3-40de-a750-dbda92eb2bd4-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2647,
+      "outputTokens": 431,
+      "costUsd": 0.001962375
+    },
+    {
+      "id": "SV-08",
+      "split": "survey",
+      "category": "caregiving",
+      "personaId": "sv5",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 2986,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "c5357048-3ccf-4de9-8d62-24b200d00c2a-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "81435e4f-719c-433f-ad22-8d25345fd83f-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "743dbbb7-5d4b-41fb-883c-82bc89bee61e-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3566,
+      "outputTokens": 353,
+      "costUsd": 0.0021315
+    },
+    {
+      "id": "SV-09",
+      "split": "survey",
+      "category": "unexpected_meeting",
+      "personaId": "sv2",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 2805,
+      "alternativesOffered": 2,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "bffc8226-2899-4341-9cb6-153a723c153b-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "bcf13cf0-42b0-4c4c-8739-f1e6df2c46a2-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2722,
+      "outputTokens": 340,
+      "costUsd": 0.00178575
+    },
+    {
+      "id": "SV-10",
+      "split": "survey",
+      "category": "unexpected_meeting",
+      "personaId": "sv4",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 4067,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "8de85e03-791b-47db-b12a-614d8bf1b8fa-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "a1e89277-7698-40f3-b6b3-c867c43eaef1-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "a6b22d7e-53f9-4597-babc-6cd3f9963524-shorter",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3735,
+      "outputTokens": 462,
+      "costUsd": 0.002440125
+    }
+  ]
+}

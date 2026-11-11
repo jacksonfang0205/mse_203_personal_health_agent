@@ -763,6 +763,769 @@
       "generatedBy": "fixture",
       "createdAt": "2026-11-01T12:00:00.000Z",
       "notes": []
+    },
+    "sv1": {
+      "id": "baseline-sv1",
+      "weekStart": "2026-11-02",
+      "workouts": [
+        {
+          "id": "sv1-w1",
+          "title": "Lower body strength",
+          "date": "2026-11-02",
+          "start": "12:15",
+          "durationMin": 60,
+          "category": "strength",
+          "muscles": [
+            "legs",
+            "glutes",
+            "core",
+            "back",
+            "chest",
+            "arms"
+          ],
+          "equipment": [
+            "barbell",
+            "squat_rack",
+            "kettlebell"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "back_squat",
+              "sets": 4,
+              "reps": "5–8"
+            },
+            {
+              "exerciseId": "kb_swing",
+              "sets": 4,
+              "reps": "12"
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "reps": "5"
+            },
+            {
+              "exerciseId": "push_up",
+              "sets": 3,
+              "reps": "8–12"
+            },
+            {
+              "exerciseId": "plank",
+              "sets": 3,
+              "seconds": 30
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free midday on Monday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sv1-w2",
+          "title": "Mobility reset",
+          "date": "2026-11-04",
+          "start": "12:15",
+          "durationMin": 60,
+          "category": "mobility",
+          "muscles": [
+            "legs",
+            "glutes",
+            "back",
+            "core",
+            "shoulders"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "worlds_greatest_stretch",
+              "sets": 2,
+              "reps": "5 / side"
+            },
+            {
+              "exerciseId": "cat_cow",
+              "sets": 2,
+              "reps": "10"
+            },
+            {
+              "exerciseId": "hip_90_90",
+              "sets": 2,
+              "reps": "8 / side"
+            },
+            {
+              "exerciseId": "open_books",
+              "sets": 2,
+              "reps": "8 / side"
+            },
+            {
+              "exerciseId": "hip_circles",
+              "sets": 2,
+              "reps": "8 / direction"
+            },
+            {
+              "exerciseId": "shoulder_cars",
+              "sets": 2,
+              "reps": "5 / direction"
+            }
+          ],
+          "rationale": "Mobility work toward your goal to de-stress. Placed in your free midday on Wednesday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sv1-w3",
+          "title": "Upper body strength",
+          "date": "2026-11-06",
+          "start": "12:15",
+          "durationMin": 60,
+          "category": "strength",
+          "muscles": [
+            "chest",
+            "arms",
+            "shoulders",
+            "back",
+            "glutes",
+            "legs"
+          ],
+          "equipment": [
+            "barbell",
+            "bench",
+            "dumbbells",
+            "kettlebell"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "bench_press",
+              "sets": 4,
+              "reps": "6–8"
+            },
+            {
+              "exerciseId": "db_row",
+              "sets": 3,
+              "reps": "10 / side"
+            },
+            {
+              "exerciseId": "db_shoulder_press",
+              "sets": 3,
+              "reps": "8–10"
+            },
+            {
+              "exerciseId": "kb_swing",
+              "sets": 4,
+              "reps": "12"
+            },
+            {
+              "exerciseId": "db_curl",
+              "sets": 3,
+              "reps": "10–12"
+            },
+            {
+              "exerciseId": "db_bench",
+              "sets": 3,
+              "reps": "8–12"
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free midday on Friday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        }
+      ],
+      "generatedBy": "fixture",
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "notes": []
+    },
+    "sv2": {
+      "id": "baseline-sv2",
+      "weekStart": "2026-11-02",
+      "workouts": [
+        {
+          "id": "sv2-w1",
+          "title": "Brisk walk",
+          "date": "2026-11-02",
+          "start": "06:00",
+          "durationMin": 30,
+          "category": "cardio",
+          "muscles": [
+            "legs",
+            "full_body"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "brisk_walk",
+              "minutes": 30
+            }
+          ],
+          "rationale": "Cardio work toward your goal to feel fit overall. Placed in your free early morning on Monday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sv2-w2",
+          "title": "Brisk walk",
+          "date": "2026-11-03",
+          "start": "06:00",
+          "durationMin": 30,
+          "category": "cardio",
+          "muscles": [
+            "legs",
+            "full_body"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "brisk_walk",
+              "minutes": 30
+            }
+          ],
+          "rationale": "Cardio work toward your goal to feel fit overall. Placed in your free early morning on Tuesday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sv2-w3",
+          "title": "Brisk walk",
+          "date": "2026-11-04",
+          "start": "06:00",
+          "durationMin": 30,
+          "category": "cardio",
+          "muscles": [
+            "legs",
+            "full_body"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "brisk_walk",
+              "minutes": 30
+            }
+          ],
+          "rationale": "Cardio work toward your goal to feel fit overall. Placed in your free early morning on Wednesday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sv2-w4",
+          "title": "Brisk walk",
+          "date": "2026-11-05",
+          "start": "06:00",
+          "durationMin": 30,
+          "category": "cardio",
+          "muscles": [
+            "legs",
+            "full_body"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "brisk_walk",
+              "minutes": 30
+            }
+          ],
+          "rationale": "Cardio work toward your goal to feel fit overall. Placed in your free early morning on Thursday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sv2-w5",
+          "title": "Brisk walk",
+          "date": "2026-11-06",
+          "start": "06:00",
+          "durationMin": 30,
+          "category": "cardio",
+          "muscles": [
+            "legs",
+            "full_body"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "brisk_walk",
+              "minutes": 30
+            }
+          ],
+          "rationale": "Cardio work toward your goal to feel fit overall. Placed in your free early morning on Friday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        }
+      ],
+      "generatedBy": "fixture",
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "notes": []
+    },
+    "sv3": {
+      "id": "baseline-sv3",
+      "weekStart": "2026-11-02",
+      "workouts": [
+        {
+          "id": "sv3-w1",
+          "title": "Lower body strength",
+          "date": "2026-11-02",
+          "start": "17:00",
+          "durationMin": 60,
+          "category": "strength",
+          "muscles": [
+            "legs",
+            "glutes",
+            "core"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "bw_squat",
+              "sets": 3,
+              "reps": "12–15"
+            },
+            {
+              "exerciseId": "glute_bridge",
+              "sets": 3,
+              "reps": "12–15"
+            },
+            {
+              "exerciseId": "plank",
+              "sets": 3,
+              "seconds": 30
+            },
+            {
+              "exerciseId": "reverse_lunge",
+              "sets": 3,
+              "reps": "8–10 / side"
+            },
+            {
+              "exerciseId": "dead_bug",
+              "sets": 3,
+              "reps": "8 / side"
+            },
+            {
+              "exerciseId": "wall_sit",
+              "sets": 3,
+              "seconds": 30
+            }
+          ],
+          "rationale": "Strength work toward your goal to feel fit overall. Placed in your free evening on Monday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sv3-w2",
+          "title": "Low-impact HIIT",
+          "date": "2026-11-04",
+          "start": "17:00",
+          "durationMin": 60,
+          "category": "hiit",
+          "muscles": [
+            "core",
+            "shoulders",
+            "full_body"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "mountain_climber",
+              "sets": 4,
+              "seconds": 30
+            },
+            {
+              "exerciseId": "low_impact_circuit",
+              "sets": 5,
+              "seconds": 40
+            }
+          ],
+          "rationale": "HIIT work toward your goal to feel fit overall. Placed in your free evening on Wednesday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        }
+      ],
+      "generatedBy": "fixture",
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "notes": []
+    },
+    "sv4": {
+      "id": "baseline-sv4",
+      "weekStart": "2026-11-02",
+      "workouts": [
+        {
+          "id": "sv4-w1",
+          "title": "Lower body strength",
+          "date": "2026-11-02",
+          "start": "18:15",
+          "durationMin": 45,
+          "category": "strength",
+          "muscles": [
+            "legs",
+            "glutes",
+            "core",
+            "back",
+            "chest",
+            "arms"
+          ],
+          "equipment": [
+            "barbell",
+            "squat_rack",
+            "kettlebell"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "back_squat",
+              "sets": 4,
+              "reps": "5–8"
+            },
+            {
+              "exerciseId": "kb_swing",
+              "sets": 4,
+              "reps": "12"
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "reps": "5"
+            },
+            {
+              "exerciseId": "push_up",
+              "sets": 3,
+              "reps": "8–12"
+            },
+            {
+              "exerciseId": "plank",
+              "sets": 3,
+              "seconds": 30
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free evening on Monday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sv4-w2",
+          "title": "Upper body strength",
+          "date": "2026-11-03",
+          "start": "18:15",
+          "durationMin": 45,
+          "category": "strength",
+          "muscles": [
+            "chest",
+            "arms",
+            "shoulders",
+            "back",
+            "glutes",
+            "legs"
+          ],
+          "equipment": [
+            "barbell",
+            "bench",
+            "dumbbells",
+            "kettlebell"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "bench_press",
+              "sets": 4,
+              "reps": "6–8"
+            },
+            {
+              "exerciseId": "db_row",
+              "sets": 3,
+              "reps": "10 / side"
+            },
+            {
+              "exerciseId": "db_shoulder_press",
+              "sets": 3,
+              "reps": "8–10"
+            },
+            {
+              "exerciseId": "kb_swing",
+              "sets": 4,
+              "reps": "12"
+            },
+            {
+              "exerciseId": "db_curl",
+              "sets": 3,
+              "reps": "10–12"
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free evening on Tuesday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sv4-w3",
+          "title": "Full body strength",
+          "date": "2026-11-05",
+          "start": "18:15",
+          "durationMin": 45,
+          "category": "strength",
+          "muscles": [
+            "legs",
+            "glutes",
+            "core",
+            "back",
+            "chest",
+            "arms",
+            "shoulders"
+          ],
+          "equipment": [
+            "barbell",
+            "squat_rack",
+            "kettlebell",
+            "cable_machine"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "back_squat",
+              "sets": 4,
+              "reps": "5–8"
+            },
+            {
+              "exerciseId": "kb_swing",
+              "sets": 4,
+              "reps": "12"
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "reps": "5"
+            },
+            {
+              "exerciseId": "push_up",
+              "sets": 3,
+              "reps": "8–12"
+            },
+            {
+              "exerciseId": "face_pull",
+              "sets": 3,
+              "reps": "12–15"
+            },
+            {
+              "exerciseId": "plank",
+              "sets": 3,
+              "seconds": 30
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free evening on Thursday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        }
+      ],
+      "generatedBy": "fixture",
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "notes": []
+    },
+    "sv5": {
+      "id": "baseline-sv5",
+      "weekStart": "2026-11-02",
+      "workouts": [
+        {
+          "id": "sv5-w1",
+          "title": "Lower body strength",
+          "date": "2026-11-02",
+          "start": "06:00",
+          "durationMin": 60,
+          "category": "strength",
+          "muscles": [
+            "glutes",
+            "core",
+            "shoulders",
+            "arms",
+            "chest",
+            "back"
+          ],
+          "equipment": [
+            "barbell",
+            "squat_rack",
+            "pull_up_bar"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "glute_bridge",
+              "sets": 3,
+              "reps": "12–15"
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 4,
+              "reps": "5–6"
+            },
+            {
+              "exerciseId": "push_up",
+              "sets": 3,
+              "reps": "8–12"
+            },
+            {
+              "exerciseId": "plank",
+              "sets": 3,
+              "seconds": 30
+            },
+            {
+              "exerciseId": "dead_bug",
+              "sets": 3,
+              "reps": "8 / side"
+            },
+            {
+              "exerciseId": "pull_up",
+              "sets": 4,
+              "reps": "4–8"
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free early morning on Monday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sv5-w2",
+          "title": "Mobility reset",
+          "date": "2026-11-03",
+          "start": "06:00",
+          "durationMin": 60,
+          "category": "mobility",
+          "muscles": [
+            "legs",
+            "glutes",
+            "back",
+            "core",
+            "shoulders"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "worlds_greatest_stretch",
+              "sets": 2,
+              "reps": "5 / side"
+            },
+            {
+              "exerciseId": "cat_cow",
+              "sets": 2,
+              "reps": "10"
+            },
+            {
+              "exerciseId": "hip_90_90",
+              "sets": 2,
+              "reps": "8 / side"
+            },
+            {
+              "exerciseId": "open_books",
+              "sets": 2,
+              "reps": "8 / side"
+            },
+            {
+              "exerciseId": "hip_circles",
+              "sets": 2,
+              "reps": "8 / direction"
+            },
+            {
+              "exerciseId": "shoulder_cars",
+              "sets": 2,
+              "reps": "5 / direction"
+            }
+          ],
+          "rationale": "Mobility work toward your goal to move better. Placed in your free early morning on Tuesday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sv5-w3",
+          "title": "Upper body strength",
+          "date": "2026-11-05",
+          "start": "06:00",
+          "durationMin": 60,
+          "category": "strength",
+          "muscles": [
+            "chest",
+            "arms",
+            "shoulders",
+            "core",
+            "back"
+          ],
+          "equipment": [
+            "barbell",
+            "bench",
+            "squat_rack",
+            "pull_up_bar",
+            "dumbbells"
+          ],
+          "exercises": [
+            {
+              "exerciseId": "bench_press",
+              "sets": 4,
+              "reps": "6–8"
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 4,
+              "reps": "5–6"
+            },
+            {
+              "exerciseId": "pull_up",
+              "sets": 4,
+              "reps": "4–8"
+            },
+            {
+              "exerciseId": "db_curl",
+              "sets": 3,
+              "reps": "10–12"
+            },
+            {
+              "exerciseId": "db_bench",
+              "sets": 3,
+              "reps": "8–12"
+            }
+          ],
+          "rationale": "Strength work toward your goal to get stronger. Placed in your free early morning on Thursday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        },
+        {
+          "id": "sv5-w4",
+          "title": "Mobility reset",
+          "date": "2026-11-07",
+          "start": "06:00",
+          "durationMin": 60,
+          "category": "mobility",
+          "muscles": [
+            "legs",
+            "glutes",
+            "back",
+            "core",
+            "shoulders"
+          ],
+          "equipment": [],
+          "exercises": [
+            {
+              "exerciseId": "worlds_greatest_stretch",
+              "sets": 2,
+              "reps": "5 / side"
+            },
+            {
+              "exerciseId": "cat_cow",
+              "sets": 2,
+              "reps": "10"
+            },
+            {
+              "exerciseId": "hip_90_90",
+              "sets": 2,
+              "reps": "8 / side"
+            },
+            {
+              "exerciseId": "open_books",
+              "sets": 2,
+              "reps": "8 / side"
+            },
+            {
+              "exerciseId": "hip_circles",
+              "sets": 2,
+              "reps": "8 / direction"
+            },
+            {
+              "exerciseId": "shoulder_cars",
+              "sets": 2,
+              "reps": "5 / direction"
+            }
+          ],
+          "rationale": "Mobility work toward your goal to move better. Placed in your free early morning on Saturday, clear of your calendar.",
+          "status": "planned",
+          "origin": "mock_template"
+        }
+      ],
+      "generatedBy": "fixture",
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "notes": []
     }
   }
 }

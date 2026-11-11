@@ -1,0 +1,11 @@
+id,split,category,persona,expected_outcome,status,constraint_pass,feasible,feasible_reason,rest_only,alternatives_offered,violations,latency_ms,input_tokens,output_tokens,cost_usd
+SV-01,survey,initial_plan,sv1,plan,ok,true,true,ok,false,1,,3722,4695,461,0.002797875
+SV-02,survey,initial_plan,sv2,plan,ok,false,false,plan violates hard constraints,false,1,generic-SV-02:equipment; generic-SV-02:avoided_activity,3399,4863,571,0.003108375
+SV-03,survey,initial_plan,sv3,plan,ok,true,true,ok,false,1,,2131,4639,367,0.002565375
+SV-04,survey,initial_plan,sv4,plan,ok,true,true,ok,false,1,,2993,4679,445,0.002755875
+SV-05,survey,initial_plan,sv5,plan,ok,true,true,ok,false,1,,3476,4918,615,0.003228
+SV-06,survey,low_energy,sv1,replan,ok,true,true,ok,false,3,,5014,5514,669,0.0035730000000000002
+SV-07,survey,low_energy,sv3,replan,ok,true,true,ok,false,3,,3365,5168,444,0.0029370000000000004
+SV-08,survey,caregiving,sv5,replan,ok,false,true,ok,false,3,generic-SV-08-2:calendar_conflict,4501,5967,664,0.0037316249999999997
+SV-09,survey,unexpected_meeting,sv2,replan,ok,false,true,ok,false,3,generic-SV-09-1:calendar_conflict; generic-SV-09-2:calendar_conflict,4237,5594,520,0.00326775
+SV-10,survey,unexpected_meeting,sv4,replan,ok,true,true,ok,false,3,,4082,5498,407,0.0029775

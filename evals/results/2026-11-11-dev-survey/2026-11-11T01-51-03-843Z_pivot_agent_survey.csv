@@ -1,0 +1,11 @@
+id,split,category,persona,expected_outcome,status,constraint_pass,feasible,feasible_reason,rest_only,alternatives_offered,violations,latency_ms,input_tokens,output_tokens,cost_usd
+SV-01,survey,initial_plan,sv1,plan,ok,true,true,ok,false,1,,16413,2774,249,0.0016005
+SV-02,survey,initial_plan,sv2,plan,ok,true,true,ok,false,1,,15024,1732,402,0.001554
+SV-03,survey,initial_plan,sv3,plan,ok,true,true,ok,false,1,,17598,1886,171,0.001092
+SV-04,survey,initial_plan,sv4,plan,ok,true,true,ok,false,1,,14161,2811,256,0.001630125
+SV-05,survey,initial_plan,sv5,plan,ok,true,true,ok,false,1,,14219,2610,315,0.0016875000000000002
+SV-06,survey,low_energy,sv1,replan,ok,true,true,ok,false,3,,17517,3616,347,0.0021367499999999998
+SV-07,survey,low_energy,sv3,replan,ok,true,true,ok,false,2,,17124,2647,419,0.001935375
+SV-08,survey,caregiving,sv5,replan,ok,true,true,ok,false,2,,25059,3566,384,0.00220125
+SV-09,survey,unexpected_meeting,sv2,replan,ok,false,false,only offered rest,true,2,bf10dee2-8560-4af0-b9b5-719f53df24a7-move:calendar_conflict,16962,2722,329,0.001761
+SV-10,survey,unexpected_meeting,sv4,replan,error,,,"The model's answer didn't match the expected format: Invalid input: expected array, received undefined",,0,,22363,0,0,

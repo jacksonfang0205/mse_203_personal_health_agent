@@ -3,6 +3,7 @@
  *
  *   npm run eval -- --planner rule_based --split dev
  *   npm run eval -- --planner rule_based --split heldout --heldout-ok
+ *   npm run eval -- --planner pivot_agent --split survey      # survey-grounded scenarios
  *
  * Writes evals/results/runs/<runId>.json and .csv and prints a summary.
  */
@@ -10,6 +11,7 @@ import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+import { config as llmConfig } from "@/lib/agent/llm";
 import type { ValidationContext } from "@/lib/validation";
 import { buildScenarioContext, EVALS_DIR, loadBaselines, loadPersonas, loadScenarios, type Scenario } from "./fixtures";
 import { PLANNERS, type PlannerOutput, type Usage } from "./planners";
@@ -36,12 +38,12 @@ if (!planner) {
   console.error(`Unknown planner "${args.planner}". Available: ${Object.keys(PLANNERS).join(", ")}`);
   process.exit(1);
 }
-const split = args.split as "dev" | "heldout" | "all";
-if (!["dev", "heldout", "all"].includes(split)) {
-  console.error(`--split must be dev, heldout, or all`);
+const split = args.split as "dev" | "heldout" | "survey" | "all";
+if (!["dev", "heldout", "survey", "all"].includes(split)) {
+  console.error(`--split must be dev, heldout, survey, or all`);
   process.exit(1);
 }
-if (split !== "dev" && !args["heldout-ok"]) {
+if ((split === "heldout" || split === "all") && !args["heldout-ok"]) {
   console.error("Held-out scenarios are for checkpoint evaluations only. Re-run with --heldout-ok to confirm.");
   process.exit(1);
 }
@@ -205,7 +207,9 @@ async function main() {
     split,
     gitCommit: gitCommit(),
     node: process.version,
-    syntheticData: true,
+    // The model and provider the LLM planners used; null for planners without a model.
+    model: ["pivot_agent", "generic_llm"].includes(planner.id) ? { id: llmConfig().model, provider: llmConfig().provider } : null,
+    syntheticData: scenarios.every((s) => s.synthetic),
     summary,
     results: rows,
   };
@@ -217,7 +221,7 @@ async function main() {
 
   // ---------- Console ----------
   const pct = (x: number | null) => (x === null ? "n/a" : `${(x * 100).toFixed(0)}%`);
-  console.log(`\nPivot eval · planner=${planner.id} · split=${split} · ${rows.length} SYNTHETIC scenarios\n`);
+  console.log(`\nPivot eval · planner=${planner.id} · split=${split} · ${rows.length} ${scenarios.every((s) => s.synthetic) ? "SYNTHETIC" : "survey-grounded"} scenarios\n`);
   for (const r of rows) {
     const m1 = r.score?.constraintPass === null ? "  -  " : r.score?.constraintPass ? " PASS" : " FAIL";
     const m3 = r.expectedOutcome === "plan" ? "     " : r.score?.feasible ? " FEAS" : " ----";

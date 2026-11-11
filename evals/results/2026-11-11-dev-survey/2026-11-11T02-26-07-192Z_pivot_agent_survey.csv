@@ -1,0 +1,11 @@
+id,split,category,persona,expected_outcome,status,constraint_pass,feasible,feasible_reason,rest_only,alternatives_offered,violations,latency_ms,input_tokens,output_tokens,cost_usd
+SV-01,survey,initial_plan,sv1,plan,ok,true,true,ok,false,1,,3063,2774,266,0.00163875
+SV-02,survey,initial_plan,sv2,plan,ok,true,true,ok,false,1,,2839,1732,421,0.00159675
+SV-03,survey,initial_plan,sv3,plan,ok,true,true,ok,false,1,,1738,1886,175,0.001101
+SV-04,survey,initial_plan,sv4,plan,ok,true,true,ok,false,1,,2818,2811,257,0.001632375
+SV-05,survey,initial_plan,sv5,plan,ok,true,true,ok,false,1,,2305,2610,355,0.0017775
+SV-06,survey,low_energy,sv1,replan,ok,true,true,ok,false,3,,2886,3616,346,0.0021345
+SV-07,survey,low_energy,sv3,replan,ok,true,true,ok,false,2,,4016,2647,431,0.001962375
+SV-08,survey,caregiving,sv5,replan,ok,true,true,ok,false,3,,2986,3566,353,0.0021315
+SV-09,survey,unexpected_meeting,sv2,replan,ok,true,true,ok,false,2,,2805,2722,340,0.00178575
+SV-10,survey,unexpected_meeting,sv4,replan,ok,true,true,ok,false,3,,4067,3735,462,0.002440125
