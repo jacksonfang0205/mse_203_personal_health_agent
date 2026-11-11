@@ -10,15 +10,26 @@ const { referenceWeek, personas } = loadPersonas();
 const { plans } = loadBaselines();
 const dev = loadScenarios("dev");
 const heldout = loadScenarios("heldout");
-const all = [...dev, ...heldout];
+const survey = loadScenarios("survey");
+const all = [...dev, ...heldout, ...survey];
 
 const inWeek = (d: string) => d >= referenceWeek.start && d <= referenceWeek.end;
 
 describe("eval fixtures", () => {
   it("has at least 30 synthetic scenarios with unique ids", () => {
-    expect(all.length).toBeGreaterThanOrEqual(30);
+    const synthetic = [...dev, ...heldout];
+    expect(synthetic.length).toBeGreaterThanOrEqual(30);
     expect(new Set(all.map((s) => s.id)).size).toBe(all.length);
-    expect(all.every((s) => s.synthetic)).toBe(true);
+    expect(synthetic.every((s) => s.synthetic)).toBe(true);
+  });
+
+  it("keeps survey scenarios separate and traceable to a respondent", () => {
+    expect(survey.length).toBeGreaterThan(0);
+    expect(survey.every((s) => s.split === "survey" && s.id.startsWith("SV-") && !s.synthetic && s.source?.respondent)).toBe(true);
+    expect(survey.filter((s) => s.expected.outcome !== "plan").every((s) => s.source?.message)).toBe(true);
+    const others = new Set([...dev, ...heldout].map((s) => s.userMessage.toLowerCase()));
+    expect(survey.filter((s) => s.expected.outcome !== "plan" && others.has(s.userMessage.toLowerCase()))).toEqual([]);
+    for (const s of survey) expect(personas.find((p) => p.id === s.personaId)?.source?.respondent, s.id).toBe(s.source?.respondent);
   });
 
   it("keeps dev and held-out splits separate", () => {

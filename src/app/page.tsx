@@ -1,4 +1,5 @@
-import { ArrowRight, CategoryIcon, Shield, Sparkle } from "@/components/icons";
+import { ArrowRight, CategoryIcon, Sparkle } from "@/components/icons";
+import { SignedInOnly } from "@/components/AccountProvider";
 import { StartButton } from "@/components/StartButton";
 import { ButtonLink, Card, Eyebrow, cx } from "@/components/ui";
 import { CATEGORY_STYLE } from "@/lib/labels";
@@ -13,15 +14,15 @@ const PREVIEW: { day: string; title: string; time: string; category: WorkoutCate
 const FEATURES = [
   {
     title: "Plans around your real week",
-    body: "Pivot reads your calendar's busy times and fits workouts into the gaps. It won't make up free time you don't have.",
+    body: "Workouts go in the gaps in your calendar, never over it.",
   },
   {
-    title: "Life Happens, in plain English",
-    body: "Midterm tomorrow? Gym closed? Say what changed and pick from up to three options, each with its tradeoffs spelled out.",
+    title: "Just tell your coach",
+    body: "Midterm tomorrow? Gym closed? Say what changed and pick an option.",
   },
   {
     title: "Remembers what matters",
-    body: "Your goals, your no-go exercises, the swaps you liked. You approve every change before it's saved.",
+    body: "Your goals and the exercises you skip. You approve every change.",
   },
 ];
 
@@ -34,13 +35,10 @@ export default function Home() {
           <h1 className="mt-4 font-display text-6xl leading-[0.98] font-medium tracking-tight sm:text-7xl">
             Fitness that <em className="text-coral">fits</em> your life.
           </h1>
-          <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-soft">
-            Most planners tell you what to do. Pivot figures out when, where, and how, and adjusts when your week doesn&apos;t
-            go to plan.
-          </p>
+          <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-soft">Pivot plans your workouts around your week and adjusts when it changes.</p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <StartButton />
-            <span className="text-sm text-ink-faint">About 2 minutes. No account needed.</span>
+            <span className="text-sm text-ink-faint">About 2 minutes.</span>
           </div>
         </div>
 
@@ -72,7 +70,7 @@ export default function Home() {
               className="animate-rise ml-6 rounded-2xl bg-ink p-5 text-paper shadow-lift"
             >
               <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-coral">
-                <Sparkle width={14} height={14} /> Life Happens
+                <Sparkle width={14} height={14} /> Coach
               </p>
               <p className="mt-2 text-sm text-paper/85">&ldquo;Midterm Thursday. Can we move my run?&rdquo;</p>
               <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold">
@@ -90,13 +88,12 @@ export default function Home() {
           <div>
             <Eyebrow className="text-coral-deep">New: form correction</Eyebrow>
             <h2 className="mt-3 font-display text-4xl font-medium tracking-tight">Film a set. Find out why a rep went wrong.</h2>
-            <p className="mt-3 max-w-lg text-ink-soft">
-              Pivot tracks your joints in the browser, measures every rep, and works out the likely cause, like fatigue, load or
-              mobility. Then it tells you what to change, and you can ask follow-up questions.
-            </p>
-            <ButtonLink href="/form" className="mt-6">
-              Try form correction <ArrowRight width={16} height={16} />
-            </ButtonLink>
+            <p className="mt-3 max-w-lg text-ink-soft">Pivot measures every rep and tells you what to change.</p>
+            <SignedInOnly>
+              <ButtonLink href="/form" className="mt-6">
+                Try form correction <ArrowRight width={16} height={16} />
+              </ButtonLink>
+            </SignedInOnly>
           </div>
           <div className="rounded-2xl bg-ink p-5 text-paper shadow-lift" aria-hidden>
             <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-coral">
@@ -125,10 +122,6 @@ export default function Home() {
             </Card>
           ))}
         </div>
-        <p className="mx-auto flex max-w-6xl items-center gap-2 px-5 pb-12 text-xs text-ink-faint sm:px-8">
-          <Shield width={14} height={14} /> Every suggested plan passes deterministic checks for calendar conflicts, time limits,
-          equipment, and the exercises you avoid.
-        </p>
       </section>
     </div>
   );

@@ -1,6 +1,21 @@
 {
-  "_comment": "Per-million-token prices used to estimate eval cost. gpt-5.4-mini is the Stanford AI API Gateway education rate, derived from the gateway's usage report on 2026-11-02 (13,889 in + 1,103 out = $0.007690). Add other models before comparing them; unknown models report cost as null and the runner never guesses.",
+  "_comment": "Per-million-token prices used to estimate eval cost. gpt-5.4-mini is the Stanford AI API Gateway education rate, derived from the gateway's usage report on 2026-11-02 (13,889 in + 1,103 out = $0.007690). Add other models before comparing them; unknown models report cost as null and the runner never guesses. Claude prices are Anthropic first-party list prices per million tokens as of 2026-11-03 (Haiku 5.5: prompts up to 100K tokens).",
   "models": {
-    "gpt-5.4-mini": { "inputPerMTok": 0.375, "outputPerMTok": 2.25 }
+    "gpt-5.4-mini": {
+      "inputPerMTok": 0.375,
+      "outputPerMTok": 2.25
+    },
+    "claude-opus-5-5": {
+      "inputPerMTok": 4.0,
+      "outputPerMTok": 20.0
+    },
+    "claude-sonnet-5-5": {
+      "inputPerMTok": 2.0,
+      "outputPerMTok": 10.0
+    },
+    "claude-haiku-5-5": {
+      "inputPerMTok": 0.1,
+      "outputPerMTok": 0.5
+    }
   }
 }

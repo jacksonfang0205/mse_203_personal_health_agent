@@ -1,0 +1,27 @@
+id,split,category,persona,expected_outcome,status,constraint_pass,feasible,feasible_reason,rest_only,alternatives_offered,violations,latency_ms,input_tokens,output_tokens,cost_usd
+DEV-01,dev,initial_plan,maya,plan,ok,true,true,ok,false,1,,17047,2913,314,0.0017988750000000001
+DEV-02,dev,initial_plan,jordan,plan,ok,true,true,ok,false,1,,18367,2337,242,0.0014208749999999998
+DEV-03,dev,initial_plan,ana,plan,ok,true,true,ok,false,1,,13865,1550,284,0.00122025
+DEV-04,dev,unexpected_meeting,maya,replan,ok,true,true,ok,false,3,,17762,3914,363,0.0022845
+DEV-05,dev,unexpected_meeting,jordan,replan,ok,true,true,ok,false,3,,15415,3201,330,0.0019428750000000002
+DEV-06,dev,missed_workout,maya,replan,ok,true,true,ok,false,3,,18941,3850,296,0.00210975
+DEV-07,dev,missed_workout,sam,replan,ok,true,false,only offered rest,true,1,,15014,3052,333,0.00189375
+DEV-08,dev,reduced_time,maya,replan,error,,,The model's answer didn't match the expected format: Expected HH:MM,,0,,14590,0,0,
+DEV-09,dev,reduced_time,lee,replan,ok,true,true,ok,false,2,,14016,3938,352,0.00226875
+DEV-10,dev,equipment_change,maya,replan,error,,,"The model's answer didn't match the expected format: Invalid input: expected array, received undefined",,0,,21709,0,0,
+DEV-11,dev,equipment_change,lee,replan,ok,true,true,ok,false,2,,18025,3857,552,0.0026883750000000002
+DEV-12,dev,activity_restriction,sam,replan,ok,true,true,ok,false,3,,19360,3022,709,0.0027285
+DEV-13,dev,activity_restriction,maya,replan,ok,false,true,ok,false,3,2bcddfe8-c76f-4b07-96bc-b66489859e86-swap_format:avoided_activity,14448,3900,435,0.00244125
+DEV-14,dev,conflicting_preferences,lee,infeasible,ok,true,false,did not acknowledge that the request can't be met,false,3,,19252,3945,653,0.002948625
+DEV-15,dev,conflicting_preferences,ana,replan,ok,true,true,ok,false,2,,12779,2458,344,0.0016957500000000002
+DEV-16,dev,no_feasible_window,jordan,infeasible,ok,true,false,did not acknowledge that the request can't be met,true,1,,20582,3072,476,0.002223
+DEV-17,dev,unexpected_meeting,lee,replan,ok,true,true,ok,false,3,,17715,3740,343,0.00217425
+DEV-18,dev,preserve_completed,maya,replan,ok,true,true,ok,false,3,,22115,3747,369,0.002235375
+DEV-19,dev,multi_change,maya,replan,ok,true,false,only offered rest,true,1,,22448,3855,421,0.002392875
+DEV-20,dev,multi_change,jordan,replan,ok,true,true,ok,false,3,,18921,3250,457,0.002247
+DEV-21,dev,multi_change,ana,replan,ok,true,true,ok,false,3,,22942,2364,503,0.00201825
+DEV-22,dev,reduced_time,sam,replan,ok,true,true,ok,false,3,,14535,2918,496,0.00221025
+DEV-23,dev,preserve_completed,lee,infeasible,ok,true,false,did not acknowledge that the request can't be met,false,2,,16999,3781,350,0.002205375
+DEV-24,dev,activity_restriction,jordan,replan,ok,false,false,only offered rest,true,3,1e35c418-cc56-4031-87dc-fb650ddb7b4b-swap_format:avoided_activity; 79e4892d-a805-4f08-b63d-c821833e2e8a-move:avoided_activity; 79e4892d-a805-4f08-b63d-c821833e2e8a-move:avoided_activity; 79e4892d-a805-4f08-b63d-c821833e2e8a-move:avoided_activity,17918,3248,536,0.002424
+DEV-25,dev,unexpected_meeting,sam,replan,ok,true,true,ok,false,2,,19558,3028,421,0.00208275
+DEV-26,dev,initial_plan,lee,plan,ok,true,true,ok,false,1,,15791,2733,355,0.0018236250000000002

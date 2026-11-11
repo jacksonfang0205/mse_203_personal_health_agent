@@ -1,0 +1,27 @@
+id,split,category,persona,expected_outcome,status,constraint_pass,feasible,feasible_reason,rest_only,alternatives_offered,violations,latency_ms,input_tokens,output_tokens,cost_usd
+DEV-01,dev,initial_plan,maya,plan,ok,true,true,ok,false,1,,15089,4838,592,0.0031462499999999997
+DEV-02,dev,initial_plan,jordan,plan,ok,true,true,ok,false,1,,22464,4738,465,0.002823
+DEV-03,dev,initial_plan,ana,plan,ok,true,true,ok,false,1,,19770,4692,490,0.002862
+DEV-04,dev,unexpected_meeting,maya,replan,ok,false,true,ok,false,3,generic-DEV-04-2:calendar_conflict,17956,5745,496,0.003270375
+DEV-05,dev,unexpected_meeting,jordan,replan,ok,false,true,ok,false,3,generic-DEV-05-0:calendar_conflict; generic-DEV-05-0:no_volume_spike,20560,5361,566,0.003283875
+DEV-06,dev,missed_workout,maya,replan,ok,false,true,ok,false,3,generic-DEV-06-1:calendar_conflict; generic-DEV-06-1:no_volume_spike,21089,5710,489,0.0032414999999999996
+DEV-07,dev,missed_workout,sam,replan,error,,,"The model's answer didn't match the expected format: Invalid option: expected one of ""shorter""|""move""|""swap_format""|""skip""",,0,,18984,0,0,
+DEV-08,dev,reduced_time,maya,replan,ok,true,true,ok,false,3,,21799,5711,613,0.0035208749999999997
+DEV-09,dev,reduced_time,lee,replan,ok,false,true,ok,false,3,generic-DEV-09-1:calendar_conflict,21358,5768,590,0.0034905
+DEV-10,dev,equipment_change,maya,replan,error,,,"The model's answer didn't match the expected format: Invalid option: expected one of ""shorter""|""move""|""swap_format""|""skip""",,0,,18382,0,0,
+DEV-11,dev,equipment_change,lee,replan,error,,,"The model's answer didn't match the expected format: Invalid option: expected one of ""shorter""|""move""|""swap_format""|""skip""",,0,,18786,0,0,
+DEV-12,dev,activity_restriction,sam,replan,ok,false,true,ok,false,3,generic-DEV-12-2:no_volume_spike,17825,5505,632,0.003486375
+DEV-13,dev,activity_restriction,maya,replan,ok,false,false,every option violates constraints,false,3,generic-DEV-13-0:avoided_activity; generic-DEV-13-1:avoided_activity; generic-DEV-13-1:completed_preserved; generic-DEV-13-1:no_past_scheduling; generic-DEV-13-2:avoided_activity,21100,5715,656,0.003619125
+DEV-14,dev,conflicting_preferences,lee,infeasible,ok,true,false,changed workouts that should be kept,true,3,,18861,5775,569,0.003445875
+DEV-15,dev,conflicting_preferences,ana,replan,error,,,"The model's answer didn't match the expected format: Invalid option: expected one of ""shorter""|""move""|""swap_format""|""skip""",,0,,16542,0,0,
+DEV-16,dev,no_feasible_window,jordan,infeasible,ok,false,false,did not acknowledge that the request can't be met,true,3,generic-DEV-16-0:no_past_scheduling; generic-DEV-16-1:no_volume_spike; generic-DEV-16-1:no_past_scheduling,18952,5438,386,0.00290775
+DEV-17,dev,unexpected_meeting,lee,replan,ok,false,true,ok,false,3,generic-DEV-17-0:calendar_conflict,23358,5766,376,0.00300825
+DEV-18,dev,preserve_completed,maya,replan,ok,true,true,ok,false,3,,18507,5714,657,0.003621
+DEV-19,dev,multi_change,maya,replan,ok,false,false,valid options don't resolve the disruption,false,3,generic-DEV-19-0:calendar_conflict; generic-DEV-19-1:calendar_conflict,19798,5723,611,0.003520875
+DEV-20,dev,multi_change,jordan,replan,ok,false,false,valid options don't resolve the disruption,false,3,generic-DEV-20-0:duration_limit; generic-DEV-20-0:no_past_scheduling; generic-DEV-20-2:no_past_scheduling,23001,5358,667,0.0035099999999999997
+DEV-21,dev,multi_change,ana,replan,ok,false,true,ok,false,3,generic-DEV-21-2:duration_limit,19092,5221,543,0.003179625
+DEV-22,dev,reduced_time,sam,replan,ok,true,true,ok,false,3,,19254,5497,589,0.003386625
+DEV-23,dev,preserve_completed,lee,infeasible,ok,false,false,did not acknowledge that the request can't be met,false,3,generic-DEV-23-0:completed_preserved; generic-DEV-23-0:no_past_scheduling; generic-DEV-23-1:completed_preserved; generic-DEV-23-1:no_past_scheduling; generic-DEV-23-2:completed_preserved; generic-DEV-23-2:no_past_scheduling,21790,5763,844,0.0040601249999999995
+DEV-24,dev,activity_restriction,jordan,replan,error,,,"The model's answer didn't match the expected format: Invalid option: expected one of ""shorter""|""move""|""swap_format""|""skip""",,0,,26688,0,0,
+DEV-25,dev,unexpected_meeting,sam,replan,ok,false,true,ok,false,3,generic-DEV-25-1:calendar_conflict; generic-DEV-25-2:calendar_conflict,19287,5535,746,0.0037541250000000005
+DEV-26,dev,initial_plan,lee,plan,ok,true,true,ok,false,1,,15872,4718,563,0.003036

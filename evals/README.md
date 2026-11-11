@@ -28,6 +28,17 @@ Results go to `results/runs/<timestamp>_<planner>_<split>.json` and `.csv`. That
 | `src/run.ts` | CLI runner and JSON/CSV export |
 | `pricing.json` | Per-model token prices. Empty on purpose; fill in from the provider's pricing page. |
 
+## Survey-grounded split
+
+`scenarios/survey.json` (ids `SV-`) and the `sv1`–`sv5` personas are built from 5 anonymous survey responses collected on 2026-11-09. They are not synthetic. Each fixture has a `source` with:
+
+- `respondent`: which response it came from (R1–R5).
+- `surveyAnswers`: the answers it uses, quoted as written.
+- `message`: `verbatim` when the user message is the respondent's own text, `derived` when their text was unusable and we wrote the message from their other answers.
+- `assumptions`: everything we filled in. Calendars, the exact day and time of each disruption, and how free-text restrictions map to avoid tags or exercise ids are all assumptions.
+
+Run it with `npm run eval -- --planner pivot_agent --split survey`. Don't tune prompts against these scenarios. When adding personas, freeze only the new baselines with `npx tsx evals/scripts/freeze-baselines.ts --missing-only`, so existing scenarios keep their workout ids.
+
 ## Adding a planner
 
 Implement `Planner` (`generatePlan` and `replan`), return `usage` with token counts, and register it in `PLANNERS`. Planners receive only `visibleBusy`, meaning the calendar as a tool would see it. Events mentioned only in the message are ground truth the planner has to pick up from the text.

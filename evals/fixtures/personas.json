@@ -1,5 +1,5 @@
 {
-  "_comment": "SYNTHETIC personas for evaluation. Not real people. Reference week: Mon 2026-11-02 to Sun 2026-11-08.",
+  "_comment": "Personas for evaluation. Those with synthetic: true are made up. The sv* personas are built from anonymous survey responses (see each source). Not identifiable people. Reference week: Mon 2026-11-02 to Sun 2026-11-08.",
   "referenceWeek": { "start": "2026-11-02", "end": "2026-11-08" },
   "personas": [
     {
@@ -164,6 +164,327 @@
         { "weekday": "tue", "start": "13:30", "end": "15:20", "title": "Seminar" },
         { "weekday": "thu", "start": "13:30", "end": "15:20", "title": "Seminar" },
         { "weekday": "sat", "start": "11:00", "end": "13:00", "title": "Brunch" }
+      ]
+    },
+    {
+      "id": "sv1",
+      "synthetic": false,
+      "summary": "Survey R1: student, intermediate, strength and weight, gym at midday and weekends, avoids running",
+      "source": {
+        "respondent": "R1",
+        "surveyAnswers": {
+          "role": "Student",
+          "experience": "Intermediate",
+          "goals": "Strength, Weight, Stress relief",
+          "perWeek": "3",
+          "busyDayMax": "60+ min",
+          "equipment": "Dumbbells, Full gym",
+          "when": "Weekday midday, Weekends",
+          "avoid": "running, hate running",
+          "remember": "my injuries, movements i don't want to do"
+        },
+        "assumptions": [
+          "Calendar assumed for the respondent's role; the survey did not ask for fixed blocks.",
+          "'Weight' has no goal option; recorded as general_fitness plus goalNotes.",
+          "'60+ min' recorded as 60.",
+          "Injuries mentioned under 'remember' were not described, so none are encoded."
+        ]
+      },
+      "profile": {
+        "version": 1,
+        "targetMuscles": [],
+        "avoidTags": ["running"],
+        "avoidExerciseIds": [],
+        "avoidNotes": "running, hate running",
+        "limitations": "",
+        "updatedAt": "2026-11-09T00:00:00.000Z",
+        "goals": ["strength", "general_fitness", "stress_relief"],
+        "goalNotes": "Build strength and manage weight.",
+        "experience": "intermediate",
+        "workoutTypes": ["gym"],
+        "equipment": [
+          "dumbbells",
+          "kettlebell",
+          "barbell",
+          "bench",
+          "squat_rack",
+          "cable_machine",
+          "pull_up_bar",
+          "yoga_mat",
+          "treadmill",
+          "stationary_bike",
+          "rower"
+        ],
+        "sessionMinutes": 60,
+        "frequencyPerWeek": 3,
+        "preferredDays": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+        "preferredTimes": ["midday"]
+      },
+      "calendar": [
+        { "weekday": "mon", "start": "09:30", "end": "11:50", "title": "Lecture" },
+        { "weekday": "wed", "start": "09:30", "end": "11:50", "title": "Lecture" },
+        { "weekday": "fri", "start": "09:30", "end": "11:50", "title": "Lecture" },
+        { "weekday": "tue", "start": "13:30", "end": "16:20", "title": "Lab section" },
+        { "weekday": "thu", "start": "13:30", "end": "16:20", "title": "Lab section" }
+      ]
+    },
+    {
+      "id": "sv2",
+      "synthetic": false,
+      "summary": "Survey R2: parent, beginner, general fitness, short weekday-morning jogs and walks, no lifting or intense sport",
+      "source": {
+        "respondent": "R2",
+        "surveyAnswers": {
+          "role": "Parent or caregiver",
+          "experience": "Beginner",
+          "goals": "General fitness",
+          "perWeek": "5+",
+          "busyDayMax": "30 min",
+          "equipment": "Dumbbells",
+          "when": "Weekday mornings",
+          "avoid": "weight lifting, i only jog or walk fast, can't do too intensive sports, no competitive sports",
+          "remember": "can tune by my pace, by my personal habits and workout history"
+        },
+        "assumptions": [
+          "Calendar assumed for the respondent's role; the survey did not ask for fixed blocks.",
+          "'5+' recorded as 5 per week.",
+          "'Weight lifting' encoded as avoiding loaded strength exercises; 'too intensive' as high_impact plus interval cardio."
+        ]
+      },
+      "profile": {
+        "version": 1,
+        "targetMuscles": [],
+        "avoidTags": ["heavy_barbell", "high_impact"],
+        "avoidExerciseIds": [
+          "goblet_squat",
+          "db_rdl",
+          "db_row",
+          "db_bench",
+          "db_floor_press",
+          "db_shoulder_press",
+          "db_lateral_raise",
+          "db_curl",
+          "db_split_squat",
+          "kb_swing",
+          "back_squat",
+          "deadlift",
+          "bench_press",
+          "overhead_press",
+          "run_intervals",
+          "bike_intervals"
+        ],
+        "avoidNotes": "weight lifting, i only jog or walk fast, can't do too intensive sports, no competitive sports",
+        "limitations": "",
+        "updatedAt": "2026-11-09T00:00:00.000Z",
+        "goals": ["general_fitness"],
+        "experience": "beginner",
+        "workoutTypes": ["walking", "running"],
+        "equipment": ["dumbbells"],
+        "sessionMinutes": 30,
+        "frequencyPerWeek": 5,
+        "preferredDays": ["mon", "tue", "wed", "thu", "fri"],
+        "preferredTimes": ["early_morning", "morning"]
+      },
+      "calendar": [
+        { "weekday": "mon", "start": "08:00", "end": "08:45", "title": "School drop-off" },
+        { "weekday": "tue", "start": "08:00", "end": "08:45", "title": "School drop-off" },
+        { "weekday": "wed", "start": "08:00", "end": "08:45", "title": "School drop-off" },
+        { "weekday": "thu", "start": "08:00", "end": "08:45", "title": "School drop-off" },
+        { "weekday": "fri", "start": "08:00", "end": "08:45", "title": "School drop-off" },
+        { "weekday": "mon", "start": "09:30", "end": "17:00", "title": "Work" },
+        { "weekday": "tue", "start": "09:30", "end": "17:00", "title": "Work" },
+        { "weekday": "wed", "start": "09:30", "end": "17:00", "title": "Work" },
+        { "weekday": "thu", "start": "09:30", "end": "17:00", "title": "Work" },
+        { "weekday": "fri", "start": "09:30", "end": "17:00", "title": "Work" }
+      ]
+    },
+    {
+      "id": "sv3",
+      "synthetic": false,
+      "summary": "Survey R3: student, beginner, general fitness and weight, yoga mat at home, weekday evenings",
+      "source": {
+        "respondent": "R3",
+        "surveyAnswers": {
+          "role": "Student",
+          "experience": "Beginner",
+          "goals": "Weight, General fitness",
+          "perWeek": "2",
+          "busyDayMax": "60+ min",
+          "equipment": "Yoga mat",
+          "when": "Weekday evenings",
+          "avoid": ""
+        },
+        "assumptions": [
+          "Calendar assumed for the respondent's role; the survey did not ask for fixed blocks.",
+          "'Weight' recorded as general_fitness plus goalNotes.",
+          "'60+ min' recorded as 60."
+        ]
+      },
+      "profile": {
+        "version": 1,
+        "targetMuscles": [],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": "",
+        "updatedAt": "2026-11-09T00:00:00.000Z",
+        "goals": ["general_fitness"],
+        "goalNotes": "Lose or manage weight.",
+        "experience": "beginner",
+        "workoutTypes": ["home", "yoga"],
+        "equipment": ["yoga_mat"],
+        "sessionMinutes": 60,
+        "frequencyPerWeek": 2,
+        "preferredDays": ["mon", "tue", "wed", "thu", "fri"],
+        "preferredTimes": ["evening"]
+      },
+      "calendar": [
+        { "weekday": "mon", "start": "10:00", "end": "16:00", "title": "Classes" },
+        { "weekday": "tue", "start": "10:00", "end": "16:00", "title": "Classes" },
+        { "weekday": "wed", "start": "10:00", "end": "16:00", "title": "Classes" },
+        { "weekday": "thu", "start": "10:00", "end": "16:00", "title": "Classes" },
+        { "weekday": "fri", "start": "10:00", "end": "16:00", "title": "Classes" }
+      ]
+    },
+    {
+      "id": "sv4",
+      "synthetic": false,
+      "summary": "Survey R4: working, intermediate, strength and endurance, full gym on weekday evenings",
+      "source": {
+        "respondent": "R4",
+        "surveyAnswers": {
+          "role": "Working",
+          "experience": "Intermediate",
+          "goals": "Strength, Endurance, Weight, General fitness",
+          "perWeek": "3",
+          "busyDayMax": "45 min",
+          "equipment": "Full gym",
+          "when": "Weekday evenings",
+          "avoid": "noen",
+          "remember": "the routines i take, i can select it myself. Also the days i am availabel, so it dosn't conflict with my time. If it can reads my calendar that'll be great."
+        },
+        "assumptions": [
+          "Calendar assumed for the respondent's role; the survey did not ask for fixed blocks.",
+          "'Weight' recorded as general_fitness plus goalNotes."
+        ]
+      },
+      "profile": {
+        "version": 1,
+        "targetMuscles": [],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": "",
+        "updatedAt": "2026-11-09T00:00:00.000Z",
+        "goals": ["strength", "endurance", "general_fitness"],
+        "goalNotes": "Also manage weight.",
+        "experience": "intermediate",
+        "workoutTypes": ["gym"],
+        "equipment": [
+          "dumbbells",
+          "kettlebell",
+          "barbell",
+          "bench",
+          "squat_rack",
+          "cable_machine",
+          "pull_up_bar",
+          "yoga_mat",
+          "treadmill",
+          "stationary_bike",
+          "rower"
+        ],
+        "sessionMinutes": 45,
+        "frequencyPerWeek": 3,
+        "preferredDays": ["mon", "tue", "wed", "thu", "fri"],
+        "preferredTimes": ["evening"]
+      },
+      "calendar": [
+        { "weekday": "mon", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "tue", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "wed", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "thu", "start": "09:00", "end": "18:00", "title": "Work" },
+        { "weekday": "fri", "start": "09:00", "end": "18:00", "title": "Work" }
+      ]
+    },
+    {
+      "id": "sv5",
+      "synthetic": false,
+      "summary": "Survey R5: working parent, advanced, all goals, full gym any time, knee injury so no leg workouts",
+      "source": {
+        "respondent": "R5",
+        "surveyAnswers": {
+          "role": "Working",
+          "experience": "Advanced",
+          "goals": "Strength, Endurance, Weight, General fitness, Flexibility, Stress relief",
+          "perWeek": "4",
+          "busyDayMax": "60+ min",
+          "equipment": "Full gym",
+          "when": "Weekday mornings, Weekday midday, Weekday evenings, Weekends",
+          "avoid": "injuires with my knees so no leg related workout recently",
+          "remember": "my daily routines, i have my fixed routines, also need to read my claendar so it knows when i am availabel. Adjust plans based on y schedule changed."
+        },
+        "assumptions": [
+          "Calendar assumed for the respondent's role; the survey did not ask for fixed blocks. Children are inferred from their disruption answer.",
+          "'60+ min' recorded as 60. 'Flexibility' recorded as mobility.",
+          "'No leg related workout' encoded as avoiding leg strength and jumping exercises; walking and cycling are still allowed. Our five avoid tags have no tag for this."
+        ]
+      },
+      "profile": {
+        "version": 1,
+        "targetMuscles": [],
+        "avoidTags": [],
+        "avoidExerciseIds": [
+          "bw_squat",
+          "reverse_lunge",
+          "wall_sit",
+          "step_up",
+          "goblet_squat",
+          "db_rdl",
+          "db_split_squat",
+          "kb_swing",
+          "back_squat",
+          "deadlift",
+          "band_squat",
+          "squat_jump",
+          "jump_rope",
+          "low_lunge"
+        ],
+        "avoidNotes": "injuires with my knees so no leg related workout recently",
+        "limitations": "Knee injury (user-stated). No leg workouts for now.",
+        "updatedAt": "2026-11-09T00:00:00.000Z",
+        "goals": ["strength", "endurance", "general_fitness", "mobility", "stress_relief"],
+        "goalNotes": "Also manage weight.",
+        "experience": "advanced",
+        "workoutTypes": ["gym"],
+        "equipment": [
+          "dumbbells",
+          "kettlebell",
+          "barbell",
+          "bench",
+          "squat_rack",
+          "cable_machine",
+          "pull_up_bar",
+          "yoga_mat",
+          "treadmill",
+          "stationary_bike",
+          "rower"
+        ],
+        "sessionMinutes": 60,
+        "frequencyPerWeek": 4,
+        "preferredDays": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+        "preferredTimes": ["early_morning", "morning", "midday", "evening"]
+      },
+      "calendar": [
+        { "weekday": "mon", "start": "08:00", "end": "08:45", "title": "School drop-off" },
+        { "weekday": "tue", "start": "08:00", "end": "08:45", "title": "School drop-off" },
+        { "weekday": "wed", "start": "08:00", "end": "08:45", "title": "School drop-off" },
+        { "weekday": "thu", "start": "08:00", "end": "08:45", "title": "School drop-off" },
+        { "weekday": "fri", "start": "08:00", "end": "08:45", "title": "School drop-off" },
+        { "weekday": "mon", "start": "09:00", "end": "17:00", "title": "Work" },
+        { "weekday": "tue", "start": "09:00", "end": "17:00", "title": "Work" },
+        { "weekday": "wed", "start": "09:00", "end": "17:00", "title": "Work" },
+        { "weekday": "thu", "start": "09:00", "end": "17:00", "title": "Work" },
+        { "weekday": "fri", "start": "09:00", "end": "17:00", "title": "Work" }
       ]
     }
   ]

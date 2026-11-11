@@ -1,5 +1,8 @@
 /**
- * Eval fixture schemas and loaders. All fixtures are SYNTHETIC.
+ * Eval fixture schemas and loaders. Dev and held-out fixtures are SYNTHETIC.
+ * The survey split is grounded in real, anonymous survey responses: each
+ * persona and scenario records its respondent, whether the user message is
+ * verbatim, and every assumption we had to add (see `source`).
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -18,12 +21,24 @@ import {
 
 export const EVALS_DIR = join(__dirname, "..");
 
+/** Where a survey-grounded fixture came from. Absent on fully synthetic fixtures. */
+export const Source = z.object({
+  respondent: z.string(),
+  /** verbatim: the user's own words. derived: we wrote it from their answers, because their own message was unusable. */
+  message: z.enum(["verbatim", "derived"]).optional(),
+  /** The survey answers this fixture is built from, quoted as written. */
+  surveyAnswers: z.record(z.string(), z.string()).default({}),
+  /** Everything we had to fill in that the respondent did not say. */
+  assumptions: z.array(z.string()).default([]),
+});
+
 const Recurring = z.object({ weekday: Weekday, start: ClockTime, end: ClockTime, title: z.string() });
 
 export const Persona = z.object({
   id: z.string(),
-  synthetic: z.literal(true),
+  synthetic: z.boolean(),
   summary: z.string(),
+  source: Source.optional(),
   profile: FitnessProfile,
   calendar: z.array(Recurring),
 });
@@ -50,7 +65,13 @@ export const SCENARIO_CATEGORIES = [
   "no_feasible_window",
   "preserve_completed",
   "multi_change",
+  // Found in the survey: workouts missed for low energy or caregiving, not schedule conflicts.
+  "low_energy",
+  "caregiving",
 ] as const;
+
+export const SPLITS = ["dev", "heldout", "survey"] as const;
+
 
 const AddedBusy = z.object({
   date: IsoDate,
@@ -62,9 +83,10 @@ const AddedBusy = z.object({
 });
 
 export const Scenario = z.object({
-  id: z.string().regex(/^(DEV|HO)-\d{2}$/),
-  split: z.enum(["dev", "heldout"]),
-  synthetic: z.literal(true),
+  id: z.string().regex(/^(DEV|HO|SV)-\d{2}$/),
+  split: z.enum(SPLITS),
+  synthetic: z.boolean(),
+  source: Source.optional(),
   category: z.enum(SCENARIO_CATEGORIES),
   title: z.string(),
   personaId: z.string(),
@@ -99,7 +121,7 @@ export const Scenario = z.object({
 export type Scenario = z.infer<typeof Scenario>;
 
 export const ScenarioFile = z.object({
-  split: z.enum(["dev", "heldout"]),
+  split: z.enum(SPLITS),
   scenarios: z.array(Scenario),
 });
 
@@ -115,7 +137,7 @@ export function loadBaselines() {
   return BaselineFile.parse(readJson("fixtures/baseline-plans.json"));
 }
 
-export function loadScenarios(split: "dev" | "heldout" | "all"): Scenario[] {
+export function loadScenarios(split: (typeof SPLITS)[number] | "all"): Scenario[] {
   const files = split === "all" ? ["dev", "heldout"] : [split];
   return files.flatMap((f) => ScenarioFile.parse(readJson(`scenarios/${f}.json`)).scenarios);
 }

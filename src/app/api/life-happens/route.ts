@@ -3,7 +3,7 @@ import { AgentRequest } from "@/lib/agent/context";
 import { agentLifeHappens } from "@/lib/agent/lifeHappens";
 import { aiEnabled } from "@/lib/agent/llm";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const Body = AgentRequest.extend({ message: z.string().trim().min(1).max(500) });
 

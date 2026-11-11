@@ -1,0 +1,411 @@
+{
+  "runId": "2026-11-11T01-51-03-843Z_pivot_agent_survey",
+  "startedAt": "2026-11-11T01:51:03.843Z",
+  "planner": {
+    "id": "pivot_agent",
+    "description": "Pivot agent: filtered catalog, free windows, validation gate, repair round, collateral fixes."
+  },
+  "split": "survey",
+  "gitCommit": "1cc3cb2",
+  "node": "v24.14.1",
+  "syntheticData": false,
+  "summary": {
+    "scenarios": 10,
+    "errors": 1,
+    "metric1_constraintAdherence": {
+      "passed": 8,
+      "evaluated": 9,
+      "noProposal": 1,
+      "rate": 0.8888888888888888,
+      "target": 0.9
+    },
+    "metric3_objectiveReplanning": {
+      "feasible": 3,
+      "total": 5,
+      "rate": 0.6,
+      "target": 0.8,
+      "note": "Objective feasibility only. User acceptance is measured separately in user studies."
+    },
+    "initialPlans": {
+      "feasible": 5,
+      "total": 5
+    },
+    "latencyMs": {
+      "median": 17043,
+      "p90": 25059
+    },
+    "tokens": {
+      "input": 24364,
+      "output": 2872
+    },
+    "estimatedCostUsd": null,
+    "byCategory": {
+      "initial_plan": {
+        "total": 5,
+        "constraintPass": 5,
+        "feasible": 5
+      },
+      "low_energy": {
+        "total": 2,
+        "constraintPass": 2,
+        "feasible": 2
+      },
+      "caregiving": {
+        "total": 1,
+        "constraintPass": 1,
+        "feasible": 1
+      },
+      "unexpected_meeting": {
+        "total": 2,
+        "constraintPass": 0,
+        "feasible": 0
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "SV-01",
+      "split": "survey",
+      "category": "initial_plan",
+      "personaId": "sv1",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 16413,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2774,
+      "outputTokens": 249,
+      "costUsd": 0.0016005
+    },
+    {
+      "id": "SV-02",
+      "split": "survey",
+      "category": "initial_plan",
+      "personaId": "sv2",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 15024,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 1732,
+      "outputTokens": 402,
+      "costUsd": 0.001554
+    },
+    {
+      "id": "SV-03",
+      "split": "survey",
+      "category": "initial_plan",
+      "personaId": "sv3",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 17598,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 1886,
+      "outputTokens": 171,
+      "costUsd": 0.001092
+    },
+    {
+      "id": "SV-04",
+      "split": "survey",
+      "category": "initial_plan",
+      "personaId": "sv4",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 14161,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2811,
+      "outputTokens": 256,
+      "costUsd": 0.001630125
+    },
+    {
+      "id": "SV-05",
+      "split": "survey",
+      "category": "initial_plan",
+      "personaId": "sv5",
+      "expectedOutcome": "plan",
+      "status": "ok",
+      "latencyMs": 14219,
+      "alternativesOffered": 1,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "plan-2026-11-02",
+            "kind": "plan",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2610,
+      "outputTokens": 315,
+      "costUsd": 0.0016875000000000002
+    },
+    {
+      "id": "SV-06",
+      "split": "survey",
+      "category": "low_energy",
+      "personaId": "sv1",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 17517,
+      "alternativesOffered": 3,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "2e2cd486-15d3-4e27-aca7-dbe80b1ce3ac-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "8b0725b6-fa60-4534-a3f8-dfc18ca01f47-shorter",
+            "kind": "shorter",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "302d0a09-7871-44ac-9821-3273accdd68f-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3616,
+      "outputTokens": 347,
+      "costUsd": 0.0021367499999999998
+    },
+    {
+      "id": "SV-07",
+      "split": "survey",
+      "category": "low_energy",
+      "personaId": "sv3",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 17124,
+      "alternativesOffered": 2,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "1442ac43-fd8b-40f2-bf3d-3c7ace06eaae-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "a63d3384-1694-4ec3-9ebb-afbf1330fd6a-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2647,
+      "outputTokens": 419,
+      "costUsd": 0.001935375
+    },
+    {
+      "id": "SV-08",
+      "split": "survey",
+      "category": "caregiving",
+      "personaId": "sv5",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 25059,
+      "alternativesOffered": 2,
+      "score": {
+        "constraintPass": true,
+        "feasible": true,
+        "feasibleReason": "ok",
+        "restOnly": false,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "3e858980-5b8d-4106-b34b-548b8741e9ef-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "8c0ff380-fa9d-4db1-9bd2-a3031ec885ba-move",
+            "kind": "move",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 3566,
+      "outputTokens": 384,
+      "costUsd": 0.00220125
+    },
+    {
+      "id": "SV-09",
+      "split": "survey",
+      "category": "unexpected_meeting",
+      "personaId": "sv2",
+      "expectedOutcome": "replan",
+      "status": "ok",
+      "latencyMs": 16962,
+      "alternativesOffered": 2,
+      "score": {
+        "constraintPass": false,
+        "feasible": false,
+        "feasibleReason": "only offered rest",
+        "restOnly": true,
+        "infeasibleAcknowledged": false,
+        "alternatives": [
+          {
+            "id": "bf10dee2-8560-4af0-b9b5-719f53df24a7-move",
+            "kind": "move",
+            "valid": false,
+            "resolves": true,
+            "violations": [
+              {
+                "constraint": "calendar_conflict",
+                "workoutId": "sv2-w2",
+                "message": "\"Brisk walk\" (2026-11-03 06:30) overlaps \"Meeting\" (06:00–07:00)."
+              }
+            ],
+            "unresolved": [],
+            "disturbed": []
+          },
+          {
+            "id": "1d9ce537-880c-41bb-82d6-250da5341dc3-skip",
+            "kind": "skip",
+            "valid": true,
+            "resolves": true,
+            "violations": [],
+            "unresolved": [],
+            "disturbed": []
+          }
+        ]
+      },
+      "inputTokens": 2722,
+      "outputTokens": 329,
+      "costUsd": 0.001761
+    },
+    {
+      "id": "SV-10",
+      "split": "survey",
+      "category": "unexpected_meeting",
+      "personaId": "sv4",
+      "expectedOutcome": "replan",
+      "status": "error",
+      "error": "The model's answer didn't match the expected format: Invalid input: expected array, received undefined",
+      "latencyMs": 22363,
+      "alternativesOffered": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": null
+    }
+  ]
+}

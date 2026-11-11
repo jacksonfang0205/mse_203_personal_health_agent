@@ -94,8 +94,11 @@ export function scoreScenario(
   });
 
   const constraintPass = alternatives.length ? alternatives.every((a) => a.valid) : null;
-  const workable = alternatives.filter((a) => a.valid && a.resolves);
-  const restOnly = workable.length > 0 && workable.every((a) => a.kind === "skip");
+  // Rest-only means every workable option only skips workouts. Judge the operations, not the
+  // option's label: "skip Monday and shorten Wednesday" is labeled skip but is a real change.
+  const onlySkips = (i: number) => proposal.alternatives[i].operations.every((o) => o.op === "skip");
+  const workableIdx = alternatives.flatMap((a, i) => (a.valid && a.resolves ? [i] : []));
+  const restOnly = workableIdx.length > 0 && workableIdx.every(onlySkips);
   const acknowledged = Boolean(proposal.infeasibleReason);
 
   let feasible: boolean;
@@ -111,7 +114,7 @@ export function scoreScenario(
           ? "changed workouts that should be kept"
           : "ok";
   } else {
-    feasible = workable.some((a) => a.kind !== "skip");
+    feasible = workableIdx.some((i) => !onlySkips(i));
     feasibleReason = feasible
       ? "ok"
       : !alternatives.length

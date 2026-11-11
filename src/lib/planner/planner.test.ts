@@ -130,3 +130,38 @@ describe("rule-based alternatives", () => {
     expect(plan.workouts.find((w) => w.id === a.id)?.date).toBe(a.date); // original untouched
   });
 });
+
+describe("preference changes reach the plan", () => {
+  const GYM = ["dumbbells", "kettlebell", "barbell", "bench", "squat_rack", "cable_machine", "pull_up_bar", "yoga_mat", "treadmill", "stationary_bike", "rower"] as const;
+  // Onboarded as a runner, then switched to a full gym and a strength goal in Preferences.
+  const switched: FitnessProfile = {
+    ...base,
+    goals: ["strength", "general_fitness"],
+    workoutTypes: ["running"],
+    equipment: [...GYM],
+    frequencyPerWeek: 4,
+    preferredDays: ["mon", "tue", "thu", "sat"],
+  };
+  const week = (p: FitnessProfile) =>
+    generateMockWeek({ profile: p, weekStart: WEEK, busy: [], createdAt: "2026-11-01T00:00:00Z" });
+
+  it("adds strength sessions, including upper body, once a full gym and strength goal are set", () => {
+    const plan = week(switched);
+    const categories = plan.workouts.map((w) => w.category);
+    expect(categories).toContain("strength");
+    expect(categories.filter((c) => c === "cardio").length).toBeLessThan(plan.workouts.length);
+    const upper = new Set(["chest", "back", "shoulders", "arms"]);
+    expect(plan.workouts.some((w) => w.category === "strength" && w.muscles.some((m) => upper.has(m)))).toBe(true);
+    expect(validatePlan(plan, { profile: switched, busy: [], knownRange: { start: WEEK, end: "2026-11-08" } }).ok).toBe(true);
+  });
+
+  it("uses equipment the profile now has", () => {
+    const used = new Set(week(switched).workouts.flatMap((w) => w.equipment));
+    expect([...used].some((e) => ["barbell", "cable_machine", "squat_rack", "bench", "kettlebell"].includes(e))).toBe(true);
+  });
+
+  it("still plans only cardio for a runner whose goals and equipment say nothing about strength", () => {
+    const runner: FitnessProfile = { ...base, goals: ["endurance"], workoutTypes: ["running"], equipment: [] };
+    expect(week(runner).workouts.every((w) => w.category === "cardio" || w.category === "mobility")).toBe(true);
+  });
+});

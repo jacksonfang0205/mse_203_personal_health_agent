@@ -1,18 +1,17 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { agentSnapshot, requestPlan, useAiStatus, type AiStatus } from "@/lib/agentClient";
-import { CALENDAR_PRESETS } from "@/lib/calendar";
+import { agentSnapshot, requestPlan, useAiStatus } from "@/lib/agentClient";
 import { computeInsights, learnedTimeOrder } from "@/lib/insights";
 import { getExercise } from "@/lib/catalog";
-import type { BusyBlock, ChangeRecord, IsoDate, WeeklyPlan, Workout, WorkoutStatus } from "@/lib/schemas";
+import type { BusyBlock, IsoDate, WeeklyPlan, Workout, WorkoutStatus } from "@/lib/schemas";
 import { buildSamplePlan, calendarForWeek, carryOver } from "@/lib/session";
 import { pivot, setCount, useNow, usePivotState } from "@/lib/store";
 import { track } from "@/lib/telemetry";
 import { addDays, dayOfMonth, dayShort, formatTime, localNow, monthDay, planCovers, toMinutes, weekDates } from "@/lib/time";
 import { CONSTRAINT_LABELS, validatePlan, type ValidationResult } from "@/lib/validation";
-import { CalendarIcon, Check, Shield, Sparkle } from "../icons";
-import { Button, ButtonLink, Card, Eyebrow, MockBadge, Skeleton, cx } from "../ui";
+import { CalendarIcon, Check, Shield } from "../icons";
+import { Button, ButtonLink, Card, Eyebrow, Skeleton, cx } from "../ui";
 import { LifeHappens } from "./LifeHappens";
 import { ExerciseVisual } from "./ExerciseVisual";
 import { prescription, setsDone, SwitchButton, TodayView } from "./TodayView";
@@ -61,7 +60,7 @@ export function WeekView() {
     return (
       <EmptyState
         title="Let's build your first week."
-        body="Answer a few questions about your goals and schedule, and Pivot will lay out a week that fits."
+        body="A few quick questions, then your week."
         action={<ButtonLink href="/onboarding">Get started</ButtonLink>}
       />
     );
@@ -82,7 +81,7 @@ export function WeekView() {
         track("plan_generated", { source: res.plan.generatedBy, workouts: res.plan.workouts.length });
         return;
       } catch (e) {
-        setPlanNote(`AI planning failed (${(e as Error).message}). Showing a template plan instead.`);
+        setPlanNote(`The AI ${(e as Error).message === "took too long" ? "took too long" : "couldn't answer"}, so this is a quick plan. You can ask your coach to adjust it.`);
       } finally {
         setPlanning(false);
       }
@@ -108,12 +107,13 @@ export function WeekView() {
     return (
       <EmptyState
         title="A fresh week."
-        body="Pivot will plan the next seven days, starting today, around your simulated calendar and the times you can't make."
+        body="Plan the next seven days around your calendar."
         action={
           <div className="flex flex-col items-center gap-3">
             <Button onClick={buildPlan} disabled={planning || !ai}>
-              {planning ? "Planning…" : ai?.ai ? "Plan this week with AI" : "Plan this week"}
+              {planning ? "Planning…" : "Plan my week"}
             </Button>
+            {planning && <p className="text-sm text-ink-soft">This can take up to 30 seconds.</p>}
             {planNote && <p className="text-sm text-coral-deep">{planNote}</p>}
           </div>
         }
@@ -141,12 +141,7 @@ export function WeekView() {
             {profile.name ? `, ${profile.name}` : ""}.
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <PlanBadge plan={plan} ai={ai} />
             <ChecksBadge result={checks} />
-            <Button variant="secondary" className="h-8 px-3.5 text-xs" onClick={buildPlan} disabled={planning || !ai}>
-              <Sparkle width={14} height={14} />
-              {planning ? "Planning…" : ai?.ai ? "Replan with AI" : "Rebuild plan"}
-            </Button>
           </div>
         </div>
         <Progress plan={plan} />
@@ -176,15 +171,10 @@ export function WeekView() {
                 className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-card px-3.5 py-1.5 text-xs font-medium text-ink-soft hover:text-ink"
               >
                 <CalendarIcon width={14} height={14} />
-                {showCalendar ? "Hide" : "Show"} calendar · {CALENDAR_PRESETS[state.calendarPreset].label} (simulated)
+                {showCalendar ? "Hide" : "Show"} calendar
               </button>
             </div>
           </div>
-          {!planCovers(plan, addDays(today, 6)) && (
-            <p className="text-sm text-ink-soft">
-              Your plan runs through {monthDay(addDays(plan.weekStart, 6))}. Replan to fill in the days after it.
-            </p>
-          )}
           <div className="flex flex-col gap-3">
             {weekDates(today).map((date, i) => (
               <DayColumn
@@ -203,15 +193,6 @@ export function WeekView() {
         </section>
       )}
 
-      <LifeHappens
-        plan={plan}
-        profile={profile}
-        busy={calendar.busy}
-        knownRange={calendar.knownRange}
-        now={now}
-        ai={ai?.ai ?? false}
-      />
-
       {plan.notes.length > 0 && (
         <Card className="flex flex-col gap-1 border-butter/50 bg-butter-soft p-4 text-sm text-butter-ink shadow-none">
           {plan.notes.map((n) => (
@@ -220,7 +201,14 @@ export function WeekView() {
         </Card>
       )}
 
-      <History records={state.history} />
+      <LifeHappens
+        plan={plan}
+        profile={profile}
+        busy={calendar.busy}
+        knownRange={calendar.knownRange}
+        now={now}
+        ai={ai?.ai ?? false}
+      />
 
       <WorkoutDialog workout={openWorkout} onClose={() => setOpenId(null)} onStatus={setStatus} />
     </div>
@@ -381,17 +369,6 @@ function Progress({ plan }: { plan: WeeklyPlan }) {
   );
 }
 
-function PlanBadge({ plan, ai }: { plan: WeeklyPlan; ai: AiStatus | null }) {
-  if (plan.generatedBy === "agent") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-lilac-soft px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-lilac-ink">
-        <Sparkle width={13} height={13} /> Planned by AI{ai?.model ? ` · ${ai.model}` : ""}
-      </span>
-    );
-  }
-  return <MockBadge>Sample plan · template, not AI</MockBadge>;
-}
-
 function ChecksBadge({ result }: { result: ValidationResult | null }) {
   const [open, setOpen] = useState(false);
   if (!result) return null;
@@ -409,12 +386,12 @@ function ChecksBadge({ result }: { result: ValidationResult | null }) {
       >
         <Shield width={13} height={13} />
         {result.ok
-          ? `${result.checked.length} checks passed`
+          ? "Fits your schedule"
           : `${result.violations.length} issue${result.violations.length > 1 ? "s" : ""}`}
       </button>
       {open && (
         <Card className="absolute top-9 left-0 z-20 w-80 animate-rise p-4 text-sm">
-          <p className="mb-2 font-semibold">Deterministic schedule checks</p>
+          <p className="mb-2 font-semibold">Schedule checks</p>
           <ul className="flex flex-col gap-1.5">
             {result.checked.map((c) => (
               <li key={c} className="flex items-center gap-2">
@@ -433,33 +410,6 @@ function ChecksBadge({ result }: { result: ValidationResult | null }) {
         </Card>
       )}
     </div>
-  );
-}
-
-function History({ records }: { records: ChangeRecord[] }) {
-  if (!records.length) return null;
-  return (
-    <section className="flex flex-col gap-3">
-      <h2 className="font-display text-2xl font-medium">Recent changes</h2>
-      <Card className="divide-y divide-line">
-        {records.slice(0, 5).map((r) => (
-          <div key={r.id} className="flex flex-col gap-0.5 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-            <div>
-              <p className="text-sm font-medium">&ldquo;{r.userMessage}&rdquo;</p>
-              <p className="text-sm text-ink-soft">{r.summary}</p>
-            </div>
-            <span
-              className={cx(
-                "shrink-0 self-start rounded-full px-2.5 py-0.5 text-[11px] font-semibold sm:self-center",
-                r.decision === "accepted" ? "bg-sage-soft text-sage-ink" : "bg-ink/10 text-ink-soft",
-              )}
-            >
-              {r.decision === "accepted" ? "Accepted" : "Declined"}
-            </span>
-          </div>
-        ))}
-      </Card>
-    </section>
   );
 }
 
