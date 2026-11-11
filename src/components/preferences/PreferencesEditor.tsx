@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
-import { importGoogleCalendar } from "@/lib/account";
+import { useEffect, useState, type ReactNode } from "react";
+import { IMPORT_AFTER_CONSENT, importGoogleCalendar, NeedsCalendarAccess, requestCalendarAccess } from "@/lib/account";
 import { useAccount } from "../AccountProvider";
 import { agentSnapshot, requestPlan, useAiStatus } from "@/lib/agentClient";
 import { CALENDAR_PRESETS, CALENDAR_PRESET_IDS, type CalendarPresetId } from "@/lib/calendar";
@@ -329,22 +329,39 @@ function CalendarImport() {
   const { user } = useAccount();
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  if (!user) return null;
-  const run = async () => {
+
+  const run = async (afterConsent: boolean) => {
     setBusy(true);
     setStatus(null);
     try {
       const n = await importGoogleCalendar(localNow(new Date()).date);
       setStatus(n ? `Added ${n} busy time${n > 1 ? "s" : ""}.` : "No busy times this week.");
     } catch (e) {
-      setStatus((e as Error).message);
+      if (e instanceof NeedsCalendarAccess && !afterConsent) {
+        // First import: ask Google for calendar access, then come back here and import.
+        setStatus("Asking Google for calendar access…");
+        await requestCalendarAccess();
+        return;
+      }
+      setStatus(e instanceof NeedsCalendarAccess ? "Calendar access wasn't granted, so nothing was imported." : (e as Error).message);
     } finally {
       setBusy(false);
     }
   };
+
+  // Back from Google's consent screen: import right away, once.
+  useEffect(() => {
+    if (!user || !window.location.search.includes(IMPORT_AFTER_CONSENT)) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    const t = setTimeout(() => void run(true), 0);
+    return () => clearTimeout(t);
+    // Fires once per sign-in; the flag is removed from the URL above, so it can't repeat.
+  }, [user]);
+
+  if (!user) return null;
   return (
     <div className="mt-3 flex flex-wrap items-center gap-3">
-      <Button variant="secondary" className="h-9 px-4 text-sm" onClick={run} disabled={busy}>
+      <Button variant="secondary" className="h-9 px-4 text-sm" onClick={() => run(false)} disabled={busy}>
         {busy ? "Importing…" : "Import Google Calendar"}
       </Button>
       {status && <span className="text-sm text-ink-soft">{status}</span>}
