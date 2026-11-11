@@ -15,6 +15,7 @@ export const GOALS = [
   "mobility",
   "general_fitness",
   "stress_relief",
+  "fat_loss",
 ] as const;
 export const Goal = z.enum(GOALS);
 export type Goal = z.infer<typeof Goal>;
