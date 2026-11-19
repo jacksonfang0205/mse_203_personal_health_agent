@@ -72,6 +72,8 @@ export interface ValidationContext {
   /** Overrides profile equipment, e.g. when traveling. */
   equipmentAvailable?: Equipment[];
   extraAvoidTags?: AvoidTag[];
+  /** Weekly minutes this user can safely do now (see planner/progression.ts). Overrides the profile target. */
+  weeklyMinuteCap?: number;
 }
 
 export interface ValidationResult {
@@ -270,11 +272,11 @@ export function checkVolume(plan: WeeklyPlan, ctx: ValidationContext): Violation
   }
 
   const minutes = (ws: Workout[]) => ws.reduce((s, w) => s + w.durationMin, 0);
-  const maxMinutes = Math.max(ctx.profile.frequencyPerWeek * ctx.profile.sessionMinutes, minutes(prev));
+  const maxMinutes = Math.max(ctx.weeklyMinuteCap ?? ctx.profile.frequencyPerWeek * ctx.profile.sessionMinutes, minutes(prev));
   if (minutes(next) > maxMinutes) {
     out.push({
       constraint: "no_volume_spike",
-      message: `${minutes(next)} weekly minutes scheduled; the cap is ${maxMinutes}.`,
+      message: `${minutes(next)} weekly minutes scheduled; the cap is ${maxMinutes}${ctx.weeklyMinuteCap !== undefined ? " (gradual progression)" : ""}.`,
     });
   }
 

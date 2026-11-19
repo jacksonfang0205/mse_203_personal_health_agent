@@ -153,3 +153,22 @@ describe("validatePlan", () => {
     expect(r.warnings.map((w) => w.constraint)).toEqual(expect.arrayContaining(["preferred_day", "preferred_time"]));
   });
 });
+
+describe("weeklyMinuteCap (gradual progression)", () => {
+  it("rejects a week above the progression cap even when it fits the profile target", async () => {
+    const { validatePlan } = await import("./validation");
+    const { EXERCISES } = await import("./catalog");
+    const run = EXERCISES.find((e) => e.prescription.kind === "duration")!;
+    const w = (i: number) => ({
+      id: `w${i}`, title: "Run", date: `2026-11-2${3 + i}`, start: "07:00", durationMin: 30, category: run.category,
+      muscles: run.muscles, equipment: run.equipment, exercises: [{ exerciseId: run.id, minutes: 30 }],
+      rationale: "x", status: "planned" as const, origin: "agent" as const,
+    });
+    const plan = { id: "p", weekStart: "2026-11-23", workouts: [w(0), w(1), w(2)], generatedBy: "agent" as const, createdAt: "2026-11-23T00:00:00Z", notes: [] };
+    const profile = { goals: ["endurance"], experience: "advanced", equipment: run.equipment, avoidTags: [], avoidExerciseIds: [], frequencyPerWeek: 3, sessionMinutes: 30, preferredDays: [], preferredTimes: [], workoutTypes: ["running"], targetMuscles: [], version: 1, updatedAt: "" };
+    const ctx = { profile: profile as never, busy: [], knownRange: { start: "2026-11-23", end: "2026-11-29" } };
+    const volume = (r: ReturnType<typeof validatePlan>) => r.violations.filter((v) => v.constraint === "no_volume_spike");
+    expect(volume(validatePlan(plan, ctx))).toHaveLength(0);
+    expect(volume(validatePlan(plan, { ...ctx, weeklyMinuteCap: 60 }))[0].message).toMatch(/gradual progression/);
+  });
+});

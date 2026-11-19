@@ -204,7 +204,9 @@ type Input = { case: string; data: RubricCase };
 type Args = { input: Input; output: TaskOutput };
 
 Eval("Pivot", {
-  experimentName: `${PLANNER} · rubric v1 · ${modelName()}`,
+  // EVAL_LABEL names a planner version (e.g. "planner v2"); EVAL_BASE picks the run Braintrust compares against.
+  experimentName: process.env.EVAL_LABEL ? `${PLANNER} · rubric v1 · ${process.env.EVAL_LABEL}` : `${PLANNER} · rubric v1 · ${modelName()}`,
+  ...(process.env.EVAL_BASE ? { baseExperimentName: process.env.EVAL_BASE } : {}),
   description: "Weekly plans for evals/cases.json, scored on capability, calendar, diversity, progression and injury (evals/rubric.md).",
   metadata: { planner: PLANNER, model: modelName(), cases: "evals/cases.json", rubric: "evals/rubric.md" },
   // Braintrust names every row "eval" and shows input keys alphabetically, so the case label goes

@@ -27,6 +27,7 @@ import {
   type WeeklyPlan,
 } from "../schemas";
 import { dayLong, formatTime, weekdayOf } from "../time";
+import { weeklyLoadBudget } from "../planner/progression";
 import { validatePlan, type ValidationContext } from "../validation";
 import {
   assembleWorkout,
@@ -302,7 +303,7 @@ function gate(out: LifeHappensOutput, req: AgentRequest, plan: WeeklyPlan, ctx: 
 }
 
 /** Checks include what the message added: new events, times to remember, limits, equipment. */
-function validationContext(req: AgentRequest, out: LifeHappensOutput, plan: WeeklyPlan): ValidationContext {
+function validationContext(req: AgentRequest & { message?: string }, out: LifeHappensOutput, plan: WeeklyPlan): ValidationContext {
   const base = weekContext(req);
   const remembered = blockedToBusy(memorySuggestions(out, req).blocked, base.knownRange).map(
     (b): BusyBlock => ({ ...b, source: "user_message" }),
@@ -316,6 +317,8 @@ function validationContext(req: AgentRequest, out: LifeHappensOutput, plan: Week
     previousPlan: plan,
     dateLimits,
     equipmentAvailable: out.equipment_available ?? undefined,
+    // Edits can add at most one step of progression, however much the message asks for.
+    weeklyMinuteCap: weeklyLoadBudget({ profile: req.profile, log: req.log, weekStart: plan.weekStart, message: req.message }).capMinutes,
   };
 }
 
