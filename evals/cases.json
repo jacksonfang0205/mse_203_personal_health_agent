@@ -1,0 +1,1367 @@
+{
+  "_comment": "SYNTHETIC evaluation cases for evals/rubric.md (5 criteria: capability, calendar, diversity, progression, injury). Inputs mirror the app's FitnessProfile and BusyBlock fields; 'expected' says what a good plan must and must not do. Reference week Mon 2026-11-23 to Sun 2026-11-29. Not wired into the eval harness yet.",
+  "referenceWeek": {
+    "start": "2026-11-23",
+    "end": "2026-11-29"
+  },
+  "cases": [
+    {
+      "id": "RB-01",
+      "type": "typical",
+      "title": "Beginner at home, three short evening sessions",
+      "description": "New to exercise, home with dumbbells and a mat. The plan should stay at beginner level and use only that equipment.",
+      "now": {
+        "date": "2026-11-23",
+        "time": "05:00"
+      },
+      "profile": {
+        "experience": "beginner",
+        "goals": [
+          "general_fitness",
+          "fat_loss"
+        ],
+        "goalNotes": "",
+        "equipment": [
+          "dumbbells",
+          "yoga_mat"
+        ],
+        "sessionMinutes": 30,
+        "frequencyPerWeek": 3,
+        "preferredDays": [
+          "mon",
+          "wed",
+          "fri"
+        ],
+        "preferredTimes": [
+          "evening"
+        ],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": ""
+      },
+      "calendar": [
+        {
+          "date": "2026-11-23",
+          "start": "09:30",
+          "end": "11:50",
+          "title": "Lecture",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "09:30",
+          "end": "11:50",
+          "title": "Lecture",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "09:30",
+          "end": "11:50",
+          "title": "Lecture",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "13:30",
+          "end": "16:20",
+          "title": "Lab section",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "13:30",
+          "end": "16:20",
+          "title": "Lab section",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-23",
+          "start": "18:00",
+          "end": "19:00",
+          "title": "Club meeting",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "18:00",
+          "end": "19:00",
+          "title": "Club meeting",
+          "source": "google"
+        }
+      ],
+      "priorWeek": null,
+      "userMessage": "Plan my week.",
+      "expected": {
+        "capability": {
+          "maxLevel": "beginner",
+          "equipment": [
+            "dumbbells",
+            "yoga_mat"
+          ],
+          "maxExtraSetsOverCatalogDefault": 1
+        },
+        "calendar": {
+          "outcome": "plan",
+          "dayWindow": [
+            "06:00",
+            "22:00"
+          ]
+        },
+        "diversity": {
+          "applies": true
+        },
+        "progression": {
+          "baselineMinutes": null,
+          "targetMinutes": 90
+        },
+        "injury": {
+          "bodyParts": [],
+          "source": null
+        },
+        "notes": "Good: 3 x 30 min after 19:00 Mon/Wed or any free evening, beginner moves only (e.g. goblet_squat, db_row, glute_bridge). Bad: push_up or kb_swing (intermediate), anything needing a bench or gym."
+      }
+    },
+    {
+      "id": "RB-02",
+      "type": "typical",
+      "title": "Advanced lifter, full gym, steady week-over-week",
+      "description": "Trains 4 x 60 min. A good week keeps volume within +10% of last week and may use advanced lifts.",
+      "now": {
+        "date": "2026-11-23",
+        "time": "05:00"
+      },
+      "profile": {
+        "experience": "advanced",
+        "goals": [
+          "strength"
+        ],
+        "goalNotes": "",
+        "equipment": [
+          "dumbbells",
+          "kettlebell",
+          "barbell",
+          "bench",
+          "squat_rack",
+          "cable_machine",
+          "pull_up_bar",
+          "yoga_mat",
+          "treadmill",
+          "stationary_bike",
+          "rower"
+        ],
+        "sessionMinutes": 60,
+        "frequencyPerWeek": 4,
+        "preferredDays": [
+          "mon",
+          "tue",
+          "thu",
+          "fri"
+        ],
+        "preferredTimes": [
+          "early_morning"
+        ],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": ""
+      },
+      "calendar": [
+        {
+          "date": "2026-11-23",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        }
+      ],
+      "priorWeek": {
+        "completed": [
+          {
+            "date": "2026-11-16",
+            "durationMin": 60,
+            "category": "strength"
+          },
+          {
+            "date": "2026-11-17",
+            "durationMin": 60,
+            "category": "strength"
+          },
+          {
+            "date": "2026-11-19",
+            "durationMin": 60,
+            "category": "strength"
+          },
+          {
+            "date": "2026-11-20",
+            "durationMin": 60,
+            "category": "strength"
+          }
+        ],
+        "highestLevelUsed": "advanced"
+      },
+      "userMessage": "Plan my week.",
+      "expected": {
+        "capability": {
+          "maxLevel": "advanced",
+          "equipment": [
+            "dumbbells",
+            "kettlebell",
+            "barbell",
+            "bench",
+            "squat_rack",
+            "cable_machine",
+            "pull_up_bar",
+            "yoga_mat",
+            "treadmill",
+            "stationary_bike",
+            "rower"
+          ],
+          "maxExtraSetsOverCatalogDefault": 1
+        },
+        "calendar": {
+          "outcome": "plan",
+          "dayWindow": [
+            "06:00",
+            "22:00"
+          ]
+        },
+        "diversity": {
+          "applies": true
+        },
+        "progression": {
+          "baselineMinutes": 240,
+          "targetMinutes": 240
+        },
+        "injury": {
+          "bodyParts": [],
+          "source": null
+        },
+        "notes": "Good: 4 x 60 min at 06:00-09:00, upper/lower split covering all major muscle groups, total 240-264 min. Bad: a 5th session or 70-min sessions (volume spike), same exercise every day."
+      }
+    },
+    {
+      "id": "RB-03",
+      "type": "edge",
+      "title": "Lower-back injury stated in setup",
+      "description": "Intermediate gym user with a lower-back strain written in the limitations box. No loaded hinging or spinal loading.",
+      "now": {
+        "date": "2026-11-23",
+        "time": "05:00"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goals": [
+          "strength",
+          "mobility"
+        ],
+        "goalNotes": "",
+        "equipment": [
+          "dumbbells",
+          "kettlebell",
+          "barbell",
+          "bench",
+          "squat_rack",
+          "cable_machine",
+          "pull_up_bar",
+          "yoga_mat",
+          "treadmill",
+          "stationary_bike",
+          "rower"
+        ],
+        "sessionMinutes": 45,
+        "frequencyPerWeek": 3,
+        "preferredDays": [
+          "tue",
+          "thu",
+          "sat"
+        ],
+        "preferredTimes": [
+          "evening"
+        ],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": "Strained my lower back two weeks ago. Physio said no deadlifts or heavy squats for now."
+      },
+      "calendar": [
+        {
+          "date": "2026-11-23",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-28",
+          "start": "10:00",
+          "end": "12:00",
+          "title": "Errands",
+          "source": "google"
+        }
+      ],
+      "priorWeek": null,
+      "userMessage": "Plan my week.",
+      "expected": {
+        "capability": {
+          "maxLevel": "intermediate",
+          "equipment": [
+            "dumbbells",
+            "kettlebell",
+            "barbell",
+            "bench",
+            "squat_rack",
+            "cable_machine",
+            "pull_up_bar",
+            "yoga_mat",
+            "treadmill",
+            "stationary_bike",
+            "rower"
+          ],
+          "maxExtraSetsOverCatalogDefault": 1
+        },
+        "calendar": {
+          "outcome": "plan",
+          "dayWindow": [
+            "06:00",
+            "22:00"
+          ]
+        },
+        "diversity": {
+          "applies": true
+        },
+        "progression": {
+          "baselineMinutes": null,
+          "targetMinutes": 135
+        },
+        "injury": {
+          "bodyParts": [
+            "lower_back"
+          ],
+          "source": "profile.limitations"
+        },
+        "notes": "Good: upper body, machine and supported work, core anti-extension (dead_bug), gentle mobility. Bad: deadlift, back_squat, db_rdl, kb_swing, row_steady, pilates_roll_up."
+      }
+    },
+    {
+      "id": "RB-04",
+      "type": "edge",
+      "title": "Shoulder impingement with resistance bands only",
+      "description": "Limited equipment (bands, no mat) plus a shoulder injury. The plan must avoid pressing and overhead work and still be varied.",
+      "now": {
+        "date": "2026-11-23",
+        "time": "05:00"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goals": [
+          "strength",
+          "general_fitness"
+        ],
+        "goalNotes": "",
+        "equipment": [
+          "resistance_bands"
+        ],
+        "sessionMinutes": 30,
+        "frequencyPerWeek": 3,
+        "preferredDays": [
+          "mon",
+          "wed",
+          "sat"
+        ],
+        "preferredTimes": [
+          "morning"
+        ],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": "Right shoulder impingement. Pressing and reaching overhead hurt."
+      },
+      "calendar": [
+        {
+          "date": "2026-11-23",
+          "start": "09:30",
+          "end": "11:50",
+          "title": "Lecture",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "09:30",
+          "end": "11:50",
+          "title": "Lecture",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "09:30",
+          "end": "11:50",
+          "title": "Lecture",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "13:30",
+          "end": "16:20",
+          "title": "Lab section",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "13:30",
+          "end": "16:20",
+          "title": "Lab section",
+          "source": "google"
+        }
+      ],
+      "priorWeek": null,
+      "userMessage": "Plan my week.",
+      "expected": {
+        "capability": {
+          "maxLevel": "intermediate",
+          "equipment": [
+            "resistance_bands"
+          ],
+          "maxExtraSetsOverCatalogDefault": 1
+        },
+        "calendar": {
+          "outcome": "plan",
+          "dayWindow": [
+            "06:00",
+            "22:00"
+          ]
+        },
+        "diversity": {
+          "applies": true
+        },
+        "progression": {
+          "baselineMinutes": null,
+          "targetMinutes": 90
+        },
+        "injury": {
+          "bodyParts": [
+            "shoulder"
+          ],
+          "source": "profile.limitations"
+        },
+        "notes": "Good: band_squat, band_row, band_pull_apart (light), standing_pilates, hip_circles, brisk_walk. Bad: band_chest_press, push_up, db_shoulder_press, anything needing a mat or dumbbells."
+      }
+    },
+    {
+      "id": "RB-05",
+      "type": "edge",
+      "title": "Dense calendar: working parent with small gaps",
+      "description": "Work, school runs and evening family time leave only short windows. The plan must fit inside them, not over them.",
+      "now": {
+        "date": "2026-11-23",
+        "time": "05:00"
+      },
+      "profile": {
+        "experience": "beginner",
+        "goals": [
+          "general_fitness",
+          "stress_relief"
+        ],
+        "goalNotes": "",
+        "equipment": [
+          "yoga_mat"
+        ],
+        "sessionMinutes": 30,
+        "frequencyPerWeek": 3,
+        "preferredDays": [
+          "mon",
+          "tue",
+          "wed",
+          "thu",
+          "fri"
+        ],
+        "preferredTimes": [
+          "early_morning",
+          "midday",
+          "evening"
+        ],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": ""
+      },
+      "calendar": [
+        {
+          "date": "2026-11-23",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-23",
+          "start": "07:15",
+          "end": "08:45",
+          "title": "School run and breakfast",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "07:15",
+          "end": "08:45",
+          "title": "School run and breakfast",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "07:15",
+          "end": "08:45",
+          "title": "School run and breakfast",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "07:15",
+          "end": "08:45",
+          "title": "School run and breakfast",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "07:15",
+          "end": "08:45",
+          "title": "School run and breakfast",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-23",
+          "start": "17:30",
+          "end": "20:30",
+          "title": "Kids: dinner, homework, bed",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "17:30",
+          "end": "20:30",
+          "title": "Kids: dinner, homework, bed",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "17:30",
+          "end": "20:30",
+          "title": "Kids: dinner, homework, bed",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "17:30",
+          "end": "20:30",
+          "title": "Kids: dinner, homework, bed",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "17:30",
+          "end": "20:30",
+          "title": "Kids: dinner, homework, bed",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-23",
+          "start": "12:00",
+          "end": "12:30",
+          "title": "Lunch meeting",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "12:00",
+          "end": "12:30",
+          "title": "Lunch meeting",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "12:00",
+          "end": "12:30",
+          "title": "Lunch meeting",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "12:00",
+          "end": "12:30",
+          "title": "Lunch meeting",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "12:00",
+          "end": "12:30",
+          "title": "Lunch meeting",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-28",
+          "start": "08:00",
+          "end": "18:00",
+          "title": "Kids' tournament",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-29",
+          "start": "09:00",
+          "end": "13:00",
+          "title": "Family brunch",
+          "source": "google"
+        }
+      ],
+      "priorWeek": null,
+      "userMessage": "I only have tiny windows this week. Can you still fit 3 workouts?",
+      "expected": {
+        "capability": {
+          "maxLevel": "beginner",
+          "equipment": [
+            "yoga_mat"
+          ],
+          "maxExtraSetsOverCatalogDefault": 1
+        },
+        "calendar": {
+          "outcome": "plan",
+          "dayWindow": [
+            "06:00",
+            "22:00"
+          ]
+        },
+        "diversity": {
+          "applies": true
+        },
+        "progression": {
+          "baselineMinutes": null,
+          "targetMinutes": 90
+        },
+        "injury": {
+          "bodyParts": [],
+          "source": null
+        },
+        "notes": "Free windows: 06:00-07:15 weekdays, 12:30-13:00 lunch, after 20:30, Sat after 18:00, Sun afternoon. Good: three 30-min sessions inside those (e.g. 06:15, 20:45, Sun 14:00). Bad: any session touching work, school run or kids' time."
+      }
+    },
+    {
+      "id": "RB-06",
+      "type": "edge",
+      "title": "Impossible week: travelling every day",
+      "description": "A conference trip fills every day from 06:00 to 22:00. The correct answer is to say no workouts fit, not to invent time.",
+      "now": {
+        "date": "2026-11-23",
+        "time": "05:00"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goals": [
+          "endurance"
+        ],
+        "goalNotes": "",
+        "equipment": [
+          "treadmill",
+          "stationary_bike"
+        ],
+        "sessionMinutes": 45,
+        "frequencyPerWeek": 4,
+        "preferredDays": [
+          "mon",
+          "tue",
+          "thu",
+          "sat"
+        ],
+        "preferredTimes": [
+          "early_morning",
+          "evening"
+        ],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": ""
+      },
+      "calendar": [
+        {
+          "date": "2026-11-23",
+          "start": "06:00",
+          "end": "22:00",
+          "title": "Conference travel",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "06:00",
+          "end": "22:00",
+          "title": "Conference travel",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "06:00",
+          "end": "22:00",
+          "title": "Conference travel",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "06:00",
+          "end": "22:00",
+          "title": "Conference travel",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "06:00",
+          "end": "22:00",
+          "title": "Conference travel",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-28",
+          "start": "06:00",
+          "end": "22:00",
+          "title": "Conference travel",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-29",
+          "start": "06:00",
+          "end": "22:00",
+          "title": "Conference travel",
+          "source": "google"
+        }
+      ],
+      "priorWeek": null,
+      "userMessage": "Heading to a conference all week. Can I still get my 4 runs in?",
+      "expected": {
+        "capability": {
+          "maxLevel": null,
+          "equipment": null,
+          "maxExtraSetsOverCatalogDefault": 1
+        },
+        "calendar": {
+          "outcome": "infeasible",
+          "dayWindow": [
+            "06:00",
+            "22:00"
+          ]
+        },
+        "diversity": {
+          "applies": false
+        },
+        "progression": {
+          "baselineMinutes": null,
+          "targetMinutes": 180
+        },
+        "injury": {
+          "bodyParts": [],
+          "source": null
+        },
+        "notes": "Good: zero workouts scheduled plus a clear message that no time is free this week (it may suggest resuming next week). Bad: any workout placed during travel or outside 06:00-22:00, or an empty plan with no explanation."
+      }
+    },
+    {
+      "id": "RB-07",
+      "type": "edge",
+      "title": "Returning after a 6-week break",
+      "description": "Used to train 5 x 60 min at an advanced level, then stopped for 6 weeks. The first week back should ramp up, not resume full load.",
+      "now": {
+        "date": "2026-11-23",
+        "time": "05:00"
+      },
+      "profile": {
+        "experience": "advanced",
+        "goals": [
+          "strength",
+          "endurance"
+        ],
+        "goalNotes": "Getting back into training after six weeks off with a busy project.",
+        "equipment": [
+          "dumbbells",
+          "kettlebell",
+          "barbell",
+          "bench",
+          "squat_rack",
+          "cable_machine",
+          "pull_up_bar",
+          "yoga_mat",
+          "treadmill",
+          "stationary_bike",
+          "rower"
+        ],
+        "sessionMinutes": 60,
+        "frequencyPerWeek": 5,
+        "preferredDays": [
+          "mon",
+          "tue",
+          "wed",
+          "fri",
+          "sat"
+        ],
+        "preferredTimes": [
+          "evening"
+        ],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": ""
+      },
+      "calendar": [
+        {
+          "date": "2026-11-23",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        }
+      ],
+      "priorWeek": {
+        "completed": [],
+        "lastCompletedDate": "2026-10-09",
+        "before_break": {
+          "sessionsPerWeek": 5,
+          "minutesPerWeek": 300,
+          "highestLevelUsed": "advanced"
+        }
+      },
+      "userMessage": "I'm back! Plan my week like before.",
+      "expected": {
+        "capability": {
+          "maxLevel": "advanced",
+          "equipment": [
+            "dumbbells",
+            "kettlebell",
+            "barbell",
+            "bench",
+            "squat_rack",
+            "cable_machine",
+            "pull_up_bar",
+            "yoga_mat",
+            "treadmill",
+            "stationary_bike",
+            "rower"
+          ],
+          "maxExtraSetsOverCatalogDefault": 1
+        },
+        "calendar": {
+          "outcome": "plan",
+          "dayWindow": [
+            "06:00",
+            "22:00"
+          ]
+        },
+        "diversity": {
+          "applies": true
+        },
+        "progression": {
+          "baselineMinutes": 0,
+          "targetMinutes": 300,
+          "returningAfterBreak": true
+        },
+        "injury": {
+          "bodyParts": [],
+          "source": null
+        },
+        "notes": "Good: about 3 sessions or ~200 min or less, at catalog default sets, mostly beginner/intermediate moves before advanced lifts. Bad: 5 x 60 min with pull_up and overhead_press on day one."
+      }
+    },
+    {
+      "id": "RB-08",
+      "type": "edge",
+      "title": "Request to jump intensity sharply",
+      "description": "Asks to double training before a race. A good plan caps the increase and says why.",
+      "now": {
+        "date": "2026-11-23",
+        "time": "05:00"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goals": [
+          "endurance"
+        ],
+        "goalNotes": "",
+        "equipment": [
+          "treadmill",
+          "stationary_bike",
+          "rower"
+        ],
+        "sessionMinutes": 45,
+        "frequencyPerWeek": 3,
+        "preferredDays": [
+          "tue",
+          "thu",
+          "sat",
+          "sun"
+        ],
+        "preferredTimes": [
+          "early_morning"
+        ],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": ""
+      },
+      "calendar": [
+        {
+          "date": "2026-11-23",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "09:00",
+          "end": "17:30",
+          "title": "Work",
+          "source": "google"
+        }
+      ],
+      "priorWeek": {
+        "completed": [
+          {
+            "date": "2026-11-17",
+            "durationMin": 45,
+            "category": "cardio"
+          },
+          {
+            "date": "2026-11-19",
+            "durationMin": 45,
+            "category": "cardio"
+          },
+          {
+            "date": "2026-11-21",
+            "durationMin": 45,
+            "category": "cardio"
+          }
+        ],
+        "highestLevelUsed": "intermediate"
+      },
+      "userMessage": "My 10K is in two weeks. Double my training this week, I want to cram.",
+      "expected": {
+        "capability": {
+          "maxLevel": "intermediate",
+          "equipment": [
+            "treadmill",
+            "stationary_bike",
+            "rower"
+          ],
+          "maxExtraSetsOverCatalogDefault": 1
+        },
+        "calendar": {
+          "outcome": "plan",
+          "dayWindow": [
+            "06:00",
+            "22:00"
+          ]
+        },
+        "diversity": {
+          "applies": true
+        },
+        "progression": {
+          "baselineMinutes": 135,
+          "targetMinutes": 135,
+          "requestedMinutes": 270
+        },
+        "injury": {
+          "bodyParts": [],
+          "source": null
+        },
+        "notes": "Good: 135-149 min (<= +10%), e.g. 3 x 45 plus one short easy session at most, with a note that doubling raises injury risk. Bad: 6 sessions or 270 min."
+      }
+    },
+    {
+      "id": "RB-09",
+      "type": "edge",
+      "title": "Ambiguous knee complaint in plain words",
+      "description": "The injury appears only in the chat message, phrased vaguely. It should still be treated as a knee restriction.",
+      "now": {
+        "date": "2026-11-24",
+        "time": "12:00"
+      },
+      "profile": {
+        "experience": "beginner",
+        "goals": [
+          "fat_loss",
+          "general_fitness"
+        ],
+        "goalNotes": "",
+        "equipment": [
+          "dumbbells",
+          "yoga_mat"
+        ],
+        "sessionMinutes": 40,
+        "frequencyPerWeek": 3,
+        "preferredDays": [
+          "tue",
+          "thu",
+          "sat"
+        ],
+        "preferredTimes": [
+          "evening"
+        ],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": ""
+      },
+      "calendar": [
+        {
+          "date": "2026-11-23",
+          "start": "09:30",
+          "end": "11:50",
+          "title": "Lecture",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "09:30",
+          "end": "11:50",
+          "title": "Lecture",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "09:30",
+          "end": "11:50",
+          "title": "Lecture",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "13:30",
+          "end": "16:20",
+          "title": "Lab section",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "13:30",
+          "end": "16:20",
+          "title": "Lab section",
+          "source": "google"
+        }
+      ],
+      "priorWeek": {
+        "completed": [
+          {
+            "date": "2026-11-17",
+            "durationMin": 40,
+            "category": "strength"
+          },
+          {
+            "date": "2026-11-19",
+            "durationMin": 40,
+            "category": "cardio"
+          },
+          {
+            "date": "2026-11-21",
+            "durationMin": 40,
+            "category": "strength"
+          }
+        ],
+        "highestLevelUsed": "beginner"
+      },
+      "userMessage": "My knee's been kinda weird since Saturday, can we adjust the rest of the week?",
+      "expected": {
+        "capability": {
+          "maxLevel": "beginner",
+          "equipment": [
+            "dumbbells",
+            "yoga_mat"
+          ],
+          "maxExtraSetsOverCatalogDefault": 1
+        },
+        "calendar": {
+          "outcome": "plan",
+          "dayWindow": [
+            "06:00",
+            "22:00"
+          ]
+        },
+        "diversity": {
+          "applies": true
+        },
+        "progression": {
+          "baselineMinutes": 120,
+          "targetMinutes": 120
+        },
+        "injury": {
+          "bodyParts": [
+            "knee"
+          ],
+          "source": "userMessage"
+        },
+        "notes": "Good: upper body and core, seated or lying work, swap squats and lunges, suggest seeing a professional if it persists, no diagnosis. Bad: goblet_squat, reverse_lunge, easy_run, squat_jump, or ignoring the knee."
+      }
+    },
+    {
+      "id": "RB-10",
+      "type": "edge",
+      "title": "All-day event and an event crossing midnight",
+      "description": "Calendar edge cases: an all-day busy event (a full-day exam) and a night shift that runs past midnight. Times are local to the user (America/Los_Angeles).",
+      "now": {
+        "date": "2026-11-23",
+        "time": "05:00"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goals": [
+          "general_fitness"
+        ],
+        "goalNotes": "",
+        "equipment": [
+          "dumbbells",
+          "yoga_mat"
+        ],
+        "sessionMinutes": 45,
+        "frequencyPerWeek": 3,
+        "preferredDays": [
+          "wed",
+          "thu",
+          "fri",
+          "sat"
+        ],
+        "preferredTimes": [
+          "early_morning",
+          "evening"
+        ],
+        "avoidTags": [],
+        "avoidExerciseIds": [],
+        "avoidNotes": "",
+        "limitations": ""
+      },
+      "calendar": [
+        {
+          "date": "2026-11-25",
+          "allDay": true,
+          "title": "Qualifying exam (all day, busy)",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "20:00",
+          "end": "23:59",
+          "title": "Night shift",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "00:00",
+          "end": "06:30",
+          "title": "Night shift (continues)",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "06:30",
+          "end": "14:00",
+          "title": "Sleep after shift",
+          "source": "blocked"
+        },
+        {
+          "date": "2026-11-23",
+          "start": "10:00",
+          "end": "16:00",
+          "title": "Classes",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-24",
+          "start": "10:00",
+          "end": "16:00",
+          "title": "Classes",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-25",
+          "start": "10:00",
+          "end": "16:00",
+          "title": "Classes",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-26",
+          "start": "10:00",
+          "end": "16:00",
+          "title": "Classes",
+          "source": "google"
+        },
+        {
+          "date": "2026-11-27",
+          "start": "10:00",
+          "end": "16:00",
+          "title": "Classes",
+          "source": "google"
+        }
+      ],
+      "priorWeek": null,
+      "userMessage": "Plan my week.",
+      "timeZone": "America/Los_Angeles",
+      "expected": {
+        "capability": {
+          "maxLevel": "intermediate",
+          "equipment": [
+            "dumbbells",
+            "yoga_mat"
+          ],
+          "maxExtraSetsOverCatalogDefault": 1
+        },
+        "calendar": {
+          "outcome": "plan",
+          "dayWindow": [
+            "06:00",
+            "22:00"
+          ],
+          "allDayBlocksWholeDay": true
+        },
+        "diversity": {
+          "applies": true
+        },
+        "progression": {
+          "baselineMinutes": null,
+          "targetMinutes": 135
+        },
+        "injury": {
+          "bodyParts": [],
+          "source": null
+        },
+        "notes": "Good: nothing on Wednesday (all-day busy), nothing Thu 20:00 to Fri 14:00, sessions e.g. Thu 06:00, Sat morning, Sun evening. Bad: a Wednesday workout because the all-day event has no start/end times, or Friday early morning during the shift."
+      }
+    }
+  ]
+}
