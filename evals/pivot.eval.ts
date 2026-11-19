@@ -200,30 +200,39 @@ function allowedIds(c: RubricCase): string[] {
   return EXERCISES.filter((e) => RANK[e.level] <= RANK[c.profile.experience] && e.equipment.every((q) => have.has(q)) && !forbidden.has(e.id)).map((e) => e.id);
 }
 
-type Args = { input: RubricCase; output: TaskOutput };
+type Input = { case: string; data: RubricCase };
+type Args = { input: Input; output: TaskOutput };
 
 Eval("Pivot", {
   experimentName: `${PLANNER} · rubric v1 · ${modelName()}`,
   description: "Weekly plans for evals/cases.json, scored on capability, calendar, diversity, progression and injury (evals/rubric.md).",
   metadata: { planner: PLANNER, model: modelName(), cases: "evals/cases.json", rubric: "evals/rubric.md" },
-  data: () => file.cases.map((c) => ({ input: c, expected: c.expected, metadata: { id: c.id, type: c.type, title: c.title } })),
-  task: async (c: RubricCase) => (PLANNER === "generic_llm" ? runGeneric(c) : runPivot(c)),
+  // Braintrust names every row "eval" and shows input keys alphabetically, so the case label goes
+  // first ("case" sorts before "data") and in the tags, to tell rows apart at a glance.
+  data: () =>
+    file.cases.map((c) => ({
+      input: { case: `${c.id} · ${c.title}`, data: c },
+      expected: c.expected,
+      tags: [c.id, c.type],
+      metadata: { id: c.id, type: c.type, title: c.title },
+    })),
+  task: async ({ data: c }: Input) => (PLANNER === "generic_llm" ? runGeneric(c) : runPivot(c)),
   // Named functions, so each scorer shows under its own name in Braintrust's trace view.
   scores: [
     function capabilityScore({ input, output }: Args) {
-      return capability(input, output, WEEK.start);
+      return capability(input.data, output, WEEK.start);
     },
     function calendarScore({ input, output }: Args) {
-      return calendar(input, output, WEEK.start);
+      return calendar(input.data, output, WEEK.start);
     },
     function diversityScore({ input, output }: Args) {
-      return diversity(input, output, WEEK.start, allowedIds(input));
+      return diversity(input.data, output, WEEK.start, allowedIds(input.data));
     },
     function progressionScore({ input, output }: Args) {
-      return progression(input, output, WEEK.start);
+      return progression(input.data, output, WEEK.start);
     },
     function injuryScore({ input, output }: Args) {
-      return injury(input, output, WEEK.start);
+      return injury(input.data, output, WEEK.start);
     },
   ],
   maxConcurrency: 2,
