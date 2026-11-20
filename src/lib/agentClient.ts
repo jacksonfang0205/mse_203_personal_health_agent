@@ -79,5 +79,5 @@ async function post<T>(path: string, body: unknown, timeoutMs = TIMEOUT_MS): Pro
 /** Planning is interactive, so it gives up sooner and the caller falls back to a quick plan. */
 export const PLAN_TIMEOUT_MS = 30_000;
 export const requestPlan = (req: AgentRequest) => post<PlanResult>("/api/plan", req, PLAN_TIMEOUT_MS);
-export const requestLifeHappens = (req: AgentRequest & { message: string }) =>
+export const requestLifeHappens = (req: AgentRequest & { message: string; clarified?: boolean }) =>
   post<LifeHappensResult>("/api/life-happens", req);

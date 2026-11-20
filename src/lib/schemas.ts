@@ -244,6 +244,10 @@ export const ALTERNATIVE_KINDS = ["shorter", "move", "swap_format", "skip"] as c
 export const AlternativeKind = z.enum(ALTERNATIVE_KINDS);
 export type AlternativeKind = z.infer<typeof AlternativeKind>;
 
+/** The user's locked choices a re-plan option may have to bend (see validation.ts). */
+export const PreferenceRuleName = z.enum(["training_days", "time_windows", "session_length"]);
+export type PreferenceRuleName = z.infer<typeof PreferenceRuleName>;
+
 export const Alternative = z.object({
   id: z.string(),
   kind: AlternativeKind,
@@ -252,6 +256,12 @@ export const Alternative = z.object({
   /** Honest costs of choosing this option. Never claim equivalence. */
   tradeoffs: z.array(z.string()),
   operations: z.array(PlanOperation).min(1),
+  /** Set by the validator, never the model: "fits" earns the badge; "bends" needs the user's OK. */
+  fit: z.enum(["fits", "bends"]).optional(),
+  /** Which locked preferences this option breaks. Applied only if the user accepts them. */
+  bends: z.array(PreferenceRuleName).optional(),
+  /** The question shown for a bending option, e.g. "Only midday is free, 25 min. OK?" */
+  ask: z.string().optional(),
 });
 export type Alternative = z.infer<typeof Alternative>;
 
@@ -264,6 +274,8 @@ export const Proposal = z.object({
   alternatives: z.array(Alternative).max(3),
   /** Set when no feasible alternative exists; the planner must say so rather than invent time. */
   infeasibleReason: z.string().optional(),
+  /** Per-date minute limits the user stated (e.g. "only 20 minutes Friday"). Shorter sessions there aren't a bend. */
+  dateLimits: z.record(z.string(), z.number()).optional(),
   generatedBy: z.enum(["rule_based_mock", "agent"]),
 });
 export type Proposal = z.infer<typeof Proposal>;

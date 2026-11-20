@@ -5,7 +5,7 @@
  * in <AccountProvider> (src/components/AccountProvider.tsx).
  */
 import { signIn } from "next-auth/react";
-import { resolveClashes, type MovedWorkout } from "./planner/clashes";
+import { resolveClashes, type BendingMove, type MovedWorkout } from "./planner/clashes";
 import type { BlockedTime, IsoDate, Workout } from "./schemas";
 import { calendarForWeek } from "./session";
 import { pivot } from "./store";
@@ -32,17 +32,26 @@ export interface ImportResult {
   moved: MovedWorkout[];
   /** Clashing workouts with no free time left this week. */
   unresolved: Workout[];
+  /** Moves that bend the user's days, times or length; shown as a question, applied only on OK. */
+  needsOk: BendingMove[];
 }
 
 /** Move any planned workouts that clash with the user's busy times (calendar plus blocked times). */
 export function fixClashes(): Omit<ImportResult, "added"> {
   const s = pivot.get();
-  if (!s.plan || !s.profile) return { moved: [], unresolved: [] };
+  if (!s.plan || !s.profile) return { moved: [], unresolved: [], needsOk: [] };
   const now = localNow(new Date());
   const { busy } = calendarForWeek(s.calendarPreset, s.plan.weekStart, s.blocked);
   const res = resolveClashes({ plan: s.plan, profile: s.profile, busy, now });
   if (res.moved.length) pivot.setPlan(res.plan);
-  return { moved: res.moved, unresolved: res.unresolved };
+  return { moved: res.moved, unresolved: res.unresolved, needsOk: res.needsOk };
+}
+
+/** The user tapped OK on a move that bends a preference. */
+export function acceptBendingMove(m: BendingMove) {
+  const s = pivot.get();
+  if (!s.plan) return;
+  pivot.setPlan({ ...s.plan, workouts: s.plan.workouts.map((w) => (w.id === m.id && w.status === "planned" ? { ...w, ...m.to } : w)) });
 }
 
 /**

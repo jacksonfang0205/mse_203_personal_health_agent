@@ -6,6 +6,7 @@
  */
 import { useState, type ReactNode } from "react";
 import { EXERCISES } from "@/lib/catalog";
+import { avoidTagsFromText } from "@/lib/injuries";
 import {
   AVOID_TAG_LABELS,
   EQUIPMENT_LABELS,
@@ -17,7 +18,6 @@ import {
   WORKOUT_TYPE_LABELS,
 } from "@/lib/labels";
 import {
-  type AvoidTag,
   EQUIPMENT,
   EXPERIENCE_LEVELS,
   FitnessProfile,
@@ -67,26 +67,8 @@ export function goalsFromText(text: string): Goal[] {
   return GOAL_WORDS.filter(([, re]) => re.test(text)).map(([g]) => g);
 }
 
-/** Things to avoid, in the user's words, mapped to the tags validation can enforce. */
-const AVOID_WORDS: [AvoidTag, RegExp][] = [
-  ["running", /\b(run|runs|running|jog|jogging)\b/i],
-  ["high_impact", /\b(jump\w*|plyo\w*|high[- ]impact|impact|burpees?|hop\w*)\b/i],
-  ["overhead", /\b(overhead|shoulders?)\b/i],
-  ["floor_work", /\b(floor|kneel\w*|lying down|on the ground)\b/i],
-  ["heavy_barbell", /\b(barbells?|heavy (lifts?|lifting|weights?)|deadlifts?|weight ?lifting)\b/i],
-];
-// Only a negative phrase counts, so "I love running" doesn't rule out running.
-const NEGATIVE = /\b(no|not|never|avoid\w*|can'?t|cannot|don'?t|won'?t|hate\w*|skip|without|stay away|injur\w*|hurt\w*|pain\w*|sore|bad|tweak\w*|strain\w*)\b/i;
-
-export function avoidTagsFromText(text: string): AvoidTag[] {
-  const clauses = text.replace(/’/g, "'").split(/[.;,\n]|\bbut\b/i);
-  const out = new Set<AvoidTag>();
-  for (const c of clauses) {
-    if (!NEGATIVE.test(c)) continue;
-    for (const [tag, re] of AVOID_WORDS) if (re.test(c)) out.add(tag);
-  }
-  return [...out];
-}
+/** Things to avoid, in the user's words, mapped to the tags validation can enforce (shared with the coach). */
+export { avoidTagsFromText };
 
 export function finalizeDraft(d: ProfileDraft, updatedAt: string) {
   const goalNotes = d.goalNotes?.trim() || undefined;

@@ -17,7 +17,10 @@ export type TelemetryEventName =
   | "life_happens_opened"
   | "life_happens_submitted"
   | "alternative_accepted"
-  | "alternatives_rejected";
+  | "alternatives_rejected"
+  | "injury_saved"
+  | "coach_clarify_asked"
+  | "coach_clarify_answered";
 
 export interface TelemetryEvent {
   name: TelemetryEventName;

@@ -13,6 +13,7 @@ import type { CalendarPresetId } from "./calendar";
 import type { BlockedTime, ChangeRecord, FitnessProfile, MemoryNote, WeeklyPlan, WorkoutExercise, WorkoutStatus } from "./schemas";
 import { isAllDay } from "./memoryRules";
 import { localNow } from "./time";
+import { doneBlockedReason } from "./workoutStatus";
 
 import { AppState } from "./appState";
 
@@ -144,13 +145,18 @@ export const pivot = {
       ticks: Object.fromEntries(Object.entries(s.ticks).filter(([id]) => plan.workouts.some((w) => w.id === id))),
     }));
   },
-  setWorkoutStatus(workoutId: string, status: WorkoutStatus) {
+  /** Returns why the change was refused (e.g. marking a future workout done), or null. */
+  setWorkoutStatus(workoutId: string, status: WorkoutStatus): string | null {
+    const w = snapshot().plan?.workouts.find((x) => x.id === workoutId);
+    const blocked = w && status === "completed" ? doneBlockedReason(w, localNow(new Date()).date) : null;
+    if (blocked) return blocked;
     update((s) => {
       // An explicit status resets the per-set ticks; a completed workout reads as every set done.
       const ticks = { ...s.ticks };
       delete ticks[workoutId];
       return withStatus({ ...s, ticks }, workoutId, status);
     });
+    return null;
   },
   /**
    * Tick sets off on the Today view. Finishing every set completes the
@@ -159,7 +165,8 @@ export const pivot = {
   setSetsDone(workoutId: string, exerciseIndex: number, done: number) {
     update((s) => {
       const w = s.plan?.workouts.find((x) => x.id === workoutId);
-      if (!w) return s;
+      // Sets can't be ticked off before the workout's day.
+      if (!w || doneBlockedReason(w, localNow(new Date()).date)) return s;
       const totals = w.exercises.map(setCount);
       const row = totals.map((t, i) => Math.min(t, s.ticks[workoutId]?.[i] ?? (w.status === "completed" ? t : 0)));
       row[exerciseIndex] = Math.max(0, Math.min(totals[exerciseIndex] ?? 0, done));

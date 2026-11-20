@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import { demoVideoUrl, getExercise } from "@/lib/catalog";
 import { CATEGORY_STYLE, EQUIPMENT_LABELS, MUSCLE_LABELS } from "@/lib/labels";
-import type { Workout, WorkoutExercise, WorkoutStatus } from "@/lib/schemas";
+import type { IsoDate, Workout, WorkoutExercise, WorkoutStatus } from "@/lib/schemas";
+import { doneBlockedReason } from "@/lib/workoutStatus";
 import { dayLong, formatRange, monthDay } from "@/lib/time";
 import { CategoryIcon, Check, SkipIcon } from "../icons";
 import { Button, MockBadge, cx } from "../ui";
@@ -25,10 +26,15 @@ const ORIGIN_LABEL: Record<Workout["origin"], string> = {
 
 export function WorkoutDialog({
   workout,
+  today,
+  note,
   onClose,
   onStatus,
 }: {
   workout: Workout | null;
+  today: IsoDate;
+  /** Why the last status change was refused, if it was. */
+  note?: string | null;
   onClose: () => void;
   onStatus: (status: WorkoutStatus) => void;
 }) {
@@ -42,6 +48,7 @@ export function WorkoutDialog({
   }, [workout]);
 
   const style = workout ? CATEGORY_STYLE[workout.category] : null;
+  const tooEarly = workout ? doneBlockedReason(workout, today) : null;
 
   return (
     <dialog
@@ -122,7 +129,7 @@ export function WorkoutDialog({
             <div className="flex flex-wrap gap-3 border-t border-line pt-6">
               {workout.status === "planned" ? (
                 <>
-                  <Button onClick={() => onStatus("completed")}>
+                  <Button onClick={() => onStatus("completed")} disabled={!!tooEarly} title={tooEarly ?? undefined}>
                     <Check /> Mark complete
                   </Button>
                   <Button variant="secondary" onClick={() => onStatus("skipped")}>
@@ -133,6 +140,11 @@ export function WorkoutDialog({
                 <Button variant="secondary" onClick={() => onStatus("planned")}>
                   {workout.status === "completed" ? "Mark as not done" : "Un-skip"}
                 </Button>
+              )}
+              {(tooEarly || note) && workout.status === "planned" && (
+                <p role="status" className="basis-full text-sm text-ink-soft">
+                  {tooEarly ?? note}
+                </p>
               )}
             </div>
           </div>

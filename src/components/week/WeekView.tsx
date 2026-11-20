@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { fixClashes } from "@/lib/account";
+import { acceptBendingMove, fixClashes } from "@/lib/account";
+import type { BendingMove } from "@/lib/planner/clashes";
 import { agentSnapshot, requestPlan, useAiStatus } from "@/lib/agentClient";
 import { findClashes } from "@/lib/planner/clashes";
 import { computeInsights, learnedTimeOrder } from "@/lib/insights";
@@ -10,7 +11,7 @@ import type { BusyBlock, IsoDate, WeeklyPlan, Workout, WorkoutStatus } from "@/l
 import { buildSamplePlan, calendarForWeek, carryOver } from "@/lib/session";
 import { pivot, setCount, useNow, usePivotState } from "@/lib/store";
 import { track } from "@/lib/telemetry";
-import { addDays, dayOfMonth, dayShort, formatTime, localNow, monthDay, planCovers, toMinutes, weekDates } from "@/lib/time";
+import { addDays, dayOfMonth, dayShort, formatDate, formatTime, localNow, monthDay, planCovers, toMinutes, weekDates } from "@/lib/time";
 import { CONSTRAINT_LABELS, validatePlan, type ValidationResult } from "@/lib/validation";
 import { CalendarIcon, Check, Shield } from "../icons";
 import { Button, ButtonLink, Card, Eyebrow, Skeleton, cx } from "../ui";
@@ -34,6 +35,8 @@ export function WeekView() {
   const [view, setView] = useState<"today" | "week">("today");
   const [planning, setPlanning] = useState(false);
   const [planNote, setPlanNote] = useState<string | null>(null);
+  const [pendingMoves, setPendingMoves] = useState<BendingMove[]>([]);
+  const [statusNote, setStatusNote] = useState<string | null>(null);
   const ai = useAiStatus();
 
   const today = now?.date ?? null;
@@ -51,7 +54,8 @@ export function WeekView() {
   const checks = useMemo(
     () =>
       state?.profile && state.plan && calendar
-        ? validatePlan(state.plan, { profile: state.profile, busy: calendar.busy, knownRange: calendar.knownRange })
+        ? // "Fits your schedule" means the validator checked days, time windows and length too, not just conflicts.
+          validatePlan(state.plan, { profile: state.profile, busy: calendar.busy, knownRange: calendar.knownRange, lockPreferences: true })
         : null,
     [state, calendar],
   );
@@ -100,6 +104,7 @@ export function WeekView() {
       keep,
       blocked: state.blocked,
       timeOrder: learnedTimeOrder(profile.preferredTimes, insights),
+      strictPreferences: true,
     });
     pivot.setPlan(next);
     track("plan_generated", { source: "mock_template", workouts: next.workouts.length });
@@ -127,7 +132,11 @@ export function WeekView() {
   const openWorkout = plan.workouts.find((w) => w.id === openId) ?? null;
   const setStatus = (status: WorkoutStatus) => {
     if (!openWorkout) return;
-    pivot.setWorkoutStatus(openWorkout.id, status);
+    const refused = pivot.setWorkoutStatus(openWorkout.id, status);
+    if (refused) {
+      setStatusNote(refused);
+      return;
+    }
     track("workout_status_changed", { status, category: openWorkout.category });
     setOpenId(null);
   };
@@ -163,15 +172,45 @@ export function WeekView() {
             className="h-9 px-4"
             onClick={() => {
               const r = fixClashes();
-              setPlanNote(
-                r.unresolved.length
-                  ? `Moved ${r.moved.length}; ${r.unresolved.length} still clash${r.unresolved.length > 1 ? "" : "es"} with no free time left this week.`
-                  : `Moved ${r.moved.map((m) => `${m.title} to ${dayShort(m.to.date)} ${formatTime(m.to.start)}`).join(", ")}.`,
-              );
+              setPendingMoves(r.needsOk);
+              const moved = r.moved.length
+                ? `Moved ${r.moved.map((m) => `${m.title} to ${formatDate(m.to.date)} ${formatTime(m.to.start)}`).join(", ")}.`
+                : "";
+              const stuck = r.unresolved.length
+                ? ` ${r.unresolved.length} still clash${r.unresolved.length > 1 ? "" : "es"} with no free time left this week.`
+                : "";
+              setPlanNote(`${moved}${stuck}`.trim() || null);
             }}
           >
             Move {clashes.length > 1 ? "them" : "it"}
           </Button>
+        </Card>
+      )}
+
+      {pendingMoves.length > 0 && (
+        <Card className="flex flex-col gap-2 border-butter/50 bg-butter-soft p-4 text-sm text-butter-ink shadow-none">
+          {pendingMoves.map((m) => (
+            <div key={m.id} className="flex flex-wrap items-center justify-between gap-3">
+              <span>
+                <span className="font-semibold">{m.title}</span>: {m.ask} ({formatDate(m.to.date)}, {formatTime(m.to.start)})
+              </span>
+              <span className="flex gap-2">
+                <Button
+                  variant="dark"
+                  className="h-8 px-3.5 text-xs"
+                  onClick={() => {
+                    acceptBendingMove(m);
+                    setPendingMoves((p) => p.filter((x) => x.id !== m.id));
+                  }}
+                >
+                  OK
+                </Button>
+                <Button variant="secondary" className="h-8 px-3.5 text-xs" onClick={() => setPendingMoves((p) => p.filter((x) => x.id !== m.id))}>
+                  No, leave it
+                </Button>
+              </span>
+            </div>
+          ))}
         </Card>
       )}
 
@@ -236,7 +275,16 @@ export function WeekView() {
         ai={ai?.ai ?? false}
       />
 
-      <WorkoutDialog workout={openWorkout} onClose={() => setOpenId(null)} onStatus={setStatus} />
+      <WorkoutDialog
+        workout={openWorkout}
+        today={today}
+        note={statusNote}
+        onClose={() => {
+          setOpenId(null);
+          setStatusNote(null);
+        }}
+        onStatus={setStatus}
+      />
     </div>
   );
 }

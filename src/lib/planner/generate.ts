@@ -25,7 +25,8 @@ import type {
   WorkoutType,
 } from "../schemas";
 import { TIMES_OF_DAY } from "../schemas";
-import { dayLong, fromMinutes, overlaps, toMinutes, weekDates, weekdayOf } from "../time";
+import { addDays, dayLong, fromMinutes, overlaps, toMinutes, weekDates, weekdayOf } from "../time";
+import { isLowerBody } from "../validation";
 
 const LEVEL_RANK = { beginner: 0, intermediate: 1, advanced: 2 } as const;
 const SLOT_STEP = 15;
@@ -305,6 +306,11 @@ export interface MockWeekArgs {
   createdAt: string;
   /** Preferred windows, best first. Defaults to the profile's, earliest first. */
   timeOrder?: TimeOfDay[];
+  /**
+   * Re-plans: only the user's training days and time windows, never a
+   * fallback day or hour. Sessions that don't fit are left out with a note.
+   */
+  strictPreferences?: boolean;
 }
 
 /** Spread `n` picks across `items` as evenly as possible. */
@@ -328,25 +334,35 @@ export function generateMockWeek(args: MockWeekArgs): WeeklyPlan {
   const target = Math.max(0, profile.frequencyPerWeek - keep.length);
 
   const chosen = spread(preferredDates, target);
-  const fallbacks = [...preferredDates.filter((d) => !chosen.includes(d)), ...otherDates];
+  const fallbacks = [...preferredDates.filter((d) => !chosen.includes(d)), ...(args.strictPreferences ? [] : otherDates)];
 
   const workouts: Workout[] = [...keep];
   let strengthIdx = 0;
   let sessionIdx = 0;
 
+  // Never two lower-body days back to back.
+  const legDayNextTo = (date: IsoDate) =>
+    workouts.some((w) => w.status !== "skipped" && isLowerBody(w) && (w.date === addDays(date, -1) || w.date === addDays(date, 1)));
+
   const tryPlace = (date: IsoDate): boolean => {
     const category = rotation[sessionIdx % rotation.length];
-    const focus =
+    let focus =
       category === "strength"
         ? profile.targetMuscles.length && !profile.targetMuscles.includes("full_body")
           ? profile.targetMuscles
           : STRENGTH_FOCI[strengthIdx % STRENGTH_FOCI.length].muscles
         : profile.targetMuscles;
-    const slot = findSlotWithFallback(
-      { date, minutes: profile.sessionMinutes, busy, taken: workouts, notBefore: now },
-      args.timeOrder ?? profile.preferredTimes,
-      !!args.timeOrder,
-    );
+    if (category === "strength" && isLowerBody({ category, muscles: focus }) && legDayNextTo(date)) {
+      focus = STRENGTH_FOCI[1].muscles; // upper body instead
+    }
+    const query = { date, minutes: profile.sessionMinutes, busy, taken: workouts, notBefore: now };
+    const order = args.timeOrder ?? profile.preferredTimes;
+    const slot = args.strictPreferences
+      ? (() => {
+          const start = findSlot({ ...query, windows: args.timeOrder ?? TIMES_OF_DAY.filter((t) => order.includes(t)) });
+          return start ? { start, preferred: true } : null;
+        })()
+      : findSlotWithFallback(query, order, !!args.timeOrder);
     if (!slot) return false;
     const goal = profile.goals.find((g) => GOAL_CATEGORIES[g].includes(category)) ?? profile.goals[0];
     const rationale =
@@ -365,7 +381,7 @@ export function generateMockWeek(args: MockWeekArgs): WeeklyPlan {
       origin: "mock_template",
       rationale,
     });
-    if (!w) return false;
+    if (!w || (isLowerBody(w) && legDayNextTo(date))) return false;
     workouts.push(w);
     sessionIdx++;
     if (category === "strength") strengthIdx++;
@@ -381,7 +397,9 @@ export function generateMockWeek(args: MockWeekArgs): WeeklyPlan {
 
   if (placed < target) {
     notes.push(
-      usable.length < target
+      args.strictPreferences && usable.length >= target
+        ? `Found time for ${placed + keep.length} of your ${profile.frequencyPerWeek} workouts on your training days and times. Ask your coach if you want one on another day or time.`
+        : usable.length < target
         ? `Only ${usable.length} day${usable.length === 1 ? "" : "s"} left this week, so this plan has ${placed + keep.length} of your ${profile.frequencyPerWeek} workouts.`
         : `Found time for ${placed + keep.length} of your ${profile.frequencyPerWeek} workouts this week. Your calendar is full on the other days.`,
     );
@@ -389,7 +407,7 @@ export function generateMockWeek(args: MockWeekArgs): WeeklyPlan {
   if (profile.workoutTypes.includes("classes")) {
     notes.push("Group classes aren't scheduled yet. Studio and class discovery is planned for a later version.");
   }
-  if (profile.preferredDays.length < profile.frequencyPerWeek) {
+  if (!args.strictPreferences && profile.preferredDays.length < profile.frequencyPerWeek) {
     notes.push("You asked for more workouts than preferred days, so some land on other days.");
   }
 
