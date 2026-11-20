@@ -143,7 +143,7 @@ export function WeekView() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-8 sm:px-8 sm:py-12">
-      <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <header className="relative z-30 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="animate-rise">
           <Eyebrow>
             {view === "today" ? `Today · ${monthDay(today)}` : `${monthDay(today)} – ${monthDay(addDays(today, 6))}`}
