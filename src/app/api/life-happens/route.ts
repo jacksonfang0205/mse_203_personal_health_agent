@@ -5,7 +5,7 @@ import { aiEnabled } from "@/lib/agent/llm";
 
 export const maxDuration = 120;
 
-const Body = AgentRequest.extend({ message: z.string().trim().min(1).max(500) });
+const Body = AgentRequest.extend({ message: z.string().trim().min(1).max(500), clarified: z.boolean().optional() });
 
 export async function POST(request: Request) {
   const parsed = Body.safeParse(await request.json().catch(() => null));

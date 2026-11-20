@@ -18,9 +18,10 @@ import type {
   WeeklyPlan,
   Workout,
 } from "../schemas";
-import { addDays, dayLong, formatTime, weekDates, weekdayOf } from "../time";
-import { validatePlan } from "../validation";
-import { allowedCategories, buildWorkout, filterFromProfile, findSlotWithFallback } from "./generate";
+import { TIMES_OF_DAY } from "../schemas";
+import { addDays, dayLong, formatDate, formatTime, weekDates, weekdayOf } from "../time";
+import { finalizeAlternative, fitsFirst } from "./describe";
+import { allowedCategories, buildWorkout, filterFromProfile, findSlot, findSlotWithFallback } from "./generate";
 
 export function applyOperations(plan: WeeklyPlan, ops: PlanOperation[]): WeeklyPlan {
   let workouts = [...plan.workouts];
@@ -79,7 +80,7 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
   const others = a.plan.workouts.filter((w) => w.id !== target.id && w.status !== "skipped");
   const filter = filterFromProfile(a.profile);
   const candidates: Alternative[] = [];
-  const label = `${target.title} on ${dayLong(target.date)}`;
+  const label = `${target.title} on ${formatDate(target.date)}`;
 
   // 1. Shorter version, same focus.
   const shortMin = target.durationMin > 25 ? 20 : Math.floor(target.durationMin / 2 / 5) * 5;
@@ -108,7 +109,7 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
         id: `${a.proposalId}-shorter`,
         kind: "shorter",
         title: `${shortMin}-minute version`,
-        summary: `Keep ${dayLong(target.date)}, but do a ${shortMin}-min ${CATEGORY_STYLE[target.category].label.toLowerCase()} session at ${formatTime(short.start)}.`,
+        summary: `Keep ${formatDate(target.date)}, but do a ${shortMin}-min ${CATEGORY_STYLE[target.category].label.toLowerCase()} session at ${formatTime(short.start)}.`,
         tradeoffs: [
           `About ${Math.round((shortMin / target.durationMin) * 100)}% of the planned time, so less total work. It keeps the habit going but isn't a full substitute.`,
         ],
@@ -125,12 +126,25 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
     ...days.filter((d) => a.profile.preferredDays.includes(weekdayOf(d))),
     ...days.filter((d) => !a.profile.preferredDays.includes(weekdayOf(d))),
   ];
-  for (const date of ranked) {
-    const slot = findSlotWithFallback(
-      { date, minutes: target.durationMin, busy: a.busy, taken: others, notBefore: a.now },
-      a.profile.preferredTimes,
-    );
-    if (!slot) continue;
+  // A training day and time window first; anything else is a bend the user has to OK.
+  const windows = TIMES_OF_DAY.filter((t) => a.profile.preferredTimes.includes(t));
+  const strict = ranked
+    .filter((d) => a.profile.preferredDays.includes(weekdayOf(d)))
+    .map((date) => {
+      const start = findSlot({ date, minutes: target.durationMin, busy: a.busy, taken: others, notBefore: a.now, windows });
+      return start ? { date, slot: { start, preferred: true } } : null;
+    })
+    .find((x) => x !== null);
+  const loose = ranked
+    .map((date) => {
+      const slot = findSlotWithFallback(
+        { date, minutes: target.durationMin, busy: a.busy, taken: others, notBefore: a.now },
+        a.profile.preferredTimes,
+      );
+      return slot ? { date, slot } : null;
+    })
+    .find((x) => x !== null);
+  for (const { date, slot } of strict ? [strict] : loose ? [loose] : []) {
     const tradeoffs: string[] = [];
     const neighbors = others.filter((w) => w.date === addDays(date, -1) || w.date === addDays(date, 1));
     if (neighbors.length) tradeoffs.push(`Lands next to ${neighbors.map((w) => w.title).join(" and ")}, so less recovery in between.`);
@@ -140,8 +154,8 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
     candidates.push({
       id: `${a.proposalId}-move`,
       kind: "move",
-      title: `Move to ${dayLong(date)}`,
-      summary: `Do the full ${target.title.toLowerCase()} on ${dayLong(date)} at ${formatTime(slot.start)}.`,
+      title: `Move to ${formatDate(date)}`,
+      summary: `Do the full ${target.title.toLowerCase()} on ${formatDate(date)} at ${formatTime(slot.start)}.`,
       tradeoffs,
       operations: [{ op: "move", workoutId: target.id, date, start: slot.start }],
     });
@@ -151,7 +165,8 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
   // 3. Different format that still supports a goal.
   const swapCategory = allowedCategories(a.profile, filter).find((c) => c !== target.category);
   if (swapCategory) {
-    const minutes = Math.min(target.durationMin, 25);
+    // Same length as the original: the user's session length is locked.
+    const minutes = target.durationMin;
     const slot = findSlotWithFallback(
       { date: target.date, minutes, busy: a.busy, taken: others, notBefore: a.now },
       a.profile.preferredTimes,
@@ -175,7 +190,7 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
         id: `${a.proposalId}-swap`,
         kind: "swap_format",
         title: `Switch to ${swap.title.toLowerCase()}`,
-        summary: `${minutes} min of ${CATEGORY_STYLE[swapCategory].label.toLowerCase()} on ${dayLong(target.date)} at ${formatTime(swap.start)}.`,
+        summary: `${minutes} min of ${CATEGORY_STYLE[swapCategory].label.toLowerCase()} on ${formatDate(target.date)} at ${formatTime(swap.start)}.`,
         tradeoffs: [
           `A different kind of training. It keeps you moving, but it won't build ${CATEGORY_STYLE[target.category].label.toLowerCase()} the way the original would.`,
         ],
@@ -184,16 +199,10 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
     }
   }
 
-  // Validation gate: only offer options that pass every hard constraint.
-  const passes = (alt: Alternative) =>
-    validatePlan(applyOperations(a.plan, alt.operations), {
-      profile: a.profile,
-      busy: a.busy,
-      knownRange: a.knownRange,
-      now: a.now,
-      previousPlan: a.plan,
-    }).ok;
-  const valid = candidates.filter(passes);
+  // Validation gate: hard rules drop an option; locked preferences make it ask first.
+  const ctx = { profile: a.profile, busy: a.busy, knownRange: a.knownRange, now: a.now, previousPlan: a.plan };
+  const finalize = (alt: Alternative) => finalizeAlternative(a.plan, alt, ctx);
+  const valid = candidates.map(finalize).filter((x): x is Alternative => x !== null);
 
   if (valid.length < 3) {
     const rest: Alternative = {
@@ -204,8 +213,10 @@ export function proposeRuleBasedAlternatives(a: AlternativesArgs): Proposal {
       tradeoffs: ["One fewer workout this week. Rest is a legitimate choice."],
       operations: [{ op: "skip", workoutId: target.id }],
     };
-    if (passes(rest)) valid.push(rest);
+    const ok = finalize(rest);
+    if (ok) valid.push(ok);
   }
+  valid.sort(fitsFirst);
 
   return {
     ...base,

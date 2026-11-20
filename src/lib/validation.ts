@@ -17,9 +17,11 @@ import {
   type Equipment,
   type FitnessProfile,
   type IsoDate,
+  type MuscleGroup,
   type Workout,
+  type WorkoutCategory,
 } from "./schemas";
-import { compareMoments, overlaps, toMinutes, weekdayOf } from "./time";
+import { addDays, compareMoments, dayLong, formatDate, formatTime, overlaps, toMinutes, weekdayOf } from "./time";
 
 export const HARD_CONSTRAINTS = [
   "schema",
@@ -32,13 +34,25 @@ export const HARD_CONSTRAINTS = [
   "grounded_availability",
   "no_volume_spike",
   "no_past_scheduling",
+  "lower_body_spacing",
 ] as const;
 export type HardConstraint = (typeof HARD_CONSTRAINTS)[number];
+
+/**
+ * The user's chosen training days, time windows and session length. On a
+ * re-plan these are locked (`lockPreferences`): a change that breaks one is
+ * not valid unless the user explicitly OK'd that rule (`acceptedBends`).
+ */
+export const PREFERENCE_RULES = ["training_days", "time_windows", "session_length"] as const;
+export type PreferenceRule = (typeof PREFERENCE_RULES)[number];
+export const isPreferenceRule = (c: string): c is PreferenceRule => (PREFERENCE_RULES as readonly string[]).includes(c);
+
+export type CheckName = HardConstraint | PreferenceRule;
 
 export const SOFT_PREFERENCES = ["preferred_day", "preferred_time", "experience_level"] as const;
 export type SoftPreference = (typeof SOFT_PREFERENCES)[number];
 
-export const CONSTRAINT_LABELS: Record<HardConstraint, string> = {
+export const CONSTRAINT_LABELS: Record<CheckName, string> = {
   schema: "Valid plan format",
   catalog_grounded: "Exercises from Pivot's catalog",
   calendar_conflict: "No calendar conflicts",
@@ -49,10 +63,14 @@ export const CONSTRAINT_LABELS: Record<HardConstraint, string> = {
   grounded_availability: "Only uses known free time",
   no_volume_spike: "No make-up overload",
   no_past_scheduling: "Nothing scheduled in the past",
+  lower_body_spacing: "No back-to-back leg days",
+  training_days: "On your training days",
+  time_windows: "In your time windows",
+  session_length: "Your full session length",
 };
 
 export interface Violation {
-  constraint: HardConstraint | SoftPreference;
+  constraint: CheckName | SoftPreference;
   workoutId?: string;
   message: string;
 }
@@ -72,13 +90,20 @@ export interface ValidationContext {
   /** Overrides profile equipment, e.g. when traveling. */
   equipmentAvailable?: Equipment[];
   extraAvoidTags?: AvoidTag[];
+  /**
+   * Re-plans: the user's training days, time windows and session length are
+   * hard rules for every workout this change adds or moves.
+   */
+  lockPreferences?: boolean;
+  /** Preference rules the user explicitly agreed to bend for this change. */
+  acceptedBends?: PreferenceRule[];
 }
 
 export interface ValidationResult {
   ok: boolean;
   violations: Violation[];
   warnings: Violation[];
-  checked: HardConstraint[];
+  checked: CheckName[];
 }
 
 const DEFAULT_DAY_WINDOW = { start: "06:00", end: "22:00" };
@@ -121,7 +146,7 @@ export function checkCalendarConflicts(plan: WeeklyPlan, busy: BusyBlock[]): Vio
         out.push({
           constraint: "calendar_conflict",
           workoutId: w.id,
-          message: `"${w.title}" (${w.date} ${w.start}) overlaps "${b.title}" (${b.start}–${b.end}).`,
+          message: `"${w.title}" (${formatDate(w.date)} ${formatTime(w.start)}) overlaps "${b.title}" (${formatTime(b.start)}–${formatTime(b.end)}).`,
         });
       }
     }
@@ -133,7 +158,7 @@ export function checkCalendarConflicts(plan: WeeklyPlan, busy: BusyBlock[]): Vio
         out.push({
           constraint: "calendar_conflict",
           workoutId: b.id,
-          message: `"${a.title}" and "${b.title}" overlap on ${a.date}.`,
+          message: `"${a.title}" and "${b.title}" overlap on ${formatDate(a.date)}.`,
         });
       }
     }),
@@ -169,8 +194,8 @@ export function checkDurations(plan: WeeklyPlan, ctx: ValidationContext): Violat
         constraint: "duration_limit",
         message:
           limit === 0
-            ? `A workout is scheduled on ${date}, when no time is available.`
-            : `${minutes} min scheduled on ${date}; only ${limit} min available.`,
+            ? `A workout is scheduled on ${formatDate(date)}, when no time is available.`
+            : `${minutes} min scheduled on ${formatDate(date)}; only ${limit} min available.`,
       });
     }
   }
@@ -241,7 +266,7 @@ export function checkGroundedAvailability(plan: WeeklyPlan, ctx: ValidationConte
         {
           constraint: "grounded_availability" as const,
           workoutId: w.id,
-          message: `"${w.title}" is on ${w.date}, outside the calendar range Pivot can see.`,
+          message: `"${w.title}" is on ${formatDate(w.date)}, outside the calendar range Pivot can see.`,
         },
       ];
     }
@@ -283,7 +308,7 @@ export function checkVolume(plan: WeeklyPlan, ctx: ValidationContext): Violation
   const prevPerDay = perDay(prev);
   for (const [date, n] of perDay(next)) {
     if (n > Math.max(1, prevPerDay.get(date) ?? 0)) {
-      out.push({ constraint: "no_volume_spike", message: `${n} workouts stacked on ${date}.` });
+      out.push({ constraint: "no_volume_spike", message: `${n} workouts stacked on ${formatDate(date)}.` });
     }
   }
 
@@ -314,12 +339,110 @@ export function checkNoPastScheduling(plan: WeeklyPlan, ctx: ValidationContext):
         {
           constraint: "no_past_scheduling" as const,
           workoutId: w.id,
-          message: `"${w.title}" is scheduled for ${w.date} ${w.start}, which has already passed.`,
+          message: `"${w.title}" is scheduled for ${formatDate(w.date)} ${formatTime(w.start)}, which has already passed.`,
         },
       ];
     }
     return [];
   });
+}
+
+/** Workouts this change adds or moves (or every planned workout when there's no previous plan). */
+function changedWorkouts(plan: WeeklyPlan, previous?: WeeklyPlan): Workout[] {
+  const prevById = new Map(previous?.workouts.map((w) => [w.id, w]));
+  return active(plan).filter((w) => {
+    if (!previous) return true;
+    const prev = prevById.get(w.id);
+    return !prev || prev.status !== "planned" || prev.date !== w.date || prev.start !== w.start || prev.durationMin !== w.durationMin;
+  });
+}
+
+/** The preferred window a start time falls in, if any. */
+export function windowOf(start: ClockTime, windows: FitnessProfile["preferredTimes"]) {
+  return windows.find((t) => toMinutes(start) >= toMinutes(TIME_OF_DAY[t].start) && toMinutes(start) < toMinutes(TIME_OF_DAY[t].end));
+}
+
+/**
+ * Locked preferences for a re-plan: every workout the change adds or moves
+ * must be on a training day, start in a chosen time window, and keep the full
+ * session length. A shorter session is fine only on a day the user said has
+ * less time (`dateLimits`).
+ */
+export function checkPreferences(plan: WeeklyPlan, ctx: ValidationContext): Violation[] {
+  const { profile } = ctx;
+  const prevById = new Map(ctx.previousPlan?.workouts.map((w) => [w.id, w]));
+  return changedWorkouts(plan, ctx.previousPlan).flatMap((w) => {
+    const out: Violation[] = [];
+    if (!profile.preferredDays.includes(weekdayOf(w.date))) {
+      out.push({
+        constraint: "training_days",
+        workoutId: w.id,
+        message: `"${w.title}" lands on ${dayLong(w.date)}, which isn't one of your training days.`,
+      });
+    }
+    if (!windowOf(w.start, profile.preferredTimes)) {
+      out.push({
+        constraint: "time_windows",
+        workoutId: w.id,
+        message: `"${w.title}" starts at ${formatTime(w.start)}, outside your chosen times.`,
+      });
+    }
+    const prev = prevById.get(w.id);
+    const limit = ctx.dateLimits?.[w.date];
+    const expected = Math.min(profile.sessionMinutes, prev?.durationMin ?? profile.sessionMinutes, limit ?? Infinity);
+    if (w.durationMin < expected) {
+      out.push({
+        constraint: "session_length",
+        workoutId: w.id,
+        message: `"${w.title}" is cut to ${w.durationMin} min; your sessions are ${expected} min.`,
+      });
+    }
+    return out;
+  });
+}
+
+const LOWER: MuscleGroup[] = ["legs", "glutes"];
+const UPPER: MuscleGroup[] = ["chest", "back", "shoulders", "arms"];
+
+/** A strength session that mostly trains legs and glutes. */
+export function isLowerBody(w: { category: WorkoutCategory; muscles: MuscleGroup[] }): boolean {
+  if (w.category !== "strength") return false;
+  const lower = w.muscles.filter((m) => LOWER.includes(m)).length;
+  const upper = w.muscles.filter((m) => UPPER.includes(m)).length;
+  return lower > 0 && lower >= upper;
+}
+
+/** No two lower-body days back to back. Only pairs this change created are flagged. */
+export function checkLowerBodySpacing(plan: WeeklyPlan, ctx: Pick<ValidationContext, "previousPlan">): Violation[] {
+  const changed = new Set(changedWorkouts(plan, ctx.previousPlan).map((w) => w.id));
+  const legs = plan.workouts.filter((w) => w.status !== "skipped" && isLowerBody(w));
+  const out: Violation[] = [];
+  for (const a of legs) {
+    for (const b of legs) {
+      if (b.date !== addDays(a.date, 1) || (!changed.has(a.id) && !changed.has(b.id))) continue;
+      out.push({
+        constraint: "lower_body_spacing",
+        workoutId: changed.has(b.id) ? b.id : a.id,
+        message: `"${a.title}" (${formatDate(a.date)}) and "${b.title}" (${formatDate(b.date)}) are lower-body days back to back.`,
+      });
+    }
+  }
+  return out;
+}
+
+export type ChangeStatus = "fits" | "bends" | "invalid";
+
+/**
+ * Judge a re-planned week against the plan it replaces. "fits": passes every
+ * hard rule and the locked preferences, so it can say "Fits your schedule".
+ * "bends": safe, but breaks a preference the user must OK first. "invalid":
+ * breaks a hard rule and is never offered.
+ */
+export function assessChange(next: WeeklyPlan, ctx: ValidationContext): { status: ChangeStatus; bends: Violation[]; violations: Violation[] } {
+  const r = validatePlan(next, { ...ctx, lockPreferences: true, acceptedBends: [] });
+  const bends = r.violations.filter((v) => isPreferenceRule(v.constraint));
+  const hard = r.violations.filter((v) => !isPreferenceRule(v.constraint));
+  return { status: hard.length ? "invalid" : bends.length ? "bends" : "fits", bends, violations: hard };
 }
 
 const LEVEL_RANK = { beginner: 0, intermediate: 1, advanced: 2 } as const;
@@ -365,7 +488,7 @@ export function validatePlan(plan: unknown, ctx: ValidationContext): ValidationR
     };
   }
   const p = parsed.data;
-  const checked: HardConstraint[] = [
+  const checked: CheckName[] = [
     "schema",
     "catalog_grounded",
     "calendar_conflict",
@@ -374,6 +497,7 @@ export function validatePlan(plan: unknown, ctx: ValidationContext): ValidationR
     "avoided_activity",
     "grounded_availability",
     "no_volume_spike",
+    "lower_body_spacing",
   ];
   const violations = [
     ...checkCatalog(p),
@@ -383,6 +507,7 @@ export function validatePlan(plan: unknown, ctx: ValidationContext): ValidationR
     ...checkAvoidance(p, ctx.profile, ctx.extraAvoidTags),
     ...checkGroundedAvailability(p, ctx),
     ...checkVolume(p, ctx),
+    ...checkLowerBodySpacing(p, ctx),
   ];
   if (ctx.previousPlan) {
     checked.push("completed_preserved");
@@ -391,6 +516,11 @@ export function validatePlan(plan: unknown, ctx: ValidationContext): ValidationR
   if (ctx.now) {
     checked.push("no_past_scheduling");
     violations.push(...checkNoPastScheduling(p, ctx));
+  }
+  if (ctx.lockPreferences) {
+    checked.push(...PREFERENCE_RULES);
+    const accepted = new Set(ctx.acceptedBends ?? []);
+    violations.push(...checkPreferences(p, ctx).filter((v) => !accepted.has(v.constraint as PreferenceRule)));
   }
   return { ok: violations.length === 0, violations, warnings: softPreferenceWarnings(p, ctx.profile), checked };
 }

@@ -5,6 +5,8 @@ import type { MemorySuggestions } from "@/lib/agent/lifeHappens";
 import { isAllDay, rememberFromMessage } from "@/lib/memoryRules";
 import { agentSnapshot, requestLifeHappens } from "@/lib/agentClient";
 import type { DateRange } from "@/lib/calendar";
+import { needsClarification, type Clarification, type ClarifyChoice } from "@/lib/coach/clarify";
+import { describeSwaps, detectInjury, removeConflictingExercises, withInjury } from "@/lib/injuries";
 import { applyOperations, proposeRuleBasedAlternatives } from "@/lib/planner/alternatives";
 import type { Alternative, BusyBlock, ClockTime, FitnessProfile, IsoDate, Proposal, WeeklyPlan } from "@/lib/schemas";
 import { pivot } from "@/lib/store";
@@ -12,8 +14,10 @@ import { track } from "@/lib/telemetry";
 import { WEEKDAY_LABELS } from "@/lib/labels";
 import { dayShort, formatTime, monthDay } from "@/lib/time";
 import { validatePlan } from "@/lib/validation";
-import { ArrowRight, Sparkle } from "../icons";
+import { ArrowRight, Shield, Sparkle } from "../icons";
 import { Button } from "../ui";
+
+const stamp = () => Date.now();
 
 function msSince(start: number | null) {
   return start === null ? null : Date.now() - start;
@@ -43,19 +47,24 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
   const [note, setNote] = useState<string | null>(null);
   const [memory, setMemory] = useState<MemorySuggestions | null>(null);
   const [unchecked, setUnchecked] = useState<Set<string>>(new Set());
+  const [clarify, setClarify] = useState<{ message: string; c: Clarification } | null>(null);
+  /** What the coach saved or swapped for an injury in this message. */
+  const [injuryNote, setInjuryNote] = useState<string | null>(null);
   const openedAt = useRef<number | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const markOpened = () => {
     if (openedAt.current === null) {
-      openedAt.current = Date.now();
+      openedAt.current = stamp();
       track("life_happens_opened");
     }
   };
 
+  // Read the store, not props: an injury saved in this same message changes the plan and profile.
   const ruleBased = (userMessage: string) =>
     proposeRuleBasedAlternatives({
-      plan,
-      profile,
+      plan: pivot.get().plan ?? plan,
+      profile: pivot.get().profile ?? profile,
       busy,
       knownRange,
       now,
@@ -69,7 +78,24 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
     return blocked.length ? { blocked, notes: [] } : null;
   };
 
-  const submit = async (text: string) => {
+  /**
+   * An injury mentioned in chat is saved to Preferences (limitations + what
+   * Pivot avoids), and conflicting exercises in upcoming workouts are swapped
+   * out right away. Returns a line telling the user what happened.
+   */
+  const handleInjury = (userMessage: string): string | null => {
+    const s = pivot.get();
+    const injury = detectInjury(userMessage);
+    if (!injury || !s.profile) return null;
+    const nextProfile = { ...withInjury(s.profile, injury, now.date), updatedAt: new Date().toISOString() };
+    pivot.saveProfile(nextProfile);
+    const swapped = s.plan ? removeConflictingExercises(s.plan, nextProfile, now.date) : null;
+    if (swapped?.swaps.length) pivot.setPlan(swapped.plan);
+    track("injury_saved", { swaps: swapped?.swaps.length ?? 0 });
+    return `Saved "${injury.label.toLowerCase()}" to your Preferences.${swapped?.swaps.length ? ` ${describeSwaps(swapped.swaps)}` : ""}`;
+  };
+
+  const submit = async (text: string, opts: { clarified?: boolean } = {}) => {
     markOpened();
     const userMessage = text.trim();
     if (!userMessage || loading) return;
@@ -77,13 +103,28 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
     setDone(null);
     setNote(null);
     setMemory(null);
+    setClarify(null);
     setUnchecked(new Set());
+    const injury = handleInjury(userMessage);
+    setInjuryNote(injury);
+    // Ask before big changes: one short question, nothing changes until the user picks.
+    const question = !opts.clarified && !injury ? needsClarification(userMessage, pivot.get().plan, now.date) : null;
+    if (question) {
+      setProposal(null);
+      setClarify({ message: userMessage, c: question });
+      track("coach_clarify_asked");
+      return;
+    }
     let p: Proposal;
     if (ai) {
       setProposal(null);
       setLoading(true);
       try {
-        const res = await requestLifeHappens({ ...agentSnapshot(pivot.get(), now), message: userMessage });
+        const res = await requestLifeHappens({ ...agentSnapshot(pivot.get(), now), message: userMessage, clarified: opts.clarified });
+        if (res.clarify) {
+          setClarify({ message: userMessage, c: res.clarify });
+          return;
+        }
         p = res.proposal;
         const blocked = res.memory.blocked.length ? res.memory.blocked : rememberFromMessage(userMessage, pivot.get().blocked);
         setMemory(blocked.length || res.memory.notes.length ? { ...res.memory, blocked } : null);
@@ -113,6 +154,21 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
     return blocked.length + notes.length;
   };
 
+  const choose = (choice: ClarifyChoice) => {
+    if (!clarify) return;
+    track("coach_clarify_answered", { action: choice.action });
+    if (choice.action === "send" && choice.message) {
+      void submit(choice.message, { clarified: true });
+    } else if (choice.action === "remember") {
+      pivot.addNotes([{ id: crypto.randomUUID(), text: choice.message ?? clarify.message, source: "agent", createdAt: new Date().toISOString() }]);
+      setClarify(null);
+      setDone("Okay, your plan stays as it is. I'll remember that.");
+    } else {
+      setClarify(null);
+      inputRef.current?.focus();
+    }
+  };
+
   const finish = (summary: string) => {
     const saved = saveMemory();
     setProposal(null);
@@ -125,9 +181,20 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
 
   const accept = (alt: Alternative) => {
     if (!proposal) return;
-    const next = applyOperations(plan, alt.operations);
-    // Re-check at save time: nothing reaches storage without passing the gate.
-    const check = validatePlan(next, { profile, busy, knownRange, now, previousPlan: plan });
+    const current = pivot.get().plan ?? plan;
+    const next = applyOperations(current, alt.operations);
+    // Re-check at save time: nothing reaches storage without passing the gate. Locked preferences
+    // only bend where this option said so and the user tapped OK on it.
+    const check = validatePlan(next, {
+      profile: pivot.get().profile ?? profile,
+      busy,
+      knownRange,
+      now,
+      previousPlan: current,
+      lockPreferences: true,
+      acceptedBends: alt.bends ?? [],
+      dateLimits: proposal.dateLimits,
+    });
     if (!check.ok) {
       setDone(`Couldn't apply that option: ${check.violations[0]?.message}`);
       return;
@@ -146,6 +213,7 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
     });
     track("alternative_accepted", {
       kind: alt.kind,
+      fit: alt.fit ?? null,
       msSinceOpen: msSince(openedAt.current),
     });
     finish(`Done. ${alt.summary}`);
@@ -184,20 +252,50 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
           <Sparkle width={16} height={16} /> Coach
         </p>
 
+        {clarify && (
+          <div className="animate-rise flex flex-col gap-3">
+            <p className="self-end rounded-2xl rounded-br-sm bg-paper/15 px-4 py-2.5 text-sm">{clarify.message}</p>
+            <div className="flex flex-col gap-3 self-start rounded-2xl rounded-bl-sm bg-card p-4 text-ink sm:max-w-[85%]">
+              {injuryNote && <p className="text-xs text-ink-soft">{injuryNote}</p>}
+              <p className="text-sm">{clarify.c.question}</p>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Quick replies">
+                {clarify.c.choices.map((ch) => (
+                  <button
+                    key={ch.label}
+                    type="button"
+                    onClick={() => choose(ch)}
+                    className="rounded-full border border-line-strong bg-paper px-3.5 py-1.5 text-xs font-semibold text-ink hover:border-ink/40"
+                  >
+                    {ch.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {proposal && (
           <div className="animate-rise flex flex-col gap-3">
             <p className="self-end rounded-2xl rounded-br-sm bg-paper/15 px-4 py-2.5 text-sm">{proposal.userMessage}</p>
             <div className="flex flex-col gap-3 self-start rounded-2xl rounded-bl-sm bg-card p-4 text-ink sm:max-w-[85%]">
+              {injuryNote && <p className="text-xs text-ink-soft">{injuryNote}</p>}
               <p className="text-sm">{reply}</p>
               {note && <p className="text-xs text-ink-faint">{note}</p>}
               {proposal.alternatives.map((alt) => (
                 <div key={alt.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-paper px-3.5 py-2.5">
-                  <div className="min-w-0">
+                  <div className="flex min-w-0 flex-col gap-1">
                     <p className="text-sm font-semibold">{alt.title}</p>
                     <p className="text-xs text-ink-soft">{alt.summary}</p>
+                    {alt.fit === "fits" ? (
+                      <span className="inline-flex items-center gap-1 self-start rounded-full bg-sage-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-sage-ink">
+                        <Shield width={11} height={11} /> Fits your schedule
+                      </span>
+                    ) : alt.ask ? (
+                      <p className="self-start rounded-lg bg-butter-soft px-2 py-1 text-xs font-medium text-butter-ink">{alt.ask}</p>
+                    ) : null}
                   </div>
                   <Button variant="dark" className="h-9 shrink-0 px-4" onClick={() => accept(alt)}>
-                    Use
+                    {alt.fit === "bends" ? "OK, use it" : "Use"}
                   </Button>
                 </div>
               ))}
@@ -244,7 +342,7 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
           </p>
         )}
 
-        {done && !proposal && (
+        {done && !proposal && !clarify && (
           <p role="status" className="self-start rounded-2xl rounded-bl-sm bg-paper/10 px-4 py-2.5 text-sm">
             {done}
           </p>
@@ -261,6 +359,7 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
             Message your coach
           </label>
           <input
+            ref={inputRef}
             id="coach-input"
             value={message}
             onFocus={markOpened}

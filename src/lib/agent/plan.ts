@@ -47,9 +47,9 @@ const SYSTEM = `You are Pivot's planning agent. You plan a week of workouts for 
 Rules:
 - Schedule exactly the number of sessions asked for, one per day at most, on the dates listed.
 - A session's start and start+minutes must fit inside one of that day's "free" windows. Never use busy time or times the user can't work out.
-- Prefer the user's preferred days and times. Where learned_from_history shows a time or day the user usually misses, avoid it; favour windows they actually complete.
+- Only use the user's preferred_days and preferred_times, and make every session exactly max_session_minutes long. These are locked; sessions that break them are discarded. Where learned_from_history shows a time or day the user usually misses, avoid it; favour windows they actually complete.
 - minutes must be at most max_session_minutes. Pick exercise ids only from <catalog>, matching the session's category, so their "min" values add up to about the session length. Cardio sessions use one cardio exercise.
-- Balance the week across the user's goals and enjoyed formats. Don't put two strength sessions with the same focus on back-to-back days.
+- Balance the week across the user's goals and enjoyed formats. Don't put two strength sessions with the same focus on back-to-back days, and never two lower-body (legs/glutes) days back to back.
 - Respect avoid, avoid_notes, limitations and memory notes. Never give medical or rehab advice.
 - Be concise: short titles, one-sentence rationales. No filler.`;
 
@@ -84,18 +84,22 @@ export async function agentPlanWeek(req: AgentRequest): Promise<PlanResult> {
   for (const [i, s] of res.output.sessions.entries()) {
     if (workouts.length - keep.length >= target) break;
     if (!allowed.has(s.date) || workouts.some((w) => w.date === s.date)) continue;
-    const built = assembleWorkout(s, { id: `ai-${weekStart}-${i}-${createdAt.slice(11, 19).replaceAll(":", "")}`, profile: req.profile, filter });
+    // Session length is the user's choice, not the model's.
+    const built = assembleWorkout({ ...s, minutes: req.profile.sessionMinutes }, { id: `ai-${weekStart}-${i}-${createdAt.slice(11, 19).replaceAll(":", "")}`, profile: req.profile, filter });
     const placed = built && repairStart(built, busy, workouts, req.profile, req.now);
     if (!placed) continue;
     // Gate each addition so one bad session can't sink the whole plan.
     const trial: WeeklyPlan = { id: "trial", weekStart, workouts: [...workouts, placed], generatedBy: "agent", createdAt, notes: [] };
-    if (validatePlan(trial, { profile: req.profile, busy, knownRange, now: req.now }).ok) workouts.push(placed);
+    // Days, time windows and session length are locked: an off-preference session is dropped, not shown.
+    if (validatePlan(trial, { profile: req.profile, busy, knownRange, now: req.now, lockPreferences: true }).ok) workouts.push(placed);
   }
 
   const notes = [...res.output.notes];
   const planned = workouts.length - keep.length;
   if (planned < target) {
-    notes.push(`Found time for ${planned + keep.length} of your ${req.profile.frequencyPerWeek} workouts this week.`);
+    notes.push(
+      `Found time for ${planned + keep.length} of your ${req.profile.frequencyPerWeek} workouts on your training days and times. Ask your coach if you want one on another day or time.`,
+    );
   }
 
   workouts.sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
@@ -118,6 +122,7 @@ export function templatePlanWeek(req: AgentRequest, reason?: string): PlanResult
     keep: carryOver(req.plan, weekStart),
     blocked: req.blocked,
     timeOrder: learnedTimeOrder(req.profile.preferredTimes, insights),
+    strictPreferences: true,
   });
   return { plan, fallback: reason };
 }

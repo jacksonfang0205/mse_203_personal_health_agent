@@ -31,6 +31,8 @@ export function buildSamplePlan(args: {
   timeOrder?: TimeOfDay[];
   /** First day of the 7-day window. Defaults to today. */
   weekStart?: IsoDate;
+  /** Re-plans keep to the user's training days and time windows (see generateMockWeek). */
+  strictPreferences?: boolean;
 }) {
   const weekStart = args.weekStart ?? args.now.date;
   const { busy } = calendarForWeek(args.preset, weekStart, args.blocked);
@@ -42,6 +44,7 @@ export function buildSamplePlan(args: {
     keep: args.keep,
     createdAt: args.createdAt,
     timeOrder: args.timeOrder,
+    strictPreferences: args.strictPreferences,
   });
 }
 

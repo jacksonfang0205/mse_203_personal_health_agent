@@ -92,6 +92,7 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
           createdAt: at.toISOString(),
           keep: carryOver(state.plan, now.date),
           blocked: state.blocked,
+          strictPreferences: true,
         });
       // Rebuild with the AI when it's on, so the new profile reaches the plan; the template is the fallback.
       if (ai?.ai) {
@@ -339,6 +340,7 @@ function CalendarImport() {
       const r = await importGoogleCalendar(localNow(new Date()).date);
       const parts = [r.added ? `Added ${r.added} busy time${r.added > 1 ? "s" : ""}.` : "No busy times this week."];
       if (r.moved.length) parts.push(`Moved ${r.moved.map((m) => m.title).join(", ")} away from a clash.`);
+      if (r.needsOk.length) parts.push(`${r.needsOk.length} clash${r.needsOk.length > 1 ? "es" : ""} only fit${r.needsOk.length > 1 ? "" : "s"} outside your usual days or times. Use "Move it" on My week to choose.`);
       if (r.unresolved.length) parts.push(`${r.unresolved.length} workout${r.unresolved.length > 1 ? "s" : ""} still clash${r.unresolved.length > 1 ? "" : "es"}, with no free time left this week.`);
       setStatus(parts.join(" "));
     } catch (e) {

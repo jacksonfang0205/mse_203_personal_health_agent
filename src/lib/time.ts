@@ -3,7 +3,7 @@
  * times ("HH:MM") without time zones; all date math is done in UTC so the
  * result never depends on where the code runs.
  */
-import { WEEKDAYS, type ClockTime, type IsoDate, type Weekday } from "./schemas";
+import { IsoDate, WEEKDAYS, type ClockTime, type Weekday } from "./schemas";
 
 export function toMinutes(time: ClockTime): number {
   const [h, m] = time.split(":").map(Number);
@@ -121,4 +121,32 @@ export function formatTime(time: ClockTime): string {
 
 export function formatRange(start: ClockTime, durationMin: number): string {
   return `${formatTime(start)} – ${formatTime(fromMinutes(toMinutes(start) + durationMin))}`;
+}
+
+/** "Wed, Nov 18": the one date format coach replies and options use. The weekday always comes from the date. */
+export function formatDate(date: IsoDate): string {
+  return `${dayShort(date)}, ${monthDay(date)}`;
+}
+
+const WEEKDAY_WORD =
+  "(?:Mon(?:day)?|Tue(?:s|sday)?|Wed(?:nesday)?|Thu(?:r|rs|rsday)?|Fri(?:day)?|Sat(?:urday)?|Sun(?:day)?)";
+const MONTH_WORD = "(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?";
+
+/**
+ * Make model-written text safe to show: ISO dates ("2026-11-18") become
+ * "Wed, Nov 18", and a weekday written next to a date is replaced with the
+ * real weekday for that date, so "Wednesday, Nov 19" can't slip through when
+ * Nov 19 is a Thursday. `year` resolves dates written without one.
+ */
+export function humanizeDates(text: string, year: number): string {
+  const iso = new RegExp(`(?:\\b${WEEKDAY_WORD},?\\s*\\(?)?\\b(\\d{4}-\\d{2}-\\d{2})\\b\\)?`, "g");
+  let out = text.replace(iso, (m, d: string) => (IsoDate.safeParse(d).success && !isNaN(Date.parse(`${d}T00:00:00Z`)) ? formatDate(d) : m));
+  const named = new RegExp(`\\b${WEEKDAY_WORD},?\\s+\\(?${MONTH_WORD}\\s+(\\d{1,2})\\b\\)?`, "g");
+  out = out.replace(named, (m, mon: string, day: string) => {
+    const mi = MONTHS.findIndex((x) => x.toLowerCase() === mon.slice(0, 3).toLowerCase());
+    const d = Number(day);
+    if (mi < 0 || d < 1 || d > 31) return m;
+    return formatDate(`${year}-${String(mi + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+  });
+  return out;
 }
