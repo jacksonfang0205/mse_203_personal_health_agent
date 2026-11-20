@@ -9,11 +9,14 @@ import type { FormChatResponse, FormCoachRequest, FormCoachResponse } from "@/li
 import { detectMovement, type MovementGuess } from "@/lib/form/detect";
 import { loadFormHistory, parseSetNote, saveFormSession } from "@/lib/form/formHistory";
 import { MOVEMENTS } from "@/lib/form/movements";
+import { canPlayVideo, checkVideoFile, convertForBrowser } from "@/lib/form/videoFile";
 import type { FitnessProfile } from "@/lib/schemas";
 import { usePivotState, useNow } from "@/lib/store";
 import { ArrowRight, Shield, Sparkle } from "../icons";
 import { Button, Chip, cx } from "../ui";
 import { FeedbackCard } from "./FeedbackCard";
+
+type ProgressStage = "converter" | "converting" | "model" | "tracking";
 
 type Stage = "upload" | "movement" | "waiting" | "confirm" | "context" | "reviewing" | "chat";
 
@@ -91,7 +94,7 @@ export function FormCoach() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [stage, setStage] = useState<Stage>("upload");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [progress, setProgress] = useState<{ stage: "model" | "tracking"; fraction: number } | null>(null);
+  const [progress, setProgress] = useState<{ stage: ProgressStage; fraction: number } | null>(null);
   const [extracted, setExtracted] = useState<ExtractResult | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
   const choiceRef = useRef<string | null>(null);
@@ -106,6 +109,7 @@ export function FormCoach() {
   const [thinking, setThinking] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const converting = progress?.stage === "converter" || progress?.stage === "converting";
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -168,15 +172,18 @@ export function FormCoach() {
   }
 
   async function onFile(file: File) {
-    if (!file.type.startsWith("video/")) {
-      coach("That doesn't look like a video. Try an .mp4 or .mov clip.");
+    // Flag a wrong file before any tracking starts.
+    const check = checkVideoFile(file);
+    if (!check.ok) {
+      coach(check.message);
       return;
     }
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    const url = URL.createObjectURL(file);
+    let url = URL.createObjectURL(file);
     setVideoUrl(url);
+    setProgress(null);
     setExtracted(null);
     extractedRef.current = null;
     setExtractError(null);
@@ -184,13 +191,23 @@ export function FormCoach() {
     setMovementId(null);
     setResult(null);
     setChat([]);
-    push([
+    const videoMsgId = push([
       { from: "user", kind: "video", url, name: file.name },
       { from: "coach", kind: "progress" },
       { from: "coach", kind: "text", text: pick(["Got it. While I track your joints, what movement is this?", "Nice. I'm tracking your joints now. Which movement are you doing?", "Thanks! Tracking your body now. What exercise is this?"]) },
     ]);
     setStage("movement");
     try {
+      // iPhone .mov clips are usually HEVC, which Chrome on Windows and Firefox can't decode. Convert those on the device.
+      if (!(await canPlayVideo(url))) {
+        if (ctrl.signal.aborted) return;
+        const converted = await convertForBrowser(file, { onProgress: (fraction, s) => setProgress({ stage: s, fraction }), signal: ctrl.signal });
+        if (ctrl.signal.aborted) return;
+        URL.revokeObjectURL(url);
+        url = converted.url;
+        setVideoUrl(url);
+        setMsgs((xs) => xs.map((m) => (m.id === videoMsgId && m.kind === "video" ? { ...m, url } : m)));
+      }
       const r = await extractPose(url, { onProgress: (fraction, s) => setProgress({ stage: s, fraction }), signal: ctrl.signal });
       if (ctrl.signal.aborted) return;
       setExtracted(r);
@@ -209,8 +226,9 @@ export function FormCoach() {
       if (choiceRef.current) proceed(r, choiceRef.current);
     } catch (e) {
       if ((e as Error).name === "AbortError") return;
-      setExtractError((e as Error).message);
-      coach(`I couldn't track that clip: ${(e as Error).message}`);
+      const message = e instanceof Error && e.message ? e.message : "Check your connection and try again.";
+      setExtractError(message);
+      coach(`I couldn't read that clip. ${message}`);
       setStage("upload");
     }
   }
@@ -381,7 +399,7 @@ export function FormCoach() {
         ))}
         {stage === "waiting" && !extracted && (
           <Bubble from="coach">
-            <p className="text-ink-soft">Still tracking, almost there…</p>
+            <p className="text-ink-soft">{converting ? "Converting the clip first, then I'll track it…" : "Still tracking, almost there…"}</p>
           </Bubble>
         )}
         {thinking && (
@@ -420,7 +438,7 @@ export function FormCoach() {
               <input
                 ref={fileRef}
                 type="file"
-                accept="video/*"
+                accept="video/*,.mov,.mp4,.m4v,.webm"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -503,7 +521,7 @@ export function FormCoach() {
           )}
 
           {stage === "reviewing" && <p className="text-sm text-ink-soft">Your coach is reviewing the set. This usually takes 10–30 seconds.</p>}
-          {stage === "waiting" && <p className="text-sm text-ink-soft">Finishing the joint tracking…</p>}
+          {stage === "waiting" && <p className="text-sm text-ink-soft">{converting ? "Converting your clip…" : "Finishing the joint tracking…"}</p>}
         </div>
       </div>
     </div>
@@ -542,23 +560,28 @@ function ProgressLine({
   error,
   frames,
 }: {
-  progress: { stage: "model" | "tracking"; fraction: number } | null;
+  progress: { stage: ProgressStage; fraction: number } | null;
   done: boolean;
   error: string | null;
   frames?: number;
 }) {
   if (error) return <p className="text-sm text-coral-ink">Tracking stopped.</p>;
   const pct = done ? 100 : Math.round((progress?.fraction ?? 0) * 100);
+  const loading = !done && (progress?.stage === "model" || progress?.stage === "converter");
   const label = done
     ? `Tracked 17 joints across ${frames} frames.`
     : progress?.stage === "tracking"
       ? `Tracking 17 joints, frame by frame… ${pct}%`
-      : "Loading the pose model (first time only)…";
+      : progress?.stage === "converting"
+        ? `Converting your clip so this browser can play it (it stays on your device)… ${pct}%`
+        : progress?.stage === "converter"
+          ? "This browser can't play that clip (likely an iPhone HEVC video). Loading a converter…"
+          : "Loading the pose model (first time only)…";
   return (
     <div className="flex min-w-[220px] flex-col gap-2">
       <p className="text-sm text-ink-soft">{label}</p>
       <div className="h-1.5 overflow-hidden rounded-full bg-paper-deep">
-        <div className={cx("h-full rounded-full transition-all", done ? "bg-sage" : "bg-coral")} style={{ width: `${progress?.stage === "model" && !done ? 8 : pct}%` }} />
+        <div className={cx("h-full rounded-full transition-all", done ? "bg-sage" : "bg-coral")} style={{ width: `${loading ? 8 : pct}%` }} />
       </div>
     </div>
   );

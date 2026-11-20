@@ -15,7 +15,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "form:references": "tsx scripts/form/build-references.ts",
-    "form:eval": "tsx scripts/form/eval-faults.ts"
+    "form:eval": "tsx scripts/form/eval-faults.ts",
+    "form:vendor-ffmpeg": "node scripts/form/vendor-ffmpeg.mjs"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",
@@ -30,6 +31,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@ffmpeg/ffmpeg": "0.12.15",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24.19.2",
     "@types/react": "^19",
