@@ -10,10 +10,12 @@ import {
   WEEKDAY_LABELS,
   WORKOUT_TYPE_LABELS,
 } from "@/lib/labels";
-import { buildSamplePlan } from "@/lib/session";
+import type { FitnessProfile, WeeklyPlan } from "@/lib/schemas";
+import { buildSamplePlan, calendarForWeek } from "@/lib/session";
 import { pivot } from "@/lib/store";
 import { track } from "@/lib/telemetry";
-import { localNow } from "@/lib/time";
+import { dayShort, localNow } from "@/lib/time";
+import { joinAnd } from "@/lib/planReveal";
 import { ArrowLeft, ArrowRight, PivotMark } from "../icons";
 import {
   BoundariesSection,
@@ -29,6 +31,7 @@ import {
   type SectionProps,
 } from "../preferences/sections";
 import { Button, cx } from "../ui";
+import { BuildingPlan, type BuildStep } from "./BuildingPlan";
 
 const STEPS = [
   { key: "goals", title: "Let's start with why.", sub: "Your goals shape every plan Pivot makes.", Section: GoalsSection },
@@ -44,6 +47,7 @@ export function OnboardingFlow() {
   const [draft, setDraft] = useState<ProfileDraft>(DEFAULT_DRAFT);
   const [stepIdx, setStepIdx] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [building, setBuilding] = useState<{ name?: string; steps: BuildStep[] } | null>(null);
   const startedAt = useRef(0);
 
   useEffect(() => {
@@ -77,13 +81,17 @@ export function OnboardingFlow() {
       return;
     }
     const preset = pivot.get().calendarPreset;
-    const plan = buildSamplePlan({ profile: parsed.data, preset, now: localNow(now), createdAt: now.toISOString() });
+    const today = localNow(now);
+    const plan = buildSamplePlan({ profile: parsed.data, preset, now: today, createdAt: now.toISOString() });
     pivot.saveProfile(parsed.data);
     pivot.setPlan(plan);
     track("onboarding_completed", { durationMs: Date.now() - startedAt.current });
     track("plan_generated", { source: "mock_template", workouts: plan.workouts.length });
-    router.push("/week");
+    const events = calendarForWeek(preset, plan.weekStart).busy.length;
+    setBuilding({ name: parsed.data.name, steps: buildSteps(parsed.data, plan, events) });
   };
+
+  if (building) return <BuildingPlan {...building} onDone={() => router.push("/week?welcome=1")} />;
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[minmax(320px,0.8fr)_1.6fr]">
@@ -195,4 +203,27 @@ function ReviewSection({ draft, set, jump }: SectionProps) {
       </dl>
     </div>
   );
+}
+
+/** What the planner just did, in the user's own numbers. */
+function buildSteps(profile: FitnessProfile, plan: WeeklyPlan, events: number): BuildStep[] {
+  const kit = profile.equipment.length
+    ? `${profile.equipment.length} piece${profile.equipment.length === 1 ? "" : "s"} of equipment`
+    : "bodyweight only";
+  const days = [...new Set(plan.workouts.map((w) => dayShort(w.date)))];
+  return [
+    {
+      label: "Reading your calendar",
+      detail: events ? `${events} event${events === 1 ? "" : "s"} in the next 7 days` : "Your next 7 days look open",
+    },
+    {
+      label: "Matching exercises to your goals",
+      detail: `${joinAnd(profile.goals.map((g) => GOAL_LABELS[g].label.toLowerCase()))}, with ${kit}`,
+    },
+    {
+      label: "Placing your workouts",
+      detail: days.length ? `${profile.sessionMinutes} min on ${joinAnd(days)}` : "Looking for free time",
+    },
+    { label: "Checking it fits", detail: "Your days, times, and limits" },
+  ];
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import { acceptBendingMove, fixClashes } from "@/lib/account";
 import type { BendingMove } from "@/lib/planner/clashes";
@@ -12,8 +13,9 @@ import { buildSamplePlan, calendarForWeek, carryOver } from "@/lib/session";
 import { pivot, setCount, useNow, usePivotState } from "@/lib/store";
 import { track } from "@/lib/telemetry";
 import { addDays, dayOfMonth, dayShort, formatDate, formatTime, localNow, monthDay, planCovers, toMinutes, weekDates } from "@/lib/time";
+import { firstUp, revealReasons } from "@/lib/planReveal";
 import { CONSTRAINT_LABELS, validatePlan, type ValidationResult } from "@/lib/validation";
-import { CalendarIcon, Check, Shield } from "../icons";
+import { CalendarIcon, Check, Shield, Sparkle } from "../icons";
 import { Button, ButtonLink, Card, Eyebrow, Skeleton, cx } from "../ui";
 import { LifeHappens } from "./LifeHappens";
 import { ExerciseVisual } from "./ExerciseVisual";
@@ -31,8 +33,11 @@ export function WeekView() {
   const now = useNow();
   const [openId, setOpenId] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(true);
-  // Today is the default; the week is one click away.
-  const [view, setView] = useState<"today" | "week">("today");
+  // Right after onboarding (/week?welcome=1) the whole week is revealed with the reasoning behind it.
+  const params = useSearchParams();
+  const [welcome, setWelcome] = useState(() => params.has("welcome"));
+  // Otherwise Today is the default; the week is one click away.
+  const [view, setView] = useState<"today" | "week">(welcome ? "week" : "today");
   const [planning, setPlanning] = useState(false);
   const [planNote, setPlanNote] = useState<string | null>(null);
   const [pendingMoves, setPendingMoves] = useState<BendingMove[]>([]);
@@ -149,7 +154,7 @@ export function WeekView() {
             {view === "today" ? `Today · ${monthDay(today)}` : `${monthDay(today)} – ${monthDay(addDays(today, 6))}`}
           </Eyebrow>
           <h1 className="mt-2 font-display text-4xl font-medium tracking-tight sm:text-5xl">
-            {greeting(now.time)}
+            {welcome ? "Here's your week" : greeting(now.time)}
             {profile.name ? `, ${profile.name}` : ""}.
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -158,6 +163,18 @@ export function WeekView() {
         </div>
         <Progress plan={plan} />
       </header>
+
+      {welcome && (
+        <PlanReveal
+          reasons={revealReasons(profile, plan, calendar.busy)}
+          first={firstUp(plan, today)}
+          onDone={() => {
+            setWelcome(false);
+            window.history.replaceState(null, "", "/week");
+            track("plan_reveal_dismissed");
+          }}
+        />
+      )}
 
       {planNote && <Card className="border-coral/30 bg-coral-soft p-4 text-sm text-coral-ink shadow-none">{planNote}</Card>}
 
@@ -228,7 +245,7 @@ export function WeekView() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-2xl font-medium">Your next 7 days</h2>
             <div className="flex flex-wrap items-center gap-2">
-              <SwitchButton onClick={() => setView("today")}>Back to today</SwitchButton>
+              <SwitchButton onClick={() => setView("today")}>{welcome ? "Go to today" : "Back to today"}</SwitchButton>
               <button
                 type="button"
                 onClick={() => setShowCalendar((v) => !v)}
@@ -252,6 +269,7 @@ export function WeekView() {
                 busy={showCalendar ? shown.busy.filter((b) => b.date === date) : []}
                 ticks={state.ticks}
                 onOpen={setOpenId}
+                showWhy={welcome}
               />
             ))}
           </div>
@@ -299,6 +317,8 @@ function DayColumn(props: {
   busy: BusyBlock[];
   ticks: Record<string, number[]>;
   onOpen: (id: string) => void;
+  /** Show each workout's reasoning under its card (the first look after onboarding). */
+  showWhy?: boolean;
 }) {
   const workouts = props.plan.workouts
     .filter((w) => w.date === props.date)
@@ -327,8 +347,14 @@ function DayColumn(props: {
         {workouts.length > 0 ? (
           workouts.map((w) => (
             <div key={w.id} className="flex flex-col gap-3 lg:flex-row">
-              <div className="lg:w-64 lg:shrink-0">
+              <div className="flex flex-col gap-2 lg:w-64 lg:shrink-0">
                 <WorkoutCard workout={w} onOpen={() => props.onOpen(w.id)} />
+                {props.showWhy && w.rationale && (
+                  <p className="px-1 text-xs leading-relaxed text-ink-soft">
+                    <span className="font-semibold text-ink">Why: </span>
+                    {w.rationale}
+                  </p>
+                )}
               </div>
               <MovementList workout={w} done={setsDone(w, props.ticks)} />
             </div>
@@ -399,6 +425,47 @@ function MovementList({ workout, done }: { workout: Workout; done: number[] }) {
         );
       })}
     </ol>
+  );
+}
+
+/** The first look at a new plan: what Pivot built and why, then out of the way. */
+function PlanReveal({
+  reasons,
+  first,
+  onDone,
+}: {
+  reasons: ReturnType<typeof revealReasons>;
+  first: string;
+  onDone: () => void;
+}) {
+  return (
+    <Card className="animate-rise overflow-hidden p-0">
+      <div className="flex flex-col gap-1 border-b border-line bg-paper-deep/50 px-5 py-4 sm:px-6">
+        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-coral-deep">
+          <Sparkle width={14} height={14} /> Why this plan
+        </p>
+        <p className="text-sm text-ink">{first}</p>
+      </div>
+      <ul className="grid gap-x-6 gap-y-4 px-5 py-5 sm:grid-cols-2 sm:px-6">
+        {reasons.map((r) => (
+          <li key={r.key} className="flex gap-3">
+            <span className="mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-sage-soft text-sage-ink">
+              <Check width={12} height={12} />
+            </span>
+            <div>
+              <p className="text-sm font-semibold">{r.title}</p>
+              <p className="text-sm text-ink-soft">{r.body}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3 sm:px-6">
+        <p className="text-xs text-ink-faint">Something off? Tell your coach below and Pivot will re-plan.</p>
+        <Button variant="dark" className="h-9 px-4" onClick={onDone}>
+          Looks good
+        </Button>
+      </div>
+    </Card>
   );
 }
 
@@ -497,7 +564,7 @@ function EmptyState({ title, body, action }: { title: string; body: string; acti
   );
 }
 
-function WeekSkeleton() {
+export function WeekSkeleton() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 sm:px-8" aria-busy="true">
       <Skeleton className="h-16 w-80" />

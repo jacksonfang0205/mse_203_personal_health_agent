@@ -12,6 +12,7 @@ export type TelemetryEventName =
   | "onboarding_step_completed"
   | "onboarding_completed"
   | "plan_generated"
+  | "plan_reveal_dismissed"
   | "preferences_saved"
   | "workout_status_changed"
   | "life_happens_opened"
