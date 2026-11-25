@@ -290,7 +290,7 @@ export function findSlotWithFallback(q: Omit<SlotQuery, "windows">, preferred: T
   return any ? { start: any, preferred: false } : null;
 }
 
-function windowLabelFor(start: ClockTime): string {
+export function windowLabelFor(start: ClockTime): string {
   const m = toMinutes(start);
   const hit = TIMES_OF_DAY.find((t) => m >= toMinutes(TIME_OF_DAY[t].start) && m < toMinutes(TIME_OF_DAY[t].end));
   return hit ? TIME_OF_DAY[hit].label.toLowerCase() : "open";
