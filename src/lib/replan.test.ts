@@ -295,11 +295,11 @@ describe("4. injuries are remembered", () => {
 });
 
 describe("5. ask before big changes", () => {
-  it("asks one question with quick replies for a vague request that would rewrite a day", () => {
+  it("asks before changing anything for a vague request that could rewrite a day", () => {
     const c = needsClarification("help me maintain lower-body mobility", base, WEEK)!;
-    expect(c.question).toMatch(/lower-body mobility/);
-    expect(c.choices.map((x) => x.action)).toEqual(["send", "remember", "dismiss"]);
-    expect(c.choices[0].message).toMatch(/Keep the same day, time and length/);
+    expect(c.request).toMatchObject({ kind: "emphasis", region: "lower", emphasis: "mobility" });
+    expect(c.next?.text).toMatch(/lower-body mobility/);
+    expect(c.next?.choices.map((x) => x.value)).toContain("remember");
   });
 
   it("lets small, specific requests through", () => {

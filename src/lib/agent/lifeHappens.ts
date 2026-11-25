@@ -42,8 +42,8 @@ import {
   type AgentRequest,
 } from "./context";
 import { callTool, type LlmResult } from "./llm";
-import { needsClarification, type Clarification } from "../coach/clarify";
-import { detectInjury, withInjury } from "../injuries";
+import { needsClarification, outOfScopeChanges, parsePreferenceRequest, preferenceScope, type Clarification } from "../coach/clarify";
+import { detectInjury, injuryMemoryNote, withInjury } from "../injuries";
 
 const opt = <T extends z.ZodType>(s: T) => s.nullish();
 
@@ -107,7 +107,7 @@ Rules:
 - Only change planned workouts that the message affects. Never touch completed workouts. Never add make-up sessions or extra volume.
 - The user's preferred_days, preferred_times and max_session_minutes are LOCKED. Every moved or replaced session must be on a preferred day, start inside a preferred time window, and keep its full length (shorter only on a day listed in day_limits). Code checks this; an option that breaks it is shown to the user as a question, not applied, so only do that when nothing else fits.
 - Never put two lower-body (legs/glutes) strength days back to back.
-- Don't change a day's focus or format (e.g. upper body to mobility) unless the user clearly asked for that.
+- Don't change a day's focus or format (e.g. upper body to mobility) unless the user clearly asked for that. A preference about one body region ("keep my lower body mobile") changes only days that train that region, and only the moves that have to change (e.g. swap a lower-body strength move for a mobility move). Code rejects options that rewrite unrelated days.
 - Write dates as "Wed, Nov 18", never as 2026-11-18.
 - Offer distinct kinds where possible: "shorter" (replace with a shorter session), "move" (same workout, another free slot), "swap_format" (replace with a different format that fits), "skip" (rest; always an honest option).
 - Every new start must fit inside a free window from <days>, after any new_busy events from the message.
@@ -138,8 +138,9 @@ function buildPrompt(req: AgentRequest & { message: string }, plan: WeeklyPlan, 
     `Today is ${req.now.date} (${req.now.time}). The user says: "${req.message}"`,
     `<profile>${JSON.stringify(profileContext(req.profile))}</profile>`,
     `<memory>${JSON.stringify(memoryContext(req))}</memory>`,
+    // Only what's still ahead: completed, skipped and past workouts are done and aren't the coach's to discuss.
     `<plan>${JSON.stringify(
-      plan.workouts.map((w) => ({
+      plan.workouts.filter((w) => w.status === "planned" && w.date >= req.now.date).map((w) => ({
         id: w.id,
         date: w.date,
         start: w.start,
@@ -289,7 +290,14 @@ export function resolveCollateral(plan: WeeklyPlan, ops: PlanOperation[], ctx: V
  * "bends" with a question, and are only applied if the user says OK. The
  * badge and all option text come from code, never the model's claims.
  */
-export function gate(out: Pick<LifeHappensOutput, "alternatives">, req: AgentRequest, plan: WeeklyPlan, ctx: ValidationContext) {
+export function gate(
+  out: Pick<LifeHappensOutput, "alternatives">,
+  req: AgentRequest,
+  plan: WeeklyPlan,
+  ctx: ValidationContext,
+  /** Preference-level message: only these workouts may change format, focus or exercises. */
+  scope?: string[],
+) {
   const valid: Alternative[] = [];
   const problems: string[] = [];
   out.alternatives.forEach((a, i) => {
@@ -299,6 +307,13 @@ export function gate(out: Pick<LifeHappensOutput, "alternatives">, req: AgentReq
       return;
     }
     const { operations, notes } = resolveCollateral(plan, own, ctx, req);
+    const outside = scope ? outOfScopeChanges(plan, applyOperations(plan, operations), scope) : [];
+    if (outside.length) {
+      problems.push(
+        `Option ${i + 1} ("${a.title}"): changes ${outside.map((w) => w.title).join(", ")}, which the request isn't about. Keep unrelated days as they are; change only the moves that have to change.`,
+      );
+      return;
+    }
     const verdict = assessChange(applyOperations(plan, operations), ctx);
     if (verdict.status !== "fits") {
       const why = verdict.status === "invalid" ? verdict.violations : verdict.bends;
@@ -367,7 +382,10 @@ function memorySuggestions(out: LifeHappensOutput, req: AgentRequest): MemorySug
 export async function agentLifeHappens(input: AgentRequest & { message: string; clarified?: boolean }): Promise<LifeHappensResult> {
   // An injury in the message is a restriction from now on, whether or not the browser saved it yet.
   const injury = detectInjury(input.message);
-  const req = injury ? { ...input, profile: withInjury(input.profile, injury, input.now.date) } : input;
+  const injuryNote = injury ? injuryMemoryNote(injury, input.notes, input.now.date) : null;
+  const req = injury
+    ? { ...input, profile: withInjury(input.profile, injury, input.now.date), notes: injuryNote ? [...input.notes, injuryNote] : input.notes }
+    : input;
   const plan = req.plan;
   const at = new Date().toISOString();
   const base = { id: crypto.randomUUID(), createdAt: at, userMessage: req.message };
@@ -382,7 +400,7 @@ export async function agentLifeHappens(input: AgentRequest & { message: string; 
   // Ask before big changes: a vague request that would rewrite a day gets one question first, no model call.
   const clarify = !input.clarified && !injury ? needsClarification(req.message, plan, req.now.date) : null;
   if (clarify) {
-    return { proposal: { ...base, understood: [clarify.question], alternatives: [], generatedBy: "agent" }, memory: { blocked: [], notes: [] }, usage: [], clarify };
+    return { proposal: { ...base, understood: clarify.next ? [clarify.next.text] : [], alternatives: [], generatedBy: "agent" }, memory: { blocked: [], notes: [] }, usage: [], clarify };
   }
 
   const call = (user: string) =>
@@ -399,7 +417,9 @@ export async function agentLifeHappens(input: AgentRequest & { message: string; 
   const usage = [first.usage];
   let out = first.output;
   let ctx = validationContext(req, out, plan);
-  let { valid, problems } = gate(out, req, plan, ctx);
+  const pref = parsePreferenceRequest(req.message);
+  const scope = pref ? preferenceScope(pref, plan) : undefined;
+  let { valid, problems } = gate(out, req, plan, ctx, scope);
   if (problems.length) console.info("life-happens: rejected options", problems);
 
   // One repair round when nothing fits cleanly: show the model exactly what failed.
@@ -416,7 +436,7 @@ export async function agentLifeHappens(input: AgentRequest & { message: string; 
     const bending = valid;
     out = { ...repair.output, new_busy: [...out.new_busy, ...repair.output.new_busy] };
     ctx = validationContext(req, out, plan);
-    ({ valid, problems } = gate(out, req, plan, ctx));
+    ({ valid, problems } = gate(out, req, plan, ctx, scope));
     if (problems.length) console.info("life-happens: rejected after repair", problems);
     // Keep earlier options that only needed the user's OK, behind any that now fit.
     valid = [...valid, ...bending.filter((b) => !valid.some((v) => v.summary === b.summary))].sort(fitsFirst);
@@ -441,6 +461,7 @@ export async function agentLifeHappens(input: AgentRequest & { message: string; 
         return finalizeAlternative(plan, { ...a, operations: fixed.operations, tradeoffs: [...a.tradeoffs, ...fixed.notes] }, ctx);
       })
       .filter((a): a is Alternative => a !== null)
+      .filter((a) => !scope || !outOfScopeChanges(plan, applyOperations(plan, a.operations), scope).length)
       .sort(fitsFirst);
     if (valid.length) fallback = "The AI's options didn't pass the schedule checks, so these are rule-based.";
   }

@@ -117,6 +117,13 @@ export type ClockTime = z.infer<typeof ClockTime>;
 
 // ---------- Fitness profile ----------
 
+/** What the user wants from a body region, stated in coach chat or Preferences. "less": de-emphasize it. */
+export const BODY_EMPHASES = ["mobility", "strength", "less"] as const;
+export const BodyEmphasis = z.enum(BODY_EMPHASES);
+export type BodyEmphasis = z.infer<typeof BodyEmphasis>;
+export const BodyFocus = z.object({ lower: BodyEmphasis.optional(), upper: BodyEmphasis.optional() });
+export type BodyFocus = z.infer<typeof BodyFocus>;
+
 export const FitnessProfile = z.object({
   version: z.literal(1),
   name: z.string().trim().max(60).optional(),
@@ -141,6 +148,8 @@ export const FitnessProfile = z.object({
   avoidNotes: z.string().max(500),
   /** Optional, user-stated. Pivot never diagnoses or prescribes rehab. */
   limitations: z.string().max(500),
+  /** Per-region emphasis, e.g. lower body: mobility & function, not strength. Future plans follow it. */
+  bodyFocus: BodyFocus.optional(),
   updatedAt: z.string(),
 });
 export type FitnessProfile = z.infer<typeof FitnessProfile>;

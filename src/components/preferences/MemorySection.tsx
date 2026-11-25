@@ -4,7 +4,8 @@ import { useState, type ReactNode } from "react";
 import { computeInsights } from "@/lib/insights";
 import { WEEKDAY_LABELS } from "@/lib/labels";
 import { ALL_DAY, isAllDay } from "@/lib/memoryRules";
-import { WEEKDAYS, type BlockedTime, type Weekday } from "@/lib/schemas";
+import { describeBodyFocus } from "@/lib/planner/focus";
+import { WEEKDAYS, type BlockedTime, type BodyFocus, type Weekday } from "@/lib/schemas";
 import { pivot, useNow, type AppState } from "@/lib/store";
 import { dayShort, formatTime, monthDay } from "@/lib/time";
 import { Button, Chip, cx } from "../ui";
@@ -152,9 +153,18 @@ export function BlockedEditor({ state, onAdd }: { state: AppState; onAdd?: (b: B
   );
 }
 
-/** Lasting preferences in the user's words. */
+/** Lasting preferences in the user's words, plus what the coach saved (injuries, body focus). Click a note to edit it. */
 export function NotesEditor({ state }: { state: AppState }) {
   const [note, setNote] = useState("");
+  const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
+  const focus = state.profile?.bodyFocus;
+  const regions = (["lower", "upper"] as const).filter((r) => focus?.[r]);
+  const dropFocus = (r: keyof BodyFocus) => {
+    if (!state.profile) return;
+    const next = { ...state.profile.bodyFocus };
+    delete next[r];
+    pivot.saveProfile({ ...state.profile, bodyFocus: Object.keys(next).length ? next : undefined, updatedAt: new Date().toISOString() });
+  };
   const add = () => {
     const text = note.trim();
     if (!text) return;
@@ -163,13 +173,49 @@ export function NotesEditor({ state }: { state: AppState }) {
   };
   return (
     <div className="flex w-full flex-col gap-2">
-      {state.notes.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {state.notes.map((n) => (
-            <Removable key={n.id} onRemove={() => pivot.removeNote(n.id)}>
-              {n.text}
+      {regions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Body focus</span>
+          {regions.map((r) => (
+            <Removable key={r} title="Future plans follow this" onRemove={() => dropFocus(r)}>
+              {describeBodyFocus({ [r]: focus![r] })[0]}
             </Removable>
           ))}
+        </div>
+      )}
+      {state.notes.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {state.notes.map((n) =>
+            editing?.id === n.id ? (
+              <form
+                key={n.id}
+                className="flex w-full gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  pivot.updateNote(n.id, editing.text);
+                  setEditing(null);
+                }}
+              >
+                <input
+                  autoFocus
+                  aria-label="Edit note"
+                  value={editing.text}
+                  maxLength={300}
+                  onChange={(e) => setEditing({ id: n.id, text: e.target.value })}
+                  className={cx(INPUT, "flex-1")}
+                />
+                <Button type="submit" variant="dark" className="h-10" disabled={!editing.text.trim()}>
+                  Save
+                </Button>
+              </form>
+            ) : (
+              <Removable key={n.id} onRemove={() => pivot.removeNote(n.id)}>
+                <button type="button" title="Edit" onClick={() => setEditing({ id: n.id, text: n.text })} className="text-left hover:underline">
+                  {n.text}
+                </button>
+              </Removable>
+            ),
+          )}
         </div>
       )}
       <form

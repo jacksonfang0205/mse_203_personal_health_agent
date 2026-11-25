@@ -198,6 +198,11 @@ export const pivot = {
   addNotes(items: MemoryNote[]) {
     update((s) => ({ ...s, notes: [...s.notes, ...items].slice(-50) }));
   },
+  updateNote(id: string, text: string) {
+    const t = text.trim().slice(0, 300);
+    if (!t) return;
+    update((s) => ({ ...s, notes: s.notes.map((n) => (n.id === id ? { ...n, text: t } : n)) }));
+  },
   removeNote(id: string) {
     update((s) => ({ ...s, notes: s.notes.filter((n) => n.id !== id) }));
   },
