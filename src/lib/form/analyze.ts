@@ -161,6 +161,8 @@ interface Signals {
   torsoLean: Series;
   hipDepth: Series;
   heelY: Series;
+  /** Ankle position across the frame, to tell planted feet from stepping. */
+  ankleX: Series;
   hipLine: Series;
   kneeAnkleRatio: Series;
   /** Hip height above the ankles as a share of torso length, ×100 so it behaves like an angle for rep counting. */
@@ -189,6 +191,7 @@ export function computeSignals(seq: PoseSequence, side: "l" | "r"): Signals {
     torsoLean: [],
     hipDepth: [],
     heelY: [],
+    ankleX: [],
     hipLine: [],
     kneeAnkleRatio: [],
     hipHeight: [],
@@ -215,6 +218,7 @@ export function computeSignals(seq: PoseSequence, side: "l" | "r"): Signals {
     if (hip && knee && ankle) legLens.push(dist(hip, knee) + dist(knee, ankle));
     out.hipDepth.push(hip && knee ? (hip.y - knee.y) / (dist(hip, knee) || 1) : null);
     out.heelY.push(heel ? heel.y : ankle ? ankle.y : null);
+    out.ankleX.push(ankle ? ankle.x : null);
     if (sh && hip && ankle && Math.abs(ankle.x - sh.x) > 1) {
       // Signed deviation of the hip from the shoulder-ankle line. Positive = hip below the line (sag).
       const lineY = sh.y + ((ankle.y - sh.y) * (hip.x - sh.x)) / (ankle.x - sh.x);
@@ -350,6 +354,32 @@ export function segmentReps(p: Series, minRom: number, maxGap = Infinity): { sta
   return reps;
 }
 
+/**
+ * Narrow a rep to the movement itself. The rep's start and end are the highest points around it, which can sit well before
+ * the descent (walking in, standing still). Start at the last frame near the top before the descent, and end at the first
+ * frame near the top after it, "near" being within 10% of the rep's range.
+ */
+export function activeWindow(p: Series, s: { start: number; bottom: number; end: number }, frac = 0.1) {
+  const bottom = p[s.bottom], top0 = p[s.start], top1 = p[s.end];
+  if (bottom === null || top0 === null || top1 === null) return s;
+  let start = s.start, end = s.end;
+  for (let i = s.bottom; i >= s.start; i--) {
+    const v = p[i];
+    if (v !== null && v >= top0 - frac * (top0 - bottom)) {
+      start = i;
+      break;
+    }
+  }
+  for (let i = s.bottom; i <= s.end; i++) {
+    const v = p[i];
+    if (v !== null && v >= top1 - frac * (top1 - bottom)) {
+      end = i;
+      break;
+    }
+  }
+  return { start, bottom: s.bottom, end };
+}
+
 function resample(xs: number[], n: number): number[] {
   if (xs.length === 1) return Array(n).fill(xs[0]);
   return Array.from({ length: n }, (_, i) => {
@@ -390,9 +420,21 @@ function repFeatures(
     set("hip_depth_at_bottom", sig.hipDepth[r.bottom]);
   }
   // Heel baseline: where the heel sits at the start and end of this rep (standing), so stepping around between reps doesn't matter.
+  // Only frames with the feet planted count: a heel coming up while the foot travels is a step, not a heel lift.
+  const footX = median(seriesIn(sig.ankleX, r.start, r.end));
+  const planted = (i: number) => {
+    const x = sig.ankleX[i];
+    return x === null || !Number.isFinite(footX) || !(sig.legLen > 0) || Math.abs(x - footX) < 0.1 * sig.legLen;
+  };
+  const heelAt = (a: number, b: number) => {
+    const out: number[] = [];
+    for (let i = Math.max(a, r.start); i <= Math.min(b, r.end); i++) if (sig.heelY[i] !== null && planted(i)) out.push(sig.heelY[i]!);
+    return out;
+  };
   const edge = Math.max(1, Math.round(seq.fps / 5));
-  const baselineHeel = median([...seriesIn(sig.heelY, r.start, r.start + edge), ...seriesIn(sig.heelY, r.end - edge, r.end)]);
-  const heelMin = min(sig.heelY);
+  const baselineHeel = median([...heelAt(r.start, r.start + edge), ...heelAt(r.end - edge, r.end)]);
+  const heelDuring = heelAt(r.start, r.end);
+  const heelMin = heelDuring.length ? Math.min(...heelDuring) : null;
   if (heelMin !== null && Number.isFinite(baselineHeel) && sig.legLen > 0) set("max_heel_lift", Math.max(0, (baselineHeel - heelMin) / sig.legLen));
   const line = seriesIn(sig.hipLine, r.start, r.end);
   if (line.length) {
@@ -518,6 +560,7 @@ export function analyzeMovement(seq: PoseSequence, movement: MovementGuide): For
     torsoLean: smooth(raw.torsoLean, win, gap),
     hipDepth: smooth(raw.hipDepth, win, gap),
     heelY: smooth(raw.heelY, win, gap),
+    ankleX: smooth(raw.ankleX, win, gap),
     hipLine: smooth(raw.hipLine, win, gap),
     kneeAnkleRatio: smooth(raw.kneeAnkleRatio, win, gap),
     hipHeight: smooth(raw.hipHeight, win, gap),
@@ -525,7 +568,9 @@ export function analyzeMovement(seq: PoseSequence, movement: MovementGuide): For
     torsoTall: smooth(raw.torsoTall, win, gap),
   };
   const primary = primarySeries(sig, movement, seq.view);
-  const segments = segmentReps(primary, movement.minRomDeg, Math.round(seq.fps));
+  // Each rep runs from the moment the descent starts to the moment the person is back up. Anything before the first rep
+  // (walking into place, setting the feet) or after the last (walking off) is left out of every measurement.
+  const segments = segmentReps(primary, movement.minRomDeg, Math.round(seq.fps)).map((s) => activeWindow(primary, s));
 
   // People turn between reps (a few from the front, then one side-on), so each rep gets its own view.
   const clipView: "side" | "front" = seq.view === "front" ? "front" : "side";

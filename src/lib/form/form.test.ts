@@ -73,6 +73,17 @@ describe("analysis", () => {
     expect(ids).toContain("squat_heel_lift");
   });
 
+  it("ignores walking into place before the first rep", () => {
+    // Reviewer clip: stepping into frame lifted the heels, and rep 1 was flagged for "Heels lifting".
+    const a = analyzeMovement(syntheticSquat({ walkInS: 3 }), MOVEMENTS.squat);
+    expect(a.reps).toHaveLength(6);
+    expect(a.faults.map((f) => f.faultId)).not.toContain("squat_heel_lift");
+    expect(a.reps[0].features.max_heel_lift ?? 0).toBeLessThan(0.02);
+    // Real heel lift during the reps is still caught.
+    const lifted = analyzeMovement(syntheticSquat({ walkInS: 3, heelLift: 0.08 }), MOVEMENTS.squat);
+    expect(lifted.faults.find((f) => f.faultId === "squat_heel_lift")?.reps).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
   it("labels faults that appear only at the end of a set as late_reps", () => {
     const a = analyzeMovement(syntheticPushUp({ fatigueSagDeg: 25 }), MOVEMENTS.push_up);
     const sag = a.faults.find((f) => f.faultId === "push_up_hip_sag");
