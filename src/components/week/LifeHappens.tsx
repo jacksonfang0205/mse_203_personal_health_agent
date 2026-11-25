@@ -211,13 +211,13 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
     return blocked.length + notes.length;
   };
 
-  /** Save the stated preference so future plans (and the coach) follow it. */
-  const rememberPreference = (memoryText: string, bodyFocus: BodyFocus) => {
+  /**
+   * Save the stated preference so future plans and the coach follow it. It lives in the profile's
+   * body focus, shown (and removable) under "Notes for Pivot", so it isn't duplicated as a note.
+   */
+  const rememberPreference = (bodyFocus: BodyFocus) => {
     const s = pivot.get();
     if (s.profile) pivot.saveProfile({ ...s.profile, bodyFocus: { ...s.profile.bodyFocus, ...bodyFocus }, updatedAt: new Date().toISOString() });
-    if (!s.notes.some((n) => n.text.toLowerCase() === memoryText.toLowerCase())) {
-      pivot.addNotes([{ id: crypto.randomUUID(), text: memoryText, source: "agent", createdAt: new Date().toISOString() }]);
-    }
   };
 
   /** All questions answered (or skipped): build the smallest change in code and offer it. */
@@ -225,7 +225,7 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
     const s = pivot.get();
     const current = s.plan ?? plan;
     const change = buildPreferenceChange(request, answers, current, s.profile ?? profile, now.date);
-    rememberPreference(change.memory, change.bodyFocus);
+    rememberPreference(change.bodyFocus);
     setClarify(null);
     if (!change.operations.length) {
       setDone(`${change.note ?? "Okay."} Saved to your preferences: ${change.memory}`);
@@ -351,7 +351,7 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
   const reply = proposal
     ? proposal.infeasibleReason ??
       (!shown.length && hiddenDone
-        ? "That's already been taken care of."
+        ? "That workout is already done, so I've cleared those options."
         : !proposal.alternatives.length
         ? "Nothing fits this week."
         : proposal.generatedBy === "agent"

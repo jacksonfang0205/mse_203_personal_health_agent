@@ -30,6 +30,10 @@ export function describeOperation(plan: WeeklyPlan, op: PlanOperation): string {
   if (before && before.title === after.title && before.category === after.category) {
     return `${after.title} on ${when}.`;
   }
+  // An addition to the same session ("Upper body strength + lower-body mobility") reads as one.
+  if (before && after.title.startsWith(`${before.title} `)) {
+    return `${before.title} on ${when}: ${after.title.slice(before.title.length).trim().replace(/^\+\s*/, "adds ").replace(/^\((.*)\)$/, "$1")}.`;
+  }
   return `${before ? `Swap ${title} for ` : ""}${before ? lower(after.title) : after.title} on ${when}.`;
 }
 
