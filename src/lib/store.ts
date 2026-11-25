@@ -10,7 +10,8 @@
  */
 import { useSyncExternalStore } from "react";
 import type { CalendarPresetId } from "./calendar";
-import type { BlockedTime, ChangeRecord, FitnessProfile, IsoDate, LoggedSet, MemoryNote, WeeklyPlan, WeightUnit, WorkoutExercise, WorkoutStatus } from "./schemas";
+import type { BlockedTime, ChangeRecord, FitnessProfile, IsoDate, LoggedSet, MemoryNote, Routine, WeeklyPlan, WeightUnit, WorkoutExercise, WorkoutStatus } from "./schemas";
+import { withExercises } from "./routine";
 import { isAllDay } from "./memoryRules";
 import { localNow } from "./time";
 import { doneBlockedReason } from "./workoutStatus";
@@ -31,6 +32,7 @@ const EMPTY: AppState = {
   ticks: {},
   lifts: [],
   weightUnit: "lb",
+  routine: null,
 };
 
 export interface PivotRepository {
@@ -216,6 +218,53 @@ export const pivot = {
   },
   setWeightUnit(weightUnit: WeightUnit) {
     update((s) => ({ ...s, weightUnit }));
+  },
+  /**
+   * Replace a workout's movements with the ones the user picked. `from[i]` is
+   * where movement i was before (-1 if it's new), so sets already ticked off
+   * stay ticked. The workout stays done only if every movement still is.
+   */
+  setWorkoutExercises(workoutId: string, exercises: WorkoutExercise[], from: number[]) {
+    update((s) => {
+      const w = s.plan?.workouts.find((x) => x.id === workoutId);
+      if (!s.plan || !w || !exercises.length) return s;
+      const oldDone = w.exercises.map((we, i) => {
+        const total = setCount(we);
+        return Math.min(total, s.ticks[workoutId]?.[i] ?? (w.status === "completed" ? total : 0));
+      });
+      const next = withExercises(w, exercises);
+      // A swapped-in movement starts unticked, even in the same slot.
+      const row = exercises.map((we, i) => {
+        const j = from[i] ?? -1;
+        return j >= 0 && w.exercises[j]?.exerciseId === we.exerciseId ? Math.min(setCount(we), oldDone[j]) : 0;
+      });
+      const anyTicked = row.some((n) => n > 0);
+      const ticks = { ...s.ticks };
+      if (anyTicked) ticks[workoutId] = row;
+      else delete ticks[workoutId];
+      const edited = {
+        ...s,
+        ticks,
+        plan: { ...s.plan, workouts: s.plan.workouts.map((x) => (x.id === workoutId ? next : x)) },
+      };
+      const allDone = row.every((n, i) => n >= setCount(exercises[i]));
+      if (w.status === "completed" && !allDone) return withStatus(edited, workoutId, "planned");
+      return edited;
+    });
+  },
+  /** Use the user's own routine from now on: their preferences and this week's plan come from it. */
+  saveRoutine(routine: Routine, profile: FitnessProfile, plan: WeeklyPlan) {
+    update((s) => ({
+      ...s,
+      routine,
+      profile,
+      plan,
+      ticks: Object.fromEntries(Object.entries(s.ticks).filter(([id]) => plan.workouts.some((w) => w.id === id))),
+    }));
+  },
+  /** Go back to Pivot planning the week. The current plan stays until the user replans. */
+  clearRoutine() {
+    update((s) => ({ ...s, routine: null }));
   },
   recordChange(record: ChangeRecord) {
     update((s) => ({ ...s, history: [record, ...s.history].slice(0, 100) }));

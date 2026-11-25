@@ -79,6 +79,7 @@ export const EQUIPMENT = [
   "stationary_bike",
   "rower",
   "jump_rope",
+  "machines",
 ] as const;
 export const Equipment = z.enum(EQUIPMENT);
 export type Equipment = z.infer<typeof Equipment>;
@@ -221,7 +222,7 @@ export const WeeklyPlan = z.object({
   /** First day of the plan's 7-day window: the day it was planned. */
   weekStart: IsoDate,
   workouts: z.array(Workout),
-  generatedBy: z.enum(["mock_template", "agent", "fixture"]),
+  generatedBy: z.enum(["mock_template", "agent", "fixture", "routine"]),
   createdAt: z.string(),
   /** Goals or constraints the plan could not satisfy, in plain language. */
   notes: z.array(z.string()),
@@ -371,3 +372,24 @@ export const ExerciseLog = z.object({
   at: z.string(),
 });
 export type ExerciseLog = z.infer<typeof ExerciseLog>;
+
+// ---------- The user's own routine ----------
+
+/** One training day of a routine the user already follows, entered by hand. */
+export const RoutineDay = z.object({
+  day: Weekday,
+  title: z.string().trim().min(1).max(60),
+  start: ClockTime,
+  exercises: z.array(WorkoutExercise).min(1).max(15),
+});
+export type RoutineDay = z.infer<typeof RoutineDay>;
+
+/**
+ * A weekly routine the user brought with them. When set, Pivot builds each
+ * week from it instead of planning one, and the app is for logging.
+ */
+export const Routine = z.object({
+  days: z.array(RoutineDay).min(1).max(7),
+  updatedAt: z.string(),
+});
+export type Routine = z.infer<typeof Routine>;

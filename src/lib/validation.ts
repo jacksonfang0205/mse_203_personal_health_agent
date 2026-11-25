@@ -112,6 +112,12 @@ const DURATION_TOLERANCE = 1.15;
 
 const endMinutes = (w: Pick<Workout, "start" | "durationMin">) => toMinutes(w.start) + w.durationMin;
 const active = (plan: WeeklyPlan) => plan.workouts.filter((w) => w.status === "planned");
+/**
+ * Planned workouts whose movements Pivot chose. Movements the user picked
+ * themselves are their call, so equipment, avoidance, length and set-count
+ * checks don't second-guess them. Calendar and timing checks still apply.
+ */
+const pivotChosen = (plan: WeeklyPlan) => active(plan).filter((w) => w.origin !== "user");
 
 /** Estimated minutes for a workout's exercises, scaled when sets/minutes are overridden. */
 export function estimateMinutes(workout: Pick<Workout, "exercises">): number {
@@ -171,7 +177,7 @@ export function checkDurations(plan: WeeklyPlan, ctx: ValidationContext): Violat
   const perDate = new Map<IsoDate, number>();
   for (const w of active(plan)) {
     perDate.set(w.date, (perDate.get(w.date) ?? 0) + w.durationMin);
-    if (w.durationMin > ctx.profile.sessionMinutes) {
+    if (w.durationMin > ctx.profile.sessionMinutes && w.origin !== "user") {
       out.push({
         constraint: "duration_limit",
         workoutId: w.id,
@@ -204,7 +210,7 @@ export function checkDurations(plan: WeeklyPlan, ctx: ValidationContext): Violat
 
 export function checkEquipment(plan: WeeklyPlan, available: Equipment[]): Violation[] {
   const have = new Set(available);
-  return active(plan).flatMap((w) => {
+  return pivotChosen(plan).flatMap((w) => {
     const needed = new Set<Equipment>(w.equipment);
     w.exercises.forEach((we) => getExercise(we.exerciseId)?.equipment.forEach((e) => needed.add(e)));
     const missing = [...needed].filter((e) => !have.has(e));
@@ -217,7 +223,7 @@ export function checkEquipment(plan: WeeklyPlan, available: Equipment[]): Violat
 export function checkAvoidance(plan: WeeklyPlan, profile: FitnessProfile, extraTags: AvoidTag[] = []): Violation[] {
   const tags = new Set([...profile.avoidTags, ...extraTags]);
   const ids = new Set(profile.avoidExerciseIds);
-  return active(plan).flatMap((w) =>
+  return pivotChosen(plan).flatMap((w) =>
     w.exercises.flatMap((we) => {
       const ex = getExercise(we.exerciseId);
       if (!ex) return [];
@@ -312,7 +318,7 @@ export function checkVolume(plan: WeeklyPlan, ctx: ValidationContext): Violation
     }
   }
 
-  for (const w of active(plan)) {
+  for (const w of pivotChosen(plan)) {
     for (const we of w.exercises) {
       const ex = getExercise(we.exerciseId);
       if (ex && ex.prescription.kind !== "duration" && we.sets && we.sets > ex.prescription.sets + 1) {

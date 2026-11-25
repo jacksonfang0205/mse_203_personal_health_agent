@@ -5,7 +5,7 @@
  */
 import { z } from "zod";
 import { CALENDAR_PRESET_IDS, type CalendarPresetId } from "./calendar";
-import { BlockedTime, ChangeRecord, ExerciseLog, FitnessProfile, MemoryNote, WeeklyPlan, WeightUnit, WorkoutLogEntry } from "./schemas";
+import { BlockedTime, ChangeRecord, ExerciseLog, FitnessProfile, MemoryNote, Routine, WeeklyPlan, WeightUnit, WorkoutLogEntry } from "./schemas";
 
 export const AppState = z.object({
   version: z.literal(1),
@@ -23,5 +23,7 @@ export const AppState = z.object({
   lifts: z.array(ExerciseLog).default([]),
   /** Unit for logging weight. */
   weightUnit: WeightUnit.default("lb"),
+  /** The user's own weekly routine. Null means Pivot plans the week. */
+  routine: Routine.nullable().default(null),
 });
 export type AppState = z.infer<typeof AppState>;

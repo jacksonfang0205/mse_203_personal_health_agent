@@ -141,6 +141,18 @@ export function OnboardingFlow() {
             <h1 className="font-display text-4xl leading-tight font-medium tracking-tight">{step.title}</h1>
             <p className="mt-2 text-ink-soft">{step.sub}</p>
           </div>
+          {stepIdx === 0 && (
+            <Link
+              href="/routine"
+              className="mb-8 flex items-center justify-between gap-4 rounded-2xl border border-line-strong bg-card px-5 py-4 transition-all hover:-translate-y-0.5 hover:border-ink/40"
+            >
+              <span className="flex flex-col gap-0.5">
+                <span className="font-semibold">Already follow a routine?</span>
+                <span className="text-sm text-ink-soft">Enter your own days and movements, and use Pivot to log them.</span>
+              </span>
+              <ArrowRight className="shrink-0 text-coral-deep" />
+            </Link>
+          )}
           <step.Section draft={draft} set={set} jump={setStepIdx} />
         </div>
 
