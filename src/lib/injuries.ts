@@ -9,7 +9,8 @@
  */
 import { getExercise } from "./catalog";
 import { allowedCategories, buildWorkout, eligibleExercises, filterFromProfile } from "./planner/generate";
-import type { AvoidTag, FitnessProfile, IsoDate, WeeklyPlan, Workout, WorkoutExercise } from "./schemas";
+import { AVOID_TAG_LABELS } from "./labels";
+import type { AvoidTag, FitnessProfile, IsoDate, MemoryNote, WeeklyPlan, Workout, WorkoutExercise } from "./schemas";
 import { formatDate } from "./time";
 
 /** Activities named directly ("no running", "nothing overhead"). */
@@ -79,6 +80,19 @@ export function withInjury(profile: FitnessProfile, injury: InjuryMention, today
   const limitations = already ? profile.limitations : [profile.limitations.trim(), line].filter(Boolean).join("\n").slice(0, 500);
   const avoidTags = [...new Set([...profile.avoidTags, ...injury.tags])];
   return { ...profile, limitations, avoidTags };
+}
+
+/**
+ * The injury as a coach-memory note ("Notes for Pivot"), which the coach and
+ * the planner read on every later turn. Null when memory already has it, so
+ * mentioning the same injury twice doesn't add a duplicate.
+ */
+export function injuryMemoryNote(injury: InjuryMention, notes: MemoryNote[], today: IsoDate, at = new Date().toISOString()): MemoryNote | null {
+  const key = injury.label.toLowerCase();
+  if (notes.some((n) => n.text.toLowerCase().includes(key))) return null;
+  const avoid = injury.tags.map((t) => AVOID_TAG_LABELS[t].label.toLowerCase());
+  const text = `Injury: ${key}${avoid.length ? `. Avoid ${avoid.join(" and ")}` : ""} (told the coach ${formatDate(today)}).`;
+  return { id: crypto.randomUUID(), text: text.slice(0, 300), source: "agent", createdAt: at };
 }
 
 export interface InjurySwap {

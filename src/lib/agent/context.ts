@@ -11,6 +11,7 @@ import { blockedToBusy, CALENDAR_PRESET_IDS, type CalendarPresetId, type DateRan
 import { getExercise } from "../catalog";
 import { computeInsights } from "../insights";
 import { TIME_OF_DAY } from "../labels";
+import { describeBodyFocus } from "../planner/focus";
 import { buildWorkout, eligibleExercises, findSlotWithFallback, type ExerciseFilter } from "../planner/generate";
 import {
   BlockedTime,
@@ -134,6 +135,7 @@ export function profileContext(p: FitnessProfile) {
     avoid: p.avoidTags,
     avoid_notes: p.avoidNotes || undefined,
     limitations: p.limitations || undefined,
+    body_focus: p.bodyFocus ? describeBodyFocus(p.bodyFocus) : undefined,
   };
 }
 

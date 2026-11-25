@@ -27,6 +27,7 @@ import type {
 import { TIMES_OF_DAY } from "../schemas";
 import { addDays, dayLong, fromMinutes, overlaps, toMinutes, weekDates, weekdayOf } from "../time";
 import { isLowerBody } from "../validation";
+import { applyBodyFocus } from "./focus";
 
 const LEVEL_RANK = { beginner: 0, intermediate: 1, advanced: 2 } as const;
 const SLOT_STEP = 15;
@@ -346,11 +347,15 @@ export function generateMockWeek(args: MockWeekArgs): WeeklyPlan {
 
   const tryPlace = (date: IsoDate): boolean => {
     const category = rotation[sessionIdx % rotation.length];
+    // A region the user asked for less of drops out of the strength rotation.
+    const foci = STRENGTH_FOCI.filter(
+      (f) => !(profile.bodyFocus?.upper === "less" && f.label === "Upper body") && !(profile.bodyFocus?.lower === "less" && f.label === "Lower body"),
+    );
     let focus =
       category === "strength"
         ? profile.targetMuscles.length && !profile.targetMuscles.includes("full_body")
           ? profile.targetMuscles
-          : STRENGTH_FOCI[strengthIdx % STRENGTH_FOCI.length].muscles
+          : foci[strengthIdx % foci.length].muscles
         : profile.targetMuscles;
     if (category === "strength" && isLowerBody({ category, muscles: focus }) && legDayNextTo(date)) {
       focus = STRENGTH_FOCI[1].muscles; // upper body instead
@@ -369,7 +374,7 @@ export function generateMockWeek(args: MockWeekArgs): WeeklyPlan {
       `${CATEGORY_STYLE[category].label} work toward your goal to ${GOAL_LABELS[goal].label.toLowerCase()}. ` +
       `Placed in your free ${windowLabelFor(slot.start)} on ${dayLong(date)}` +
       (slot.preferred ? ", clear of your calendar." : " — outside your preferred times, but it's the open slot that day.");
-    const w = buildWorkout({
+    const built = buildWorkout({
       category,
       focus,
       minutes: profile.sessionMinutes,
@@ -381,6 +386,8 @@ export function generateMockWeek(args: MockWeekArgs): WeeklyPlan {
       origin: "mock_template",
       rationale,
     });
+    // The user's stated body focus (e.g. lower body: mobility, not strength) shapes every new plan.
+    const w = built && applyBodyFocus(built, profile);
     if (!w || (isLowerBody(w) && legDayNextTo(date))) return false;
     workouts.push(w);
     sessionIdx++;
