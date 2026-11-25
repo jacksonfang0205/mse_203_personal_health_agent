@@ -8,7 +8,7 @@ import { agentSnapshot, requestPlan, useAiStatus } from "@/lib/agentClient";
 import { findClashes } from "@/lib/planner/clashes";
 import { computeInsights, learnedTimeOrder } from "@/lib/insights";
 import { getExercise } from "@/lib/catalog";
-import type { BusyBlock, IsoDate, WeeklyPlan, Workout, WorkoutStatus } from "@/lib/schemas";
+import type { BusyBlock, ExerciseLog, IsoDate, WeeklyPlan, WeightUnit, Workout, WorkoutStatus } from "@/lib/schemas";
 import { buildSamplePlan, calendarForWeek, carryOver } from "@/lib/session";
 import { pivot, setCount, useNow, usePivotState } from "@/lib/store";
 import { track } from "@/lib/telemetry";
@@ -255,6 +255,8 @@ export function WeekView() {
                 plan={plan}
                 busy={showCalendar ? shown.busy.filter((b) => b.date === date) : []}
                 ticks={state.ticks}
+                lifts={state.lifts}
+                weightUnit={state.weightUnit}
                 onOpen={setOpenId}
                 showWhy={welcome}
               />
@@ -283,6 +285,8 @@ export function WeekView() {
         workout={openWorkout}
         today={today}
         note={statusNote}
+        lifts={state.lifts}
+        weightUnit={state.weightUnit}
         onClose={() => {
           setOpenId(null);
           setStatusNote(null);
@@ -302,6 +306,9 @@ function DayColumn(props: {
   plan: WeeklyPlan;
   busy: BusyBlock[];
   ticks: Record<string, number[]>;
+  /** Logged sets, reps and weight; drives each movement's target. */
+  lifts: ExerciseLog[];
+  weightUnit: WeightUnit;
   onOpen: (id: string) => void;
   /** Show each workout's reasoning under its card (the first look after onboarding). */
   showWhy?: boolean;
@@ -333,7 +340,14 @@ function DayColumn(props: {
         {workouts.length > 0 ? (
           workouts.map((w) =>
             props.isToday ? (
-              <TodayWorkout key={w.id} workout={w} done={setsDone(w, props.ticks)} onOpen={() => props.onOpen(w.id)} />
+              <TodayWorkout
+                key={w.id}
+                workout={w}
+                done={setsDone(w, props.ticks)}
+                lifts={props.lifts}
+                unit={props.weightUnit}
+                onOpen={() => props.onOpen(w.id)}
+              />
             ) : (
             <div key={w.id} className="flex flex-col gap-3 lg:flex-row">
               <div className="flex flex-col gap-2 lg:w-64 lg:shrink-0">
@@ -381,7 +395,19 @@ function DayColumn(props: {
  * a tick per set, and a button to finish the whole workout. Only today's
  * workouts can be finished; other days are read-only.
  */
-function TodayWorkout({ workout, done, onOpen }: { workout: Workout; done: number[]; onOpen: () => void }) {
+function TodayWorkout({
+  workout,
+  done,
+  lifts,
+  unit,
+  onOpen,
+}: {
+  workout: Workout;
+  done: number[];
+  lifts: ExerciseLog[];
+  unit: WeightUnit;
+  onOpen: () => void;
+}) {
   const skipped = workout.status === "skipped";
   const completed = workout.status === "completed";
   const totalSets = workout.exercises.reduce((s, we) => s + setCount(we), 0);
@@ -434,6 +460,10 @@ function TodayWorkout({ workout, done, onOpen }: { workout: Workout; done: numbe
             index={i}
             done={done[i]}
             disabled={skipped}
+            workoutId={workout.id}
+            date={workout.date}
+            lifts={lifts}
+            unit={unit}
             onSetDone={(n) => pivot.setSetsDone(workout.id, i, n)}
           />
         ))}

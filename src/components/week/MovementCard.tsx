@@ -1,11 +1,13 @@
 "use client";
 
 import { demoVideoUrl, getExercise } from "@/lib/catalog";
-import type { Workout, WorkoutExercise } from "@/lib/schemas";
+import { isLoggable } from "@/lib/progression";
+import type { ExerciseLog, IsoDate, WeightUnit, Workout, WorkoutExercise } from "@/lib/schemas";
 import { setCount } from "@/lib/store";
 import { Check } from "../icons";
 import { cx } from "../ui";
 import { ExerciseVisual } from "./ExerciseVisual";
+import { SetLogger } from "./SetLogger";
 
 export function prescription(we: WorkoutExercise): string {
   if (we.minutes) return `${we.minutes} min`;
@@ -22,12 +24,16 @@ export function setsDone(w: Workout, ticks: Record<string, number[]>): number[] 
   });
 }
 
-/** One movement of today's workout: photo, prescription, a check for the whole movement and a tick per set. */
+/** One movement of today's workout: photo, prescription, a check for the whole movement, and a logger (or a tick) per set. */
 export function MovementCard(props: {
   we: WorkoutExercise;
   index: number;
   done: number;
   disabled: boolean;
+  workoutId: string;
+  date: IsoDate;
+  lifts: ExerciseLog[];
+  unit: WeightUnit;
   onSetDone: (n: number) => void;
 }) {
   const ex = getExercise(props.we.exerciseId);
@@ -75,7 +81,20 @@ export function MovementCard(props: {
           <span className="shrink-0 font-mono text-sm font-semibold">{prescription(props.we)}</span>
         </div>
         {ex && <p className="text-sm text-ink-soft">{ex.cue}</p>}
-        {total > 1 && (
+        {isLoggable(props.we) ? (
+          <SetLogger
+            workoutId={props.workoutId}
+            date={props.date}
+            index={props.index}
+            we={props.we}
+            total={total}
+            done={props.done}
+            disabled={props.disabled}
+            lifts={props.lifts}
+            unit={props.unit}
+            onSetDone={props.onSetDone}
+          />
+        ) : total > 1 && (
           <div className="mt-auto flex flex-wrap gap-1.5 pt-1" role="group" aria-label={`${name} sets`}>
             {Array.from({ length: total }, (_, k) => {
               const on = props.done > k;
@@ -103,7 +122,7 @@ export function MovementCard(props: {
             href={demoVideoUrl(ex)}
             target="_blank"
             rel="noopener noreferrer"
-            className={cx("text-xs font-semibold text-coral-deep underline-offset-4 hover:underline", total <= 1 && "mt-auto")}
+            className={cx("text-xs font-semibold text-coral-deep underline-offset-4 hover:underline", total <= 1 && !isLoggable(props.we) && "mt-auto")}
           >
             Watch a form demo ↗
           </a>

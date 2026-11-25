@@ -4,11 +4,13 @@ import { useEffect, useRef } from "react";
 import { demoVideoUrl, getExercise } from "@/lib/catalog";
 import { CATEGORY_STYLE, EQUIPMENT_LABELS, MUSCLE_LABELS } from "@/lib/labels";
 import { rationaleFor } from "@/lib/planner/move";
-import type { IsoDate, Workout, WorkoutExercise, WorkoutStatus } from "@/lib/schemas";
+import { formatTarget, isLoggable } from "@/lib/progression";
+import type { ExerciseLog, IsoDate, WeightUnit, Workout, WorkoutExercise, WorkoutStatus } from "@/lib/schemas";
 import { doneBlockedReason } from "@/lib/workoutStatus";
 import { dayLong, formatRange, monthDay } from "@/lib/time";
 import { CategoryIcon, Check, SkipIcon } from "../icons";
 import { Button, MockBadge, cx } from "../ui";
+import { targetFor } from "./SetLogger";
 import { StatusPill } from "./WorkoutCard";
 
 function prescription(we: WorkoutExercise): string {
@@ -29,6 +31,8 @@ export function WorkoutDialog({
   workout,
   today,
   note,
+  lifts = [],
+  weightUnit = "lb",
   onClose,
   onStatus,
 }: {
@@ -36,6 +40,8 @@ export function WorkoutDialog({
   today: IsoDate;
   /** Why the last status change was refused, if it was. */
   note?: string | null;
+  lifts?: ExerciseLog[];
+  weightUnit?: WeightUnit;
   onClose: () => void;
   onStatus: (status: WorkoutStatus) => void;
 }) {
@@ -91,11 +97,19 @@ export function WorkoutDialog({
               <ol className="flex flex-col divide-y divide-line rounded-2xl border border-line">
                 {workout.exercises.map((we, i) => {
                   const ex = getExercise(we.exerciseId);
+                  // Only worth showing once there's history to build on.
+                  const next = isLoggable(we) ? targetFor(we, lifts, workout.date, weightUnit) : null;
+                  const target = next?.history.length ? next.target : null;
                   return (
                     <li key={`${we.exerciseId}-${i}`} className="flex items-start justify-between gap-4 px-4 py-3">
                       <div>
                         <p className="font-medium">{ex?.name ?? we.exerciseId}</p>
                         {ex && <p className="text-sm text-ink-soft">{ex.cue}</p>}
+                        {target && (
+                          <p className="mt-1 text-xs text-ink-soft">
+                            <span className="font-semibold text-ink">Target: {formatTarget(target)}</span> · {target.reason}
+                          </p>
+                        )}
                         {ex && (
                           <a
                             href={demoVideoUrl(ex)}
