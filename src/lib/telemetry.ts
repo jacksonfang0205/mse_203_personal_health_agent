@@ -15,6 +15,8 @@ export type TelemetryEventName =
   | "plan_reveal_dismissed"
   | "preferences_saved"
   | "workout_status_changed"
+  | "workout_movements_changed"
+  | "routine_saved"
   | "life_happens_opened"
   | "life_happens_submitted"
   | "alternative_accepted"

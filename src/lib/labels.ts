@@ -64,6 +64,7 @@ export const EQUIPMENT_LABELS: Record<Equipment, string> = {
   stationary_bike: "Stationary bike",
   rower: "Rowing machine",
   jump_rope: "Jump rope",
+  machines: "Gym machines",
 };
 
 /** Quick presets in onboarding; users can still toggle individual items. */
@@ -85,6 +86,7 @@ export const EQUIPMENT_PRESETS: { id: string; label: string; items: Equipment[] 
       "treadmill",
       "stationary_bike",
       "rower",
+      "machines",
     ],
   },
 ];

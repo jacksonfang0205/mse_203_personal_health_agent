@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import { acceptBendingMove, fixClashes } from "@/lib/account";
@@ -9,6 +10,7 @@ import { findClashes } from "@/lib/planner/clashes";
 import { computeInsights, learnedTimeOrder } from "@/lib/insights";
 import { getExercise } from "@/lib/catalog";
 import type { BusyBlock, ExerciseLog, IsoDate, WeeklyPlan, WeightUnit, Workout, WorkoutStatus } from "@/lib/schemas";
+import { planFromRoutine } from "@/lib/routine";
 import { buildSamplePlan, calendarForWeek, carryOver } from "@/lib/session";
 import { pivot, setCount, useNow, usePivotState } from "@/lib/store";
 import { track } from "@/lib/telemetry";
@@ -32,6 +34,8 @@ export function WeekView() {
   const state = usePivotState();
   const now = useNow();
   const [openId, setOpenId] = useState<string | null>(null);
+  // Open the workout straight into "Change movements".
+  const [editOnOpen, setEditOnOpen] = useState(false);
   const [showCalendar, setShowCalendar] = useState(true);
   // Right after onboarding (/week?welcome=1) the whole week is revealed with the reasoning behind it.
   const params = useSearchParams();
@@ -81,6 +85,19 @@ export function WeekView() {
   const buildPlan = async () => {
     const at = new Date();
     setPlanNote(null);
+    // Users with their own routine get the week straight from it.
+    if (state.routine) {
+      const now = localNow(at);
+      const next = planFromRoutine({
+        routine: state.routine,
+        weekStart: now.date,
+        createdAt: at.toISOString(),
+        keep: carryOver(state.plan, now.date),
+      });
+      pivot.setPlan(next);
+      track("plan_generated", { source: "routine", workouts: next.workouts.length });
+      return;
+    }
     if (ai?.ai) {
       setPlanning(true);
       try {
@@ -117,11 +134,11 @@ export function WeekView() {
     return (
       <EmptyState
         title="A fresh week."
-        body="Plan the next seven days around your calendar."
+        body={state.routine ? "Lay out the next seven days from your routine." : "Plan the next seven days around your calendar."}
         action={
           <div className="flex flex-col items-center gap-3">
-            <Button onClick={buildPlan} disabled={planning || !ai}>
-              {planning ? "Planning…" : "Plan my week"}
+            <Button onClick={buildPlan} disabled={planning || (!ai && !state.routine)}>
+              {planning ? "Planning…" : state.routine ? "Start my week" : "Plan my week"}
             </Button>
             {planning && <p className="text-sm text-ink-soft">This can take up to 30 seconds.</p>}
             {planNote && <p className="text-sm text-coral-deep">{planNote}</p>}
@@ -143,6 +160,10 @@ export function WeekView() {
     track("workout_status_changed", { status, category: openWorkout.category });
     setOpenId(null);
   };
+  const open = (id: string, edit = false) => {
+    setEditOnOpen(edit);
+    setOpenId(id);
+  };
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-8 sm:px-8 sm:py-12">
@@ -157,6 +178,12 @@ export function WeekView() {
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <ChecksBadge result={checks} />
+            <Link
+              href="/routine"
+              className="inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-card px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ink-soft hover:border-ink/40 hover:text-ink"
+            >
+              {state.routine ? "Your routine · edit" : "Use my own routine"}
+            </Link>
           </div>
         </div>
         <Progress plan={plan} />
@@ -257,7 +284,8 @@ export function WeekView() {
                 ticks={state.ticks}
                 lifts={state.lifts}
                 weightUnit={state.weightUnit}
-                onOpen={setOpenId}
+                onOpen={(id) => open(id)}
+                onEdit={(id) => open(id, true)}
                 showWhy={welcome}
               />
             ))}
@@ -287,11 +315,18 @@ export function WeekView() {
         note={statusNote}
         lifts={state.lifts}
         weightUnit={state.weightUnit}
+        profile={profile}
+        startEditing={editOnOpen}
         onClose={() => {
           setOpenId(null);
           setStatusNote(null);
         }}
         onStatus={setStatus}
+        onSaveExercises={(exercises, from) => {
+          if (!openWorkout) return;
+          pivot.setWorkoutExercises(openWorkout.id, exercises, from);
+          track("workout_movements_changed", { movements: exercises.length, category: openWorkout.category });
+        }}
       />
     </div>
   );
@@ -310,6 +345,8 @@ function DayColumn(props: {
   lifts: ExerciseLog[];
   weightUnit: WeightUnit;
   onOpen: (id: string) => void;
+  /** Open a workout straight into "Change movements". */
+  onEdit: (id: string) => void;
   /** Show each workout's reasoning under its card (the first look after onboarding). */
   showWhy?: boolean;
 }) {
@@ -347,6 +384,7 @@ function DayColumn(props: {
                 lifts={props.lifts}
                 unit={props.weightUnit}
                 onOpen={() => props.onOpen(w.id)}
+                onEdit={() => props.onEdit(w.id)}
               />
             ) : (
             <div key={w.id} className="flex flex-col gap-3 lg:flex-row">
@@ -401,12 +439,14 @@ function TodayWorkout({
   lifts,
   unit,
   onOpen,
+  onEdit,
 }: {
   workout: Workout;
   done: number[];
   lifts: ExerciseLog[];
   unit: WeightUnit;
   onOpen: () => void;
+  onEdit: () => void;
 }) {
   const skipped = workout.status === "skipped";
   const completed = workout.status === "completed";
@@ -432,7 +472,10 @@ function TodayWorkout({
             />
           </div>
           {!skipped && (
-            <div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" className="h-9 px-4" onClick={onEdit}>
+                Change movements
+              </Button>
               {completed ? (
                 <Button variant="secondary" className="h-9 px-4" onClick={() => pivot.setWorkoutStatus(workout.id, "planned")}>
                   Mark as not done

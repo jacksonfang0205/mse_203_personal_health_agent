@@ -82,7 +82,8 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
       return;
     }
     pivot.setCalendarPreset(calendar);
-    if (rebuild) {
+    // A user's own routine decides the plan; preferences don't rebuild it.
+    if (rebuild && !state.routine) {
       const now = localNow(at);
       const template = () =>
         buildSamplePlan({
@@ -306,10 +307,20 @@ function Editor({ profile, state }: { profile: FitnessProfile; state: AppState }
 
       <div className="sticky bottom-4 z-10">
         <Card className="flex flex-col gap-3 p-4 shadow-lift sm:flex-row sm:items-center sm:justify-between">
-          <label className="flex items-center gap-2 text-sm text-ink-soft">
-            <input type="checkbox" checked={rebuild} onChange={(e) => setRebuild(e.target.checked)} className="accent-coral" />
-            Update my plan with these changes
-          </label>
+          {state.routine ? (
+            <p className="text-sm text-ink-soft">
+              Your week comes from{" "}
+              <a href="/routine" className="font-semibold text-coral-deep hover:underline">
+                your own routine
+              </a>
+              .
+            </p>
+          ) : (
+            <label className="flex items-center gap-2 text-sm text-ink-soft">
+              <input type="checkbox" checked={rebuild} onChange={(e) => setRebuild(e.target.checked)} className="accent-coral" />
+              Update my plan with these changes
+            </label>
+          )}
           <div className="flex items-center gap-3">
             {error && <span className="text-sm font-medium text-coral-deep">{error}</span>}
             {saved && (

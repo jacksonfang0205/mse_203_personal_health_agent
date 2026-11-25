@@ -94,8 +94,51 @@ export const EXERCISES: Exercise[] = [
   { id: "standing_hamstring", name: "Standing hamstring stretch", category: "mobility", muscles: ["legs"], equipment: [], level: "beginner", tags: [], prescription: hold(2, 30), minutes: 3, cue: "Heel on a low step, hinge forward." },
 ];
 
+/**
+ * More movements people log from their own routines. Users can pick these in
+ * the movement picker; Pivot's planner doesn't schedule them on its own, so
+ * generated plans and their evals stay as they were.
+ */
+export const EXTRA_EXERCISES: Exercise[] = [
+  // ----- Strength: gym -----
+  { id: "hip_thrust", name: "Barbell hip thrust", category: "strength", muscles: ["glutes", "legs"], equipment: ["barbell", "bench"], level: "intermediate", tags: ["heavy_barbell"], prescription: reps(4, "8–10"), minutes: 9, cue: "Chin tucked, ribs down, drive the hips to lockout." },
+  { id: "front_squat", name: "Barbell front squat", category: "strength", muscles: ["legs", "glutes", "core"], equipment: ["barbell", "squat_rack"], level: "advanced", tags: ["heavy_barbell"], prescription: reps(4, "5–6"), minutes: 12, cue: "Elbows high, sit straight down between your heels." },
+  { id: "barbell_row", name: "Barbell row", category: "strength", muscles: ["back", "arms"], equipment: ["barbell"], level: "intermediate", tags: ["heavy_barbell"], prescription: reps(4, "6–8"), minutes: 9, cue: "Hinge to about 45°, pull the bar to your lower ribs." },
+  { id: "incline_db_press", name: "Incline dumbbell press", category: "strength", muscles: ["chest", "shoulders", "arms"], equipment: ["dumbbells", "bench"], level: "beginner", tags: [], prescription: reps(3, "8–12"), minutes: 7, cue: "Bench at 30°, lower to upper chest." },
+  { id: "db_fly", name: "Dumbbell fly", category: "strength", muscles: ["chest"], equipment: ["dumbbells", "bench"], level: "beginner", tags: [], prescription: reps(3, "10–12"), minutes: 6, cue: "Soft elbows, open wide, hug back up." },
+  { id: "chest_press_machine", name: "Machine chest press", category: "strength", muscles: ["chest", "arms", "shoulders"], equipment: ["machines"], level: "beginner", tags: [], prescription: reps(3, "10–12"), minutes: 6, cue: "Handles at mid-chest, press without locking out hard." },
+  { id: "leg_press", name: "Leg press", category: "strength", muscles: ["legs", "glutes"], equipment: ["machines"], level: "beginner", tags: [], prescription: reps(3, "10–12"), minutes: 7, cue: "Feet hip-width, lower until hips start to tuck." },
+  { id: "leg_curl", name: "Leg curl", category: "strength", muscles: ["legs"], equipment: ["machines"], level: "beginner", tags: [], prescription: reps(3, "10–12"), minutes: 6, cue: "Curl smoothly, slow on the way back." },
+  { id: "leg_extension", name: "Leg extension", category: "strength", muscles: ["legs"], equipment: ["machines"], level: "beginner", tags: [], prescription: reps(3, "12–15"), minutes: 5, cue: "Pause at the top, control the lowering." },
+  { id: "tricep_pushdown", name: "Cable triceps pushdown", category: "strength", muscles: ["arms"], equipment: ["cable_machine"], level: "beginner", tags: [], prescription: reps(3, "10–15"), minutes: 5, cue: "Elbows pinned to your sides." },
+  { id: "chin_up", name: "Chin-up", category: "strength", muscles: ["back", "arms"], equipment: ["pull_up_bar"], level: "intermediate", tags: [], prescription: reps(4, "5–8"), minutes: 8, cue: "Palms toward you, chest up to the bar." },
+  { id: "hanging_knee_raise", name: "Hanging knee raise", category: "strength", muscles: ["core"], equipment: ["pull_up_bar"], level: "intermediate", tags: [], prescription: reps(3, "10–12"), minutes: 5, cue: "No swinging; curl the pelvis up." },
+
+  // ----- Strength: dumbbells, bench & bodyweight -----
+  { id: "bulgarian_split_squat", name: "Bulgarian split squat", category: "strength", muscles: ["legs", "glutes"], equipment: ["dumbbells", "bench"], level: "intermediate", tags: [], prescription: reps(3, "8 / side"), minutes: 8, cue: "Back foot on the bench, front shin stays steady." },
+  { id: "walking_lunge", name: "Walking lunge", category: "strength", muscles: ["legs", "glutes"], equipment: ["dumbbells"], level: "beginner", tags: [], prescription: reps(3, "10 / side"), minutes: 7, cue: "Long steps, torso tall." },
+  { id: "hammer_curl", name: "Hammer curl", category: "strength", muscles: ["arms"], equipment: ["dumbbells"], level: "beginner", tags: [], prescription: reps(3, "10–12"), minutes: 5, cue: "Thumbs up, elbows still." },
+  { id: "overhead_tricep_ext", name: "Overhead triceps extension", category: "strength", muscles: ["arms"], equipment: ["dumbbells"], level: "beginner", tags: ["overhead"], prescription: reps(3, "10–12"), minutes: 5, cue: "Elbows point up; lower behind your head." },
+  { id: "arnold_press", name: "Arnold press", category: "strength", muscles: ["shoulders", "arms"], equipment: ["dumbbells"], level: "intermediate", tags: ["overhead"], prescription: reps(3, "8–10"), minutes: 6, cue: "Rotate palms out as you press." },
+  { id: "rear_delt_fly", name: "Rear-delt fly", category: "strength", muscles: ["shoulders", "back"], equipment: ["dumbbells"], level: "beginner", tags: [], prescription: reps(3, "12–15"), minutes: 5, cue: "Hinge forward, lead with the elbows." },
+  { id: "db_shrug", name: "Dumbbell shrug", category: "strength", muscles: ["back", "shoulders"], equipment: ["dumbbells"], level: "beginner", tags: [], prescription: reps(3, "12–15"), minutes: 4, cue: "Straight up toward your ears, pause." },
+  { id: "bench_dip", name: "Bench dip", category: "strength", muscles: ["arms", "chest"], equipment: ["bench"], level: "beginner", tags: [], prescription: reps(3, "10–12"), minutes: 5, cue: "Shoulders down, elbows point back." },
+  { id: "calf_raise", name: "Standing calf raise", category: "strength", muscles: ["legs"], equipment: [], level: "beginner", tags: [], prescription: reps(3, "15–20"), minutes: 4, cue: "Full stretch at the bottom, pause at the top." },
+  { id: "side_plank", name: "Side plank", category: "strength", muscles: ["core"], equipment: [], level: "beginner", tags: ["floor_work"], prescription: hold(2, 30), minutes: 4, cue: "Hips high, body in one line. Both sides." },
+  { id: "russian_twist", name: "Russian twist", category: "strength", muscles: ["core"], equipment: [], level: "beginner", tags: ["floor_work"], prescription: reps(3, "12 / side"), minutes: 4, cue: "Lean back slightly, rotate from the ribs." },
+
+  // ----- Cardio, HIIT & mobility -----
+  { id: "elliptical", name: "Elliptical", category: "cardio", muscles: ["legs", "full_body"], equipment: ["machines"], level: "beginner", tags: [], prescription: duration(25), minutes: 25, cue: "Steady effort, stand tall." },
+  { id: "stair_climber", name: "Stair climber", category: "cardio", muscles: ["legs", "glutes"], equipment: ["machines"], level: "beginner", tags: [], prescription: duration(20), minutes: 20, cue: "Light touch on the rails, full steps." },
+  { id: "jumping_jacks", name: "Jumping jacks", category: "hiit", muscles: ["full_body"], equipment: [], level: "beginner", tags: ["high_impact"], prescription: hold(4, 40), minutes: 5, cue: "Land softly on the balls of your feet." },
+  { id: "couch_stretch", name: "Couch stretch", category: "mobility", muscles: ["legs", "glutes"], equipment: [], level: "beginner", tags: ["floor_work"], prescription: hold(2, 45), minutes: 4, cue: "Back knee down, squeeze the glute of that leg." },
+];
+
+/** Everything a user can pick: the planner's catalog plus the extras. */
+export const ALL_EXERCISES: Exercise[] = [...EXERCISES, ...EXTRA_EXERCISES];
+
 export const EXERCISES_BY_ID: Record<string, Exercise> = Object.fromEntries(
-  EXERCISES.map((e) => [e.id, e]),
+  ALL_EXERCISES.map((e) => [e.id, e]),
 );
 
 export function getExercise(id: string): Exercise | undefined {
