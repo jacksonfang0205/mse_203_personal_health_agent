@@ -60,7 +60,8 @@ export async function callTool<T extends z.ZodType>(call: ToolCall<T>): Promise<
   const raw = cfg.provider === "openai" ? await callOpenAI(call, cfg) : await callAnthropic(call, cfg);
   const parsed = call.schema.safeParse(raw.input);
   if (!parsed.success) {
-    throw new LlmError(`The model's answer didn't match the expected format: ${parsed.error.issues[0]?.message ?? ""}`);
+    const issue = parsed.error.issues[0];
+    throw new LlmError(`The model's answer didn't match the expected format: ${issue?.path.join(".") || "(root)"}: ${issue?.message ?? ""}`);
   }
   return { output: parsed.data, usage: { model: cfg.model, ...raw.usage } };
 }

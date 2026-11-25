@@ -19,6 +19,7 @@ import {
   memoryFor,
   needsClarification,
   nextQuestion,
+  disproportionateChanges,
   outOfScopeChanges,
   parsePreferenceRequest,
   preferenceScope,
@@ -231,11 +232,37 @@ describe("6. proportionality is enforced in code", () => {
         { kind: "skip" as const, title: "Rest", summary: "x", tradeoffs: [], operations: [{ op: "skip" as const, workoutId: "w-fri" }] },
       ],
     };
-    const scoped = gate(out, req, p, ctx(p), preferenceScope(parsePreferenceRequest(JF)!, p));
-    expect(scoped.valid.map((a) => a.kind)).toEqual(["skip"]);
-    expect(scoped.problems.join(" ")).toMatch(/isn't about/);
+    const scoped = gate(out, req, p, ctx(p), parsePreferenceRequest(JF));
+    // Both are rejected: the rewrite, and skipping a day (not a proportionate answer to a preference).
+    expect(scoped.valid).toEqual([]);
+    expect(scoped.problems.join(" ")).toMatch(/more than the request asks/);
     // Without a preference-level message the same option is allowed through.
     expect(gate(out, req, p, ctx(p)).valid.map((a) => a.kind)).toContain("swap_format");
+  });
+});
+
+describe("6. proportionality: what the live AI actually proposed", () => {
+  // The live model (gpt-5.4-mini) answered jf's message by rewriting, or skipping, an upper-body
+  // day that has one lower-body move in it. Both are disproportionate; a mobility block is not.
+  const day = upper({ exercises: [...upper().exercises, { exerciseId: "kb_swing", sets: 4, reps: "12" }], equipment: ["dumbbells", "kettlebell"] });
+  const p = plan([day, run()]);
+  const req = parsePreferenceRequest(JF)!;
+  const after = (w: Workout) => applyOperations(p, [{ op: "replace", workoutId: w.id, workout: w }]);
+
+  it("rejects rewriting the whole day and skipping it", () => {
+    const wiped = { ...day, title: "Lower body mobility", category: "mobility" as const, exercises: [{ exerciseId: "hip_circles", sets: 2, reps: "8" }] };
+    expect(disproportionateChanges(p, after(wiped), req).map((w) => w.id)).toEqual(["w-wed"]);
+    expect(disproportionateChanges(p, applyOperations(p, [{ op: "skip", workoutId: "w-wed" }]), req).map((w) => w.id)).toEqual(["w-wed"]);
+    expect(disproportionateChanges(p, applyOperations(p, [{ op: "skip", workoutId: "w-fri" }]), req).map((w) => w.id)).toEqual(["w-fri"]);
+  });
+
+  it("allows swapping the lower-body move for mobility while the upper-body moves stay", () => {
+    const swapped = { ...day, exercises: [...upper().exercises, { exerciseId: "hip_circles", sets: 2, reps: "8 / direction" }] };
+    expect(disproportionateChanges(p, after(swapped), req)).toEqual([]);
+    // A shift may also drop moves from the region being shifted away from.
+    const shift = parsePreferenceRequest("move from upper body to lower body")!;
+    const legsDay = { ...day, exercises: [{ exerciseId: "goblet_squat", sets: 3, reps: "8–12" }, { exerciseId: "kb_swing", sets: 4, reps: "12" }] };
+    expect(disproportionateChanges(p, after(legsDay), shift)).toEqual([]);
   });
 });
 
