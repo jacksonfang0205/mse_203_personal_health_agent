@@ -239,6 +239,14 @@ describe("6. proportionality is enforced in code", () => {
   });
 });
 
+describe("6. body regions", () => {
+  it("classifies exercises by most of their muscles", () => {
+    expect(regionOf(getExercise("deadlift")!)).toBe("lower");
+    expect(regionOf(getExercise("db_row")!)).toBe("upper");
+    expect(regionOf(getExercise("plank")!)).toBeNull();
+  });
+});
+
 describe("6. future plans follow the stated body focus", () => {
   it("lower body: mobility swaps lower-body strength moves; upper: less drops upper-body days", () => {
     const legsFirst = { ...profile, workoutTypes: ["home"] as FitnessProfile["workoutTypes"] };

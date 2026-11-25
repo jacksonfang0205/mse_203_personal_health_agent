@@ -16,12 +16,12 @@ export const REGION_MUSCLES: Record<Region, MuscleGroup[]> = {
 };
 export const REGION_LABEL: Record<Region, string> = { lower: "lower-body", upper: "upper-body" };
 
-/** The region an exercise mainly trains (its first-listed muscle), if any. */
+/** The region an exercise mainly trains (most of its listed muscles), if any. A deadlift (back, glutes, legs) is lower-body. */
 export function regionOf(ex: Pick<Exercise, "muscles">): Region | null {
-  const m = ex.muscles[0];
-  if (REGION_MUSCLES.lower.includes(m)) return "lower";
-  if (REGION_MUSCLES.upper.includes(m)) return "upper";
-  return null;
+  const lower = ex.muscles.filter((m) => REGION_MUSCLES.lower.includes(m)).length;
+  const upper = ex.muscles.filter((m) => REGION_MUSCLES.upper.includes(m)).length;
+  if (!lower && !upper) return null;
+  return lower >= upper ? "lower" : "upper";
 }
 
 /** True when the workout has at least one strength move whose main muscle is in the region. */
