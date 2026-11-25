@@ -11,6 +11,7 @@ import { z } from "zod";
 
 export const GOALS = [
   "strength",
+  "build_muscle",
   "endurance",
   "mobility",
   "general_fitness",

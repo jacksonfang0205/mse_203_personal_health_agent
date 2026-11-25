@@ -49,7 +49,7 @@ Rules:
 - A session's start and start+minutes must fit inside one of that day's "free" windows. Never use busy time or times the user can't work out.
 - Only use the user's preferred_days and preferred_times, and make every session exactly max_session_minutes long. These are locked; sessions that break them are discarded. Where learned_from_history shows a time or day the user usually misses, avoid it; favour windows they actually complete.
 - minutes must be at most max_session_minutes. Pick exercise ids only from <catalog>, matching the session's category, so their "min" values add up to about the session length. Cardio sessions use one cardio exercise.
-- Balance the week across the user's goals and enjoyed formats. Don't put two strength sessions with the same focus on back-to-back days, and never two lower-body (legs/glutes) days back to back.
+- Balance the week across the user's goals and enjoyed formats. strength means lifting heavier at lower reps; build_muscle means muscle size (hypertrophy), favouring moderate-rep exercises and more sets per muscle. Don't put two strength sessions with the same focus on back-to-back days, and never two lower-body (legs/glutes) days back to back.
 - Respect avoid, avoid_notes, limitations, body_focus and memory notes (including injuries). Never give medical or rehab advice.
 - Be concise: short titles, one-sentence rationales. No filler.`;
 

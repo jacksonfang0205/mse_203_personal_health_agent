@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
-  AVOID_TAG_LABELS,
   EQUIPMENT_LABELS,
   GOAL_LABELS,
   TIME_OF_DAY,
@@ -24,7 +23,7 @@ import {
   SECTION_CHECKS,
   ScheduleSection,
   StyleSection,
-  avoidTagsFromText,
+  avoidSummary,
   finalizeDraft,
   type ProfileDraft,
   type SectionProps,
@@ -166,15 +165,8 @@ function ReviewSection({ draft, set, jump }: SectionProps) {
     { label: "Sessions", value: `${draft.frequencyPerWeek}× a week, up to ${draft.sessionMinutes} min`, step: 3 },
     { label: "Days", value: list(draft.preferredDays.map((d) => WEEKDAY_LABELS[d].short)), step: 3 },
     { label: "Times", value: list(draft.preferredTimes.map((t) => TIME_OF_DAY[t].label)), step: 3 },
-    {
-      label: "Avoiding",
-      value: list(
-        [...new Set([...draft.avoidTags, ...avoidTagsFromText(`${draft.avoidNotes}\n${draft.limitations}`)])].map(
-          (t) => AVOID_TAG_LABELS[t].label,
-        ),
-      ),
-      step: 4,
-    },
+    { label: "Avoiding", value: list(avoidSummary(draft)), step: 4 },
+    ...(draft.limitations.trim() ? [{ label: "Physical limitations", value: `“${draft.limitations.trim()}”`, step: 4 }] : []),
   ];
   return (
     <div className="flex flex-col gap-8">
