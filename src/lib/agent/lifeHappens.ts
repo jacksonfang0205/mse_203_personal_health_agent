@@ -42,7 +42,7 @@ import {
   type AgentRequest,
 } from "./context";
 import { callTool, type LlmResult } from "./llm";
-import { needsClarification, outOfScopeChanges, parsePreferenceRequest, preferenceScope, type Clarification } from "../coach/clarify";
+import { buildPreferenceChange, disproportionateChanges, needsClarification, parsePreferenceRequest, type Clarification, type PreferenceRequest } from "../coach/clarify";
 import { detectInjury, injuryMemoryNote, withInjury } from "../injuries";
 
 const opt = <T extends z.ZodType>(s: T) => s.nullish();
@@ -60,14 +60,17 @@ const Operation = z.object({
 });
 
 const LifeHappensOutput = z.object({
-  understood: z.array(z.string()).max(3).describe("what changed, as short plain statements"),
+  // Lists that can legitimately be empty default to [] so a model that omits one doesn't sink the whole answer.
+  understood: z.array(z.string()).max(3).default([]).describe("what changed, as short plain statements"),
   new_busy: z
     .array(z.object({ date: IsoDate, start: ClockTime, end: ClockTime, title: z.string() }))
     .max(10)
+    .default([])
     .describe("events from the message that are not in the calendar yet"),
   day_limits: z
     .array(z.object({ date: IsoDate, minutes: z.number() }))
     .max(7)
+    .default([])
     .describe("e.g. 'only 20 minutes Friday'; 0 = no time that day"),
   equipment_available: opt(z.array(Equipment)).describe("set only if the message changes what equipment is available"),
   alternatives: z
@@ -93,6 +96,7 @@ const LifeHappensOutput = z.object({
       }),
     )
     .max(3)
+    .default([])
     .describe(
       "only durable facts in the user's words, like 'I can never…' or 'every Tuesday…', or lasting preferences. One-off events (a midterm, a meeting this Thursday) go ONLY in new_busy or day_limits, never here.",
     ),
@@ -295,8 +299,8 @@ export function gate(
   req: AgentRequest,
   plan: WeeklyPlan,
   ctx: ValidationContext,
-  /** Preference-level message: only these workouts may change format, focus or exercises. */
-  scope?: string[],
+  /** Preference-level message: changes must be proportionate to it (see disproportionateChanges). */
+  pref?: PreferenceRequest | null,
 ) {
   const valid: Alternative[] = [];
   const problems: string[] = [];
@@ -307,10 +311,10 @@ export function gate(
       return;
     }
     const { operations, notes } = resolveCollateral(plan, own, ctx, req);
-    const outside = scope ? outOfScopeChanges(plan, applyOperations(plan, operations), scope) : [];
+    const outside = pref ? disproportionateChanges(plan, applyOperations(plan, operations), pref) : [];
     if (outside.length) {
       problems.push(
-        `Option ${i + 1} ("${a.title}"): changes ${outside.map((w) => w.title).join(", ")}, which the request isn't about. Keep unrelated days as they are; change only the moves that have to change.`,
+        `Option ${i + 1} ("${a.title}"): rewrites or skips ${outside.map((w) => w.title).join(", ")}, more than the request asks. Keep each day and its other moves; only add or swap the moves the request is about.`,
       );
       return;
     }
@@ -418,8 +422,7 @@ export async function agentLifeHappens(input: AgentRequest & { message: string; 
   let out = first.output;
   let ctx = validationContext(req, out, plan);
   const pref = parsePreferenceRequest(req.message);
-  const scope = pref ? preferenceScope(pref, plan) : undefined;
-  let { valid, problems } = gate(out, req, plan, ctx, scope);
+  let { valid, problems } = gate(out, req, plan, ctx, pref);
   if (problems.length) console.info("life-happens: rejected options", problems);
 
   // One repair round when nothing fits cleanly: show the model exactly what failed.
@@ -436,14 +439,29 @@ export async function agentLifeHappens(input: AgentRequest & { message: string; 
     const bending = valid;
     out = { ...repair.output, new_busy: [...out.new_busy, ...repair.output.new_busy] };
     ctx = validationContext(req, out, plan);
-    ({ valid, problems } = gate(out, req, plan, ctx, scope));
+    ({ valid, problems } = gate(out, req, plan, ctx, pref));
     if (problems.length) console.info("life-happens: rejected after repair", problems);
     // Keep earlier options that only needed the user's OK, behind any that now fit.
     valid = [...valid, ...bending.filter((b) => !valid.some((v) => v.summary === b.summary))].sort(fitsFirst);
   }
 
   let fallback: string | undefined;
-  if (!valid.length && !out.infeasible_reason) {
+  if (!valid.length && pref) {
+    // A preference the model couldn't answer proportionately: use the smallest change, built in code.
+    const change = buildPreferenceChange(pref, {}, plan, req.profile, req.now.date);
+    const alt =
+      change.operations.length &&
+      finalizeAlternative(
+        plan,
+        { id: `${base.id}-pref`, kind: "swap_format", title: "Smallest change for this", summary: "", tradeoffs: [], operations: change.operations },
+        ctx,
+      );
+    if (alt) {
+      valid = [alt];
+      fallback = "The AI's options changed more than you asked, so this is the smallest change instead.";
+    }
+  }
+  if (!valid.length && !out.infeasible_reason && !pref) {
     // Rule-based options still have to pass the message-aware checks.
     const rb = proposeRuleBasedAlternatives({
       plan,
@@ -461,7 +479,7 @@ export async function agentLifeHappens(input: AgentRequest & { message: string; 
         return finalizeAlternative(plan, { ...a, operations: fixed.operations, tradeoffs: [...a.tradeoffs, ...fixed.notes] }, ctx);
       })
       .filter((a): a is Alternative => a !== null)
-      .filter((a) => !scope || !outOfScopeChanges(plan, applyOperations(plan, a.operations), scope).length)
+      .filter((a) => !pref || !disproportionateChanges(plan, applyOperations(plan, a.operations), pref).length)
       .sort(fitsFirst);
     if (valid.length) fallback = "The AI's options didn't pass the schedule checks, so these are rule-based.";
   }

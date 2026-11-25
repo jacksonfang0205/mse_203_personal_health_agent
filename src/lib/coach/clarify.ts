@@ -9,7 +9,7 @@
  * skip/move) skip all of this and go straight to the coach.
  */
 import { getExercise } from "../catalog";
-import { addMobilityBlock, rebuildForRegion, REGION_LABEL, swapRegionForMobility, trainsRegion, type Region, type TrimFrom } from "../planner/focus";
+import { addMobilityBlock, rebuildForRegion, REGION_LABEL, regionOf, swapRegionForMobility, trainsRegion, type Region, type TrimFrom } from "../planner/focus";
 import type { BodyFocus, FitnessProfile, IsoDate, PlanOperation, WeeklyPlan, Workout } from "../schemas";
 import { formatDate } from "../time";
 import { isLowerBody } from "../validation";
@@ -302,6 +302,33 @@ export function outOfScopeChanges(previous: WeeklyPlan, next: WeeklyPlan, scope:
     if (allowed.has(p.id) || p.status !== "planned") return false;
     const n = next.workouts.find((w) => w.id === p.id);
     return !!n && n.status === "planned" && !sameWork(p, n);
+  });
+}
+
+/**
+ * The stricter check for model options on a preference-level message: a day
+ * may gain or swap moves for the region the request is about, but every other
+ * move it had must still be there (for a shift, moves of the region being
+ * shifted away from may go too). Rewriting or skipping a whole day, which is
+ * what turned an upper-body day into a lower-body mobility day, fails this.
+ * Workouts outside the scope can't change at all.
+ */
+export function disproportionateChanges(previous: WeeklyPlan, next: WeeklyPlan, req: PreferenceRequest): Workout[] {
+  const scope = new Set(preferenceScope(req, previous));
+  return previous.workouts.filter((p) => {
+    if (p.status !== "planned") return false;
+    const n = next.workouts.find((w) => w.id === p.id);
+    if (!n) return true;
+    if (n.status !== "planned") return true; // skipping a day isn't a proportionate answer to a preference
+    if (sameWork(p, n)) return false;
+    if (!scope.has(p.id)) return true;
+    const mayGo = (id: string) => {
+      const ex = getExercise(id);
+      if (!ex) return true;
+      const r = regionOf(ex);
+      return r === req.region || (req.kind === "shift" && r === req.from);
+    };
+    return p.exercises.some((e) => !mayGo(e.exerciseId) && !n.exercises.some((x) => x.exerciseId === e.exerciseId));
   });
 }
 
