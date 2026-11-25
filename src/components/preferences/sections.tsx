@@ -57,7 +57,8 @@ export function draftFromProfile(p: FitnessProfile): ProfileDraft {
 /** Quick-pick goals implied by a goal typed in the user's own words. */
 const GOAL_WORDS: [Goal, RegExp][] = [
   ["fat_loss", /lose (weight|fat)|fat loss|burn fat|lean(er)?\b|slim|weight loss|cut\b/i],
-  ["strength", /strong|strength|muscle|lift|bulk|tone|pull-?up|push-?up|squat|bench/i],
+  ["build_muscle", /muscle|hypertroph|bulk|tone|size|bigger|gain (mass|weight)|physique/i],
+  ["strength", /strong|strength|lift|pull-?up|push-?up|squat|bench|deadlift|1rm|\bpr\b/i],
   ["endurance", /run|marathon|\b\d+\s?k\b|endurance|cardio|stamina|hike|cycl|bike|swim|row/i],
   ["mobility", /flexib|mobil|stretch|posture|yoga|pilates|back pain|stiff|range of motion/i],
   ["stress_relief", /stress|relax|calm|anxi|mental|sleep|mood/i],
@@ -69,6 +70,19 @@ export function goalsFromText(text: string): Goal[] {
 
 /** Things to avoid, in the user's words, mapped to the tags validation can enforce (shared with the coach). */
 export { avoidTagsFromText };
+
+/**
+ * Everything the user asked Pivot to steer clear of, in the order they gave it on the setup step:
+ * exercises picked from the library, restrictions read from their words, then their own note.
+ */
+export function avoidSummary(d: Pick<ProfileDraft, "avoidExerciseIds" | "avoidTags" | "avoidNotes" | "limitations">): string[] {
+  const exercises = d.avoidExerciseIds.map((id) => EXERCISES.find((e) => e.id === id)?.name ?? id);
+  const tags = [...new Set([...d.avoidTags, ...avoidTagsFromText(`${d.avoidNotes}\n${d.limitations}`)])].map(
+    (t) => AVOID_TAG_LABELS[t].label,
+  );
+  const note = d.avoidNotes.trim();
+  return [...exercises, ...tags, ...(note ? [`“${note}”`] : [])];
+}
 
 export function finalizeDraft(d: ProfileDraft, updatedAt: string) {
   const goalNotes = d.goalNotes?.trim() || undefined;

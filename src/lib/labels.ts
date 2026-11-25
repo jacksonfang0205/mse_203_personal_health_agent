@@ -12,12 +12,13 @@ import type {
 } from "./schemas";
 
 export const GOAL_LABELS: Record<Goal, { label: string; blurb: string }> = {
-  strength: { label: "Get stronger", blurb: "Build muscle and lift with confidence" },
+  strength: { label: "Get stronger", blurb: "Lift heavier, with fewer reps and longer rests" },
+  build_muscle: { label: "Build muscle", blurb: "Grow muscle size with moderate weights and more sets" },
   endurance: { label: "Build endurance", blurb: "Go longer with less effort" },
   mobility: { label: "Move better", blurb: "Flexibility, posture, and range of motion" },
   general_fitness: { label: "Feel fit overall", blurb: "A balanced mix of everything" },
   stress_relief: { label: "De-stress", blurb: "Movement as a mental reset" },
-  fat_loss: { label: "Lose fat", blurb: "Burn more and build lean muscle" },
+  fat_loss: { label: "Lose fat", blurb: "Burn more calories and get leaner" },
 };
 
 export const MUSCLE_LABELS: Record<MuscleGroup, string> = {

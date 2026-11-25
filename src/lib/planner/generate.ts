@@ -58,6 +58,7 @@ const CARDIO_BY_TYPE: Partial<Record<WorkoutType, string[]>> = {
 
 const GOAL_CATEGORIES: Record<Goal, WorkoutCategory[]> = {
   strength: ["strength"],
+  build_muscle: ["strength"],
   endurance: ["cardio", "hiit"],
   mobility: ["yoga", "pilates", "mobility"],
   general_fitness: ["strength", "cardio", "pilates", "hiit"],
@@ -107,9 +108,9 @@ const STRENGTH_EQUIPMENT: Equipment[] = ["dumbbells", "kettlebell", "barbell", "
 export function allowedCategories(profile: FitnessProfile, f: ExerciseFilter): WorkoutCategory[] {
   const fromTypes = new Set(profile.workoutTypes.flatMap((t) => TYPE_CATEGORIES[t]));
   fromTypes.add("mobility"); // bodyweight mobility is always an option
-  // The workout-type list is set at onboarding and tucked away in Preferences. A strength goal or
-  // strength equipment chosen later must still reach the plan, so they unlock strength too.
-  if (profile.goals.includes("strength") || f.equipment.some((e) => STRENGTH_EQUIPMENT.includes(e))) fromTypes.add("strength");
+  // The workout-type list is set at onboarding and tucked away in Preferences. A strength or muscle goal
+  // or strength equipment chosen later must still reach the plan, so they unlock strength too.
+  if (profile.goals.some((g) => g === "strength" || g === "build_muscle") || f.equipment.some((e) => STRENGTH_EQUIPMENT.includes(e))) fromTypes.add("strength");
   return [...fromTypes].filter((c) => eligibleExercises(c, f).length > 0);
 }
 
