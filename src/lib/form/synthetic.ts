@@ -54,17 +54,39 @@ export interface SquatOptions {
   fatigueDeg?: number;
   repS?: number;
   seed?: number;
+  /** Seconds of walking into place before the set: steps with heels coming off the floor, knees nearly straight. */
+  walkInS?: number;
 }
 
 export function syntheticSquat(o: SquatOptions = {}): PoseSequence {
-  const { reps = 6, fps = 30, bottomKneeDeg = 85, leanDeg = 40, heelLift = 0, fatigueDeg = 0, repS = 2.4, seed = 1 } = o;
+  const { reps = 6, fps = 30, bottomKneeDeg = 85, leanDeg = 40, heelLift = 0, fatigueDeg = 0, repS = 2.4, seed = 1, walkInS = 0 } = o;
   const pause = 0.6;
   const noise = rng(seed);
   const shin = 0.22, thigh = 0.22, torso = 0.28;
   const A: P = { x: 0.45, y: 0.12 };
-  const total = pause + reps * (repS + pause);
+  const total = walkInS + pause + reps * (repS + pause);
   const frames: PoseFrame[] = [];
-  for (let i = 0; i <= Math.round(total * fps); i++) {
+  const shin0 = 0.22, thigh0 = 0.22;
+  for (let i = 0; i < Math.round(walkInS * fps); i++) {
+    // Walking in from the left: about two steps a second, a slight knee bend, and the heel peeling off at each push-off.
+    const t = i / fps;
+    const step = Math.max(0, Math.sin(2 * Math.PI * 2 * t));
+    const x = A.x - 0.3 * (1 - t / walkInS);
+    const Aw = { x, y: A.y + 0.02 * step };
+    const flex = rad(12 * step);
+    const K = { x: Aw.x + shin0 * Math.sin(flex), y: Aw.y + shin0 * Math.cos(flex) };
+    const H = { x: K.x - thigh0 * Math.sin(flex * 0.5), y: K.y + thigh0 * Math.cos(flex * 0.5) };
+    const S = { x: H.x + 0.02, y: H.y + torso };
+    const E = { x: S.x + 0.02, y: S.y - 0.12 }, W = { x: E.x + 0.02, y: E.y - 0.1 };
+    const heel = { x: Aw.x - 0.03, y: Aw.y - 0.04 + 0.12 * (shin0 + thigh0) * step };
+    const toe = { x: Aw.x + 0.07, y: Aw.y - 0.05 };
+    const side = (s: "l" | "r") => ({
+      [`${s}_shoulder`]: S, [`${s}_elbow`]: E, [`${s}_wrist`]: W, [`${s}_hip`]: H, [`${s}_knee`]: K,
+      [`${s}_ankle`]: Aw, [`${s}_heel`]: heel, [`${s}_toe`]: toe,
+    }) as Partial<Record<Joint, P>>;
+    frames.push(frame(Math.round(t * 1000), { nose: { x: S.x + 0.04, y: S.y + 0.1 }, ...side("l"), ...side("r") }, noise));
+  }
+  for (let i = 0; i <= Math.round((total - walkInS) * fps); i++) {
     const t = i / fps;
     const { d, rep } = envelope(t, repS, pause, reps);
     const lateStart = Math.floor((reps * 2) / 3);
@@ -83,7 +105,7 @@ export function syntheticSquat(o: SquatOptions = {}): PoseSequence {
       [`${s}_shoulder`]: S, [`${s}_elbow`]: E, [`${s}_wrist`]: W, [`${s}_hip`]: H, [`${s}_knee`]: K,
       [`${s}_ankle`]: A, [`${s}_heel`]: heel, [`${s}_toe`]: toe,
     }) as Partial<Record<Joint, P>>;
-    frames.push(frame(Math.round(t * 1000), { nose, ...side("l"), ...side("r") }, noise));
+    frames.push(frame(Math.round((t + walkInS) * 1000), { nose, ...side("l"), ...side("r") }, noise));
   }
   return { version: 1, source: "synthetic", fps, width: 1000, height: 1000, view: "side", frames };
 }
