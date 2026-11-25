@@ -334,9 +334,9 @@ describe("6. guardrails", () => {
     expect(validatePlan(week, { profile: legsOnly, busy: [], knownRange: RANGE }).violations.filter((v) => v.constraint === "lower_body_spacing")).toEqual([]);
   });
 
-  it("can't mark a workout done before its day", () => {
+  it("can only mark a workout done on its own day", () => {
     expect(doneBlockedReason(upper(), "2026-11-17")).toBe("You can mark this done on Wed, Nov 18.");
     expect(doneBlockedReason(upper(), "2026-11-18")).toBeNull();
-    expect(doneBlockedReason(upper(), "2026-11-19")).toBeNull();
+    expect(doneBlockedReason(upper(), "2026-11-19")).toMatch(/passed/);
   });
 });

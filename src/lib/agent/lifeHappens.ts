@@ -260,7 +260,7 @@ export function resolveCollateral(plan: WeeklyPlan, ops: PlanOperation[], ctx: V
       const moved = repairStart(w, ctx.busy, others, req.profile, req.now);
       if (moved) {
         op = { op: "move", workoutId: w.id, date: moved.date, start: moved.start };
-        note = `${w.title} moves to ${formatTime(moved.start)} on ${formatDate(w.date)}.`;
+        note = `${w.title} moves to ${formatTime(moved.start)} on ${formatDate(moved.date)}.`;
       }
     }
     if (!op && !needsEquip) {

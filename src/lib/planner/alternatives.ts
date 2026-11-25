@@ -22,13 +22,14 @@ import { TIMES_OF_DAY } from "../schemas";
 import { addDays, dayLong, formatDate, formatTime, weekDates, weekdayOf } from "../time";
 import { finalizeAlternative, fitsFirst } from "./describe";
 import { allowedCategories, buildWorkout, filterFromProfile, findSlot, findSlotWithFallback } from "./generate";
+import { moveWorkout } from "./move";
 
 export function applyOperations(plan: WeeklyPlan, ops: PlanOperation[]): WeeklyPlan {
   let workouts = [...plan.workouts];
   for (const op of ops) {
     switch (op.op) {
       case "move":
-        workouts = workouts.map((w) => (w.id === op.workoutId ? { ...w, date: op.date, start: op.start } : w));
+        workouts = workouts.map((w) => (w.id === op.workoutId ? moveWorkout(w, op.date, op.start) : w));
         break;
       case "replace":
         workouts = workouts.map((w) => (w.id === op.workoutId ? { ...op.workout, id: op.workoutId } : w));

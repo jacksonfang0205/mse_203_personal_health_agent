@@ -10,7 +10,7 @@
  */
 import { useSyncExternalStore } from "react";
 import type { CalendarPresetId } from "./calendar";
-import type { BlockedTime, ChangeRecord, FitnessProfile, MemoryNote, WeeklyPlan, WorkoutExercise, WorkoutStatus } from "./schemas";
+import type { BlockedTime, ChangeRecord, FitnessProfile, IsoDate, MemoryNote, WeeklyPlan, WorkoutExercise, WorkoutStatus } from "./schemas";
 import { isAllDay } from "./memoryRules";
 import { localNow } from "./time";
 import { doneBlockedReason } from "./workoutStatus";
@@ -99,6 +99,13 @@ function update(fn: (s: AppState) => AppState) {
   emit();
 }
 
+/** A workout can be finished, or have its sets ticked, only on its own day. */
+export function canFinishOn(w: { date: IsoDate }, today: IsoDate): boolean {
+  return doneBlockedReason(w, today) === null;
+}
+
+const todayDate = () => localNow(new Date()).date;
+
 /** Sets in a prescription; timed blocks count as one. */
 export function setCount(we: WorkoutExercise): number {
   return we.minutes ? 1 : Math.max(1, we.sets ?? 1);
@@ -151,6 +158,8 @@ export const pivot = {
     const blocked = w && status === "completed" ? doneBlockedReason(w, localNow(new Date()).date) : null;
     if (blocked) return blocked;
     update((s) => {
+      const w = s.plan?.workouts.find((x) => x.id === workoutId);
+      if (status === "completed" && w && !canFinishOn(w, todayDate())) return s;
       // An explicit status resets the per-set ticks; a completed workout reads as every set done.
       const ticks = { ...s.ticks };
       delete ticks[workoutId];
@@ -165,8 +174,7 @@ export const pivot = {
   setSetsDone(workoutId: string, exerciseIndex: number, done: number) {
     update((s) => {
       const w = s.plan?.workouts.find((x) => x.id === workoutId);
-      // Sets can't be ticked off before the workout's day.
-      if (!w || doneBlockedReason(w, localNow(new Date()).date)) return s;
+      if (!w || !canFinishOn(w, todayDate())) return s;
       const totals = w.exercises.map(setCount);
       const row = totals.map((t, i) => Math.min(t, s.ticks[workoutId]?.[i] ?? (w.status === "completed" ? t : 0)));
       row[exerciseIndex] = Math.max(0, Math.min(totals[exerciseIndex] ?? 0, done));

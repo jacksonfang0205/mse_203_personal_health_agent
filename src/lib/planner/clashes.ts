@@ -9,6 +9,7 @@ import { addDays, overlaps, planCovers, toMinutes, weekdayOf } from "../time";
 import { checkPreferences } from "../validation";
 import { bendQuestion } from "./describe";
 import { findSlot, findSlotWithFallback } from "./generate";
+import { moveWorkout } from "./move";
 
 export interface MovedWorkout {
   id: string;
@@ -89,7 +90,7 @@ export function resolveClashes(args: {
       continue;
     }
     moved.push({ id: w.id, title: w.title, from: { date: w.date, start: w.start }, to: placed });
-    workouts = workouts.map((x) => (x.id === w.id ? { ...x, date: placed.date, start: placed.start } : x));
+    workouts = workouts.map((x) => (x.id === w.id ? moveWorkout(x, placed.date, placed.start) : x));
   }
 
   return { plan: { ...args.plan, workouts }, moved, unresolved, needsOk };

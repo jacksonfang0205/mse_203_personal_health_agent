@@ -19,7 +19,7 @@ import { CalendarIcon, Check, Shield, Sparkle } from "../icons";
 import { Button, ButtonLink, Card, Eyebrow, Skeleton, cx } from "../ui";
 import { LifeHappens } from "./LifeHappens";
 import { ExerciseVisual } from "./ExerciseVisual";
-import { prescription, setsDone, SwitchButton, TodayView } from "./TodayView";
+import { MovementCard, prescription, setsDone } from "./MovementCard";
 import { WorkoutCard } from "./WorkoutCard";
 import { WorkoutDialog } from "./WorkoutDialog";
 
@@ -36,8 +36,6 @@ export function WeekView() {
   // Right after onboarding (/week?welcome=1) the whole week is revealed with the reasoning behind it.
   const params = useSearchParams();
   const [welcome, setWelcome] = useState(() => params.has("welcome"));
-  // Otherwise Today is the default; the week is one click away.
-  const [view, setView] = useState<"today" | "week">(welcome ? "week" : "today");
   const [planning, setPlanning] = useState(false);
   const [planNote, setPlanNote] = useState<string | null>(null);
   const [pendingMoves, setPendingMoves] = useState<BendingMove[]>([]);
@@ -151,7 +149,7 @@ export function WeekView() {
       <header className="relative z-30 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="animate-rise">
           <Eyebrow>
-            {view === "today" ? `Today · ${monthDay(today)}` : `${monthDay(today)} – ${monthDay(addDays(today, 6))}`}
+            {monthDay(today)} – {monthDay(addDays(today, 6))}
           </Eyebrow>
           <h1 className="mt-2 font-display text-4xl font-medium tracking-tight sm:text-5xl">
             {welcome ? "Here's your week" : greeting(now.time)}
@@ -231,21 +229,10 @@ export function WeekView() {
         </Card>
       )}
 
-      {view === "today" ? (
-        <TodayView
-          today={today}
-          plan={plan}
-          ticks={state.ticks}
-          busy={shown.busy.filter((b) => b.date === today)}
-          onOpen={setOpenId}
-          onSwitchToWeek={() => setView("week")}
-        />
-      ) : (
         <section aria-label="This week" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-2xl font-medium">Your next 7 days</h2>
             <div className="flex flex-wrap items-center gap-2">
-              <SwitchButton onClick={() => setView("today")}>{welcome ? "Go to today" : "Back to today"}</SwitchButton>
               <button
                 type="button"
                 onClick={() => setShowCalendar((v) => !v)}
@@ -274,7 +261,6 @@ export function WeekView() {
             ))}
           </div>
         </section>
-      )}
 
       {plan.notes.length > 0 && (
         <Card className="flex flex-col gap-1 border-butter/50 bg-butter-soft p-4 text-sm text-butter-ink shadow-none">
@@ -345,7 +331,10 @@ function DayColumn(props: {
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         {workouts.length > 0 ? (
-          workouts.map((w) => (
+          workouts.map((w) =>
+            props.isToday ? (
+              <TodayWorkout key={w.id} workout={w} done={setsDone(w, props.ticks)} onOpen={() => props.onOpen(w.id)} />
+            ) : (
             <div key={w.id} className="flex flex-col gap-3 lg:flex-row">
               <div className="flex flex-col gap-2 lg:w-64 lg:shrink-0">
                 <WorkoutCard workout={w} onOpen={() => props.onOpen(w.id)} />
@@ -358,7 +347,8 @@ function DayColumn(props: {
               </div>
               <MovementList workout={w} done={setsDone(w, props.ticks)} />
             </div>
-          ))
+            ),
+          )
         ) : (
           <p className="pt-2 text-sm text-ink-faint italic">{props.planned ? "Rest day" : "Not planned yet"}</p>
         )}
@@ -382,6 +372,72 @@ function DayColumn(props: {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Today's workout in the week view: each movement as a card with a check and
+ * a tick per set, and a button to finish the whole workout. Only today's
+ * workouts can be finished; other days are read-only.
+ */
+function TodayWorkout({ workout, done, onOpen }: { workout: Workout; done: number[]; onOpen: () => void }) {
+  const skipped = workout.status === "skipped";
+  const completed = workout.status === "completed";
+  const totalSets = workout.exercises.reduce((s, we) => s + setCount(we), 0);
+  const doneSets = done.reduce((s, n) => s + n, 0);
+  const movesDone = workout.exercises.filter((we, i) => done[i] >= setCount(we)).length;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+        <div className="sm:w-64 sm:shrink-0">
+          <WorkoutCard workout={workout} onOpen={onOpen} />
+        </div>
+        <div className="flex flex-1 flex-col justify-end gap-3">
+          <p className="text-sm text-ink-soft tabular-nums">
+            <span className="font-display text-xl font-semibold text-ink">{movesDone}</span>/{workout.exercises.length}{" "}
+            movements · {doneSets}/{totalSets} sets
+          </p>
+          <div className="h-1.5 overflow-hidden rounded-full bg-paper-deep" aria-hidden>
+            <div
+              className="h-full rounded-full bg-sage transition-[width] duration-500"
+              style={{ width: `${totalSets ? (doneSets / totalSets) * 100 : 0}%` }}
+            />
+          </div>
+          {!skipped && (
+            <div>
+              {completed ? (
+                <Button variant="secondary" className="h-9 px-4" onClick={() => pivot.setWorkoutStatus(workout.id, "planned")}>
+                  Mark as not done
+                </Button>
+              ) : (
+                <Button
+                  className="h-9 px-4"
+                  onClick={() => {
+                    pivot.setWorkoutStatus(workout.id, "completed");
+                    track("workout_status_changed", { status: "completed", category: workout.category });
+                  }}
+                >
+                  <Check /> Finish workout
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+      <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {workout.exercises.map((we, i) => (
+          <MovementCard
+            key={`${we.exerciseId}-${i}`}
+            we={we}
+            index={i}
+            done={done[i]}
+            disabled={skipped}
+            onSetDone={(n) => pivot.setSetsDone(workout.id, i, n)}
+          />
+        ))}
+      </ol>
     </div>
   );
 }

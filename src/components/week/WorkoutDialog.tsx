@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { demoVideoUrl, getExercise } from "@/lib/catalog";
 import { CATEGORY_STYLE, EQUIPMENT_LABELS, MUSCLE_LABELS } from "@/lib/labels";
+import { rationaleFor } from "@/lib/planner/move";
 import type { IsoDate, Workout, WorkoutExercise, WorkoutStatus } from "@/lib/schemas";
 import { doneBlockedReason } from "@/lib/workoutStatus";
 import { dayLong, formatRange, monthDay } from "@/lib/time";
@@ -82,7 +83,7 @@ export function WorkoutDialog({
           <div className="flex flex-col gap-6 p-6 sm:p-8">
             <section>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-faint">Why this workout</h3>
-              <p className="text-[15px] leading-relaxed">{workout.rationale}</p>
+              <p className="text-[15px] leading-relaxed">{rationaleFor(workout)}</p>
             </section>
 
             <section>
