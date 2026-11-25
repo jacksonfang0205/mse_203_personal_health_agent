@@ -72,7 +72,7 @@ export function startDemo() {
   const now = localNow(at);
   const profile: FitnessProfile = { ...DEMO_PROFILE, updatedAt: at.toISOString() };
   const plan = buildSamplePlan({ profile, preset: "student", now, createdAt: at.toISOString() });
-  pivot.replaceAll({ version: 1, profile, plan, history: [], calendarPreset: "student", blocked: [], notes: [], log: [], ticks: {} });
+  pivot.replaceAll({ version: 1, profile, plan, history: [], calendarPreset: "student", blocked: [], notes: [], log: [], ticks: {}, lifts: [], weightUnit: "lb" });
   write(true);
 }
 

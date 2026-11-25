@@ -10,7 +10,7 @@
  */
 import { useSyncExternalStore } from "react";
 import type { CalendarPresetId } from "./calendar";
-import type { BlockedTime, ChangeRecord, FitnessProfile, IsoDate, MemoryNote, WeeklyPlan, WorkoutExercise, WorkoutStatus } from "./schemas";
+import type { BlockedTime, ChangeRecord, FitnessProfile, IsoDate, LoggedSet, MemoryNote, WeeklyPlan, WeightUnit, WorkoutExercise, WorkoutStatus } from "./schemas";
 import { isAllDay } from "./memoryRules";
 import { localNow } from "./time";
 import { doneBlockedReason } from "./workoutStatus";
@@ -29,6 +29,8 @@ const EMPTY: AppState = {
   notes: [],
   log: [],
   ticks: {},
+  lifts: [],
+  weightUnit: "lb",
 };
 
 export interface PivotRepository {
@@ -184,6 +186,36 @@ export const pivot = {
       if (!allDone && w.status === "completed") return withStatus(next, workoutId, "planned");
       return next;
     });
+  },
+  /**
+   * Save what the user lifted for one set of one movement (null clears it).
+   * The lift log outlives the weekly plan so later sessions can build on it.
+   */
+  logSet(args: { workoutId: string; exerciseIndex: number; exerciseId: string; date: IsoDate; setIndex: number; set: LoggedSet | null }) {
+    update((s) => {
+      const match = (l: AppState["lifts"][number]) => l.workoutId === args.workoutId && l.exerciseIndex === args.exerciseIndex;
+      const prev = s.lifts.find(match);
+      // A swapped movement starts a fresh entry rather than inheriting the old one's sets.
+      const sets = prev && prev.exerciseId === args.exerciseId ? [...prev.sets] : [];
+      while (sets.length <= args.setIndex) sets.push(null);
+      sets[args.setIndex] = args.set;
+      while (sets.length && sets[sets.length - 1] === null) sets.pop();
+      const rest = s.lifts.filter((l) => !match(l));
+      if (!sets.length) return { ...s, lifts: rest };
+      const entry = {
+        workoutId: args.workoutId,
+        exerciseIndex: args.exerciseIndex,
+        exerciseId: args.exerciseId,
+        date: args.date,
+        unit: s.weightUnit,
+        sets,
+        at: new Date().toISOString(),
+      };
+      return { ...s, lifts: [entry, ...rest].slice(0, 1000) };
+    });
+  },
+  setWeightUnit(weightUnit: WeightUnit) {
+    update((s) => ({ ...s, weightUnit }));
   },
   recordChange(record: ChangeRecord) {
     update((s) => ({ ...s, history: [record, ...s.history].slice(0, 100) }));

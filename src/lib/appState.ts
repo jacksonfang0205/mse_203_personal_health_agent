@@ -5,7 +5,7 @@
  */
 import { z } from "zod";
 import { CALENDAR_PRESET_IDS, type CalendarPresetId } from "./calendar";
-import { BlockedTime, ChangeRecord, FitnessProfile, MemoryNote, WeeklyPlan, WorkoutLogEntry } from "./schemas";
+import { BlockedTime, ChangeRecord, ExerciseLog, FitnessProfile, MemoryNote, WeeklyPlan, WeightUnit, WorkoutLogEntry } from "./schemas";
 
 export const AppState = z.object({
   version: z.literal(1),
@@ -19,5 +19,9 @@ export const AppState = z.object({
   log: z.array(WorkoutLogEntry).default([]),
   /** Sets ticked off on the Today view: workout id → sets done per exercise, by index. */
   ticks: z.record(z.string(), z.array(z.number().int().min(0))).default({}),
+  /** Sets, reps and weight logged per movement. Outlives the weekly plan, like `log`. */
+  lifts: z.array(ExerciseLog).default([]),
+  /** Unit for logging weight. */
+  weightUnit: WeightUnit.default("lb"),
 });
 export type AppState = z.infer<typeof AppState>;

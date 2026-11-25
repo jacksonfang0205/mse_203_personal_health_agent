@@ -341,3 +341,33 @@ export const WorkoutLogEntry = z.object({
   at: z.string(),
 });
 export type WorkoutLogEntry = z.infer<typeof WorkoutLogEntry>;
+
+// ---------- Lift log (sets, reps, weight) ----------
+
+export const WEIGHT_UNITS = ["lb", "kg"] as const;
+export const WeightUnit = z.enum(WEIGHT_UNITS);
+export type WeightUnit = z.infer<typeof WeightUnit>;
+
+/** One set the user did. `reps` is seconds for timed holds; `weight` is null for bodyweight. */
+export const LoggedSet = z.object({
+  reps: z.number().int().min(0).max(999),
+  weight: z.number().min(0).max(2000).nullable(),
+});
+export type LoggedSet = z.infer<typeof LoggedSet>;
+
+/**
+ * What the user actually lifted for one movement in one session. Kept across
+ * weeks so Pivot can suggest the next session's targets from it.
+ */
+export const ExerciseLog = z.object({
+  workoutId: z.string(),
+  /** Position of the movement in the workout, so the same exercise twice stays separate. */
+  exerciseIndex: z.number().int().min(0),
+  exerciseId: z.string(),
+  date: IsoDate,
+  unit: WeightUnit,
+  /** By set number; null for a set not logged yet. */
+  sets: z.array(LoggedSet.nullable()).max(12),
+  at: z.string(),
+});
+export type ExerciseLog = z.infer<typeof ExerciseLog>;
