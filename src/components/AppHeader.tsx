@@ -18,8 +18,9 @@ export function AppHeader() {
   const { enabled, user, demo, signIn, signOut } = useAccount();
   const router = useRouter();
   if (pathname === "/onboarding") return null;
+  // z-50: above everything on the page, including the week header (z-30), which sits above the workout cards for its popover.
   return (
-    <header className="sticky top-0 z-30 border-b border-line/70 bg-paper/85 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-line/70 bg-paper/85 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
         <Link href="/" className="flex items-center gap-2 text-ink">
           <PivotMark width={26} height={26} className="text-coral" />
