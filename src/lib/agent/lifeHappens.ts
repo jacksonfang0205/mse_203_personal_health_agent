@@ -44,6 +44,7 @@ import {
 import { callTool, type LlmResult } from "./llm";
 import { buildPreferenceChange, disproportionateChanges, needsClarification, parsePreferenceRequest, type Clarification, type PreferenceRequest } from "../coach/clarify";
 import { detectInjury, injuryMemoryNote, withInjury } from "../injuries";
+import { buildMovementChange, parseMovementEdit, targetWorkout } from "../coach/movementEdit";
 
 const opt = <T extends z.ZodType>(s: T) => s.nullish();
 
@@ -111,6 +112,7 @@ Rules:
 - Only change planned workouts that the message affects. Never touch completed workouts. Never add make-up sessions or extra volume.
 - The user's preferred_days, preferred_times and max_session_minutes are LOCKED. Every moved or replaced session must be on a preferred day, start inside a preferred time window, and keep its full length (shorter only on a day listed in day_limits). Code checks this; an option that breaks it is shown to the user as a question, not applied, so only do that when nothing else fits.
 - Never put two lower-body (legs/glutes) strength days back to back.
+- To add, remove or swap one movement, change only that movement and keep the day's title, focus and other movements. Never rebuild a day around a single movement.
 - Don't change a day's focus or format (e.g. upper body to mobility) unless the user clearly asked for that. A preference about one body region ("keep my lower body mobile") changes only days that train that region, and only the moves that have to change (e.g. swap a lower-body strength move for a mobility move). Code rejects options that rewrite unrelated days.
 - Write dates as "Wed, Nov 18", never as 2026-11-18.
 - Offer distinct kinds where possible: "shorter" (replace with a shorter session), "move" (same workout, another free slot), "swap_format" (replace with a different format that fits), "skip" (rest; always an honest option).
@@ -396,6 +398,46 @@ export async function agentLifeHappens(input: AgentRequest & { message: string; 
   if (!plan) {
     return {
       proposal: { ...base, understood: [], alternatives: [], infeasibleReason: "There's no plan for this week yet.", generatedBy: "agent" },
+      memory: { blocked: [], notes: [] },
+      usage: [],
+    };
+  }
+
+  // "Add barbell bench press": change that one movement, keep the day's focus, title and time. No model call,
+  // because the model tends to rebuild the whole day around the new movement.
+  const edit = !injury ? parseMovementEdit(req.message) : null;
+  if (edit) {
+    const target = targetWorkout(req.message, plan, req.now.date);
+    const year = Number(plan.weekStart.slice(0, 4));
+    const built = target ? buildMovementChange(edit, target, req.profile) : { problem: "There's no workout left this week to change." };
+    const alt =
+      "change" in built
+        ? finalizeAlternative(
+            plan,
+            { id: `${base.id}-edit`, kind: "swap_format", title: built.change.title, summary: "", tradeoffs: built.change.notes, operations: [built.change.operation] },
+            validationContext(req, { understood: [], new_busy: [], day_limits: [], alternatives: [], remember: [] }, plan),
+          )
+        : null;
+    if (alt && "change" in built && target) {
+      return {
+        proposal: {
+          ...base,
+          understood: [`${built.change.title} on ${formatDate(target.date)}. The rest of ${target.title.toLowerCase()} stays as it is.`],
+          alternatives: [{ ...alt, title: built.change.title }],
+          generatedBy: "agent",
+        },
+        memory: { blocked: [], notes: [] },
+        usage: [],
+      };
+    }
+    return {
+      proposal: {
+        ...base,
+        understood: [],
+        alternatives: [],
+        infeasibleReason: humanizeDates("problem" in built ? built.problem : "That change doesn't fit your week.", year),
+        generatedBy: "agent",
+      },
       memory: { blocked: [], notes: [] },
       usage: [],
     };
