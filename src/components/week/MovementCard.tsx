@@ -1,13 +1,13 @@
 "use client";
 
 import { demoVideoUrl, getExercise } from "@/lib/catalog";
-import { isLoggable } from "@/lib/progression";
+import { isLoggable, usesWeight } from "@/lib/progression";
 import type { ExerciseLog, IsoDate, WeightUnit, Workout, WorkoutExercise } from "@/lib/schemas";
-import { setCount } from "@/lib/store";
+import { pivot, setCount } from "@/lib/store";
 import { Check } from "../icons";
 import { cx } from "../ui";
 import { ExerciseVisual } from "./ExerciseVisual";
-import { SetLogger } from "./SetLogger";
+import { SetLogger, targetFor } from "./SetLogger";
 
 export function prescription(we: WorkoutExercise): string {
   if (we.minutes) return `${we.minutes} min`;
@@ -24,7 +24,7 @@ export function setsDone(w: Workout, ticks: Record<string, number[]>): number[] 
   });
 }
 
-/** One movement of today's workout: photo, prescription, a check for the whole movement, and a logger (or a tick) per set. */
+/** One movement of today's workout: photo, prescription, one check for the whole movement, and a logger per set. */
 export function MovementCard(props: {
   we: WorkoutExercise;
   index: number;
@@ -40,6 +40,23 @@ export function MovementCard(props: {
   const name = ex?.name ?? props.we.exerciseId;
   const total = setCount(props.we);
   const complete = props.done >= total;
+
+  const toggle = () => {
+    if (!complete && isLoggable(props.we)) {
+      // Checking the movement means "did it as planned": sets left empty log today's target.
+      const { target } = targetFor(props.we, props.lifts, props.date, props.unit);
+      const entry = props.lifts.find(
+        (l) => l.workoutId === props.workoutId && l.exerciseIndex === props.index && l.exerciseId === props.we.exerciseId,
+      );
+      const weight = usesWeight(ex) ? target.weight : null;
+      for (let k = 0; k < total; k++) {
+        if (!entry?.sets[k]) {
+          pivot.logSet({ workoutId: props.workoutId, exerciseIndex: props.index, exerciseId: props.we.exerciseId, date: props.date, setIndex: k, set: { reps: target.reps, weight } });
+        }
+      }
+    }
+    props.onSetDone(complete ? 0 : total);
+  };
 
   return (
     <li
@@ -66,7 +83,7 @@ export function MovementCard(props: {
             className="sr-only"
             checked={complete}
             disabled={props.disabled}
-            onChange={() => props.onSetDone(complete ? 0 : total)}
+            onChange={toggle}
             aria-label={`${name} done`}
           />
           <Check width={20} height={20} />
@@ -81,7 +98,7 @@ export function MovementCard(props: {
           <span className="shrink-0 font-mono text-sm font-semibold">{prescription(props.we)}</span>
         </div>
         {ex && <p className="text-sm text-ink-soft">{ex.cue}</p>}
-        {isLoggable(props.we) ? (
+        {isLoggable(props.we) && (
           <SetLogger
             workoutId={props.workoutId}
             date={props.date}
@@ -92,37 +109,14 @@ export function MovementCard(props: {
             disabled={props.disabled}
             lifts={props.lifts}
             unit={props.unit}
-            onSetDone={props.onSetDone}
           />
-        ) : total > 1 && (
-          <div className="mt-auto flex flex-wrap gap-1.5 pt-1" role="group" aria-label={`${name} sets`}>
-            {Array.from({ length: total }, (_, k) => {
-              const on = props.done > k;
-              return (
-                <button
-                  key={k}
-                  type="button"
-                  disabled={props.disabled}
-                  aria-pressed={on}
-                  onClick={() => props.onSetDone(on ? k : k + 1)}
-                  className={cx(
-                    "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition-colors",
-                    on ? "border-sage bg-sage text-white" : "border-line-strong bg-card text-ink-soft hover:border-sage",
-                  )}
-                >
-                  {on && <Check width={12} height={12} />}
-                  Set {k + 1}
-                </button>
-              );
-            })}
-          </div>
         )}
         {ex && (
           <a
             href={demoVideoUrl(ex)}
             target="_blank"
             rel="noopener noreferrer"
-            className={cx("text-xs font-semibold text-coral-deep underline-offset-4 hover:underline", total <= 1 && !isLoggable(props.we) && "mt-auto")}
+            className={cx("text-xs font-semibold text-coral-deep underline-offset-4 hover:underline", !isLoggable(props.we) && "mt-auto")}
           >
             Watch a form demo ↗
           </a>
