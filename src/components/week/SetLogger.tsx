@@ -15,7 +15,7 @@ import {
 import type { ExerciseLog, IsoDate, LoggedSet, WeightUnit, WorkoutExercise } from "@/lib/schemas";
 import { pivot } from "@/lib/store";
 import { monthDay } from "@/lib/time";
-import { Check, Sparkle } from "../icons";
+import { Sparkle } from "../icons";
 import { cx } from "../ui";
 
 /** Today's target for a movement, from the user's lift history before `date`. */
@@ -26,8 +26,9 @@ export function targetFor(we: WorkoutExercise, lifts: ExerciseLog[], date: IsoDa
 
 /**
  * Per-set logging on a Today movement card: reps and weight for each set,
- * prefilled with a target built from the last sessions. Ticking a set with
- * nothing typed logs the target as done.
+ * prefilled with a target built from the last sessions. There is no tick per
+ * set: the movement's own check marks it done (see MovementCard), and sets
+ * left empty then log the target.
  */
 export function SetLogger(props: {
   workoutId: string;
@@ -39,7 +40,6 @@ export function SetLogger(props: {
   disabled: boolean;
   lifts: ExerciseLog[];
   unit: WeightUnit;
-  onSetDone: (n: number) => void;
 }) {
   const ex = getExercise(props.we.exerciseId);
   const name = ex?.name ?? props.we.exerciseId;
@@ -91,14 +91,9 @@ export function SetLogger(props: {
             weighted={weighted}
             logged={entry?.sets[k] ?? null}
             loggedUnit={entry?.unit ?? props.unit}
-            on={props.done > k}
+            on={props.done >= props.total}
             disabled={props.disabled}
             onSave={(set) => save(k, set)}
-            onToggle={(on, typed) => {
-              // Ticking an empty row means "did the target as planned".
-              if (on && !typed && !entry?.sets[k]) save(k, { reps: target.reps, weight: weighted ? target.weight : null });
-              props.onSetDone(on ? k + 1 : k);
-            }}
           />
         ))}
       </ol>
@@ -130,10 +125,18 @@ function SetRow(props: {
   on: boolean;
   disabled: boolean;
   onSave: (set: LoggedSet | null) => void;
-  onToggle: (on: boolean, typed: boolean) => void;
 }) {
   const [reps, setReps] = useState(props.logged ? String(props.logged.reps) : "");
   const [weight, setWeight] = useState(props.logged?.weight != null ? String(props.logged.weight) : "");
+  // Checking the movement logs the target into empty rows; show it here too.
+  const [seen, setSeen] = useState(props.logged);
+  if (props.logged !== seen) {
+    setSeen(props.logged);
+    if (props.logged && !reps.trim() && !weight.trim()) {
+      setReps(String(props.logged.reps));
+      setWeight(props.logged.weight != null ? String(props.logged.weight) : "");
+    }
+  }
 
   const commit = (r: string, w: string) => {
     const repsN = Number.parseInt(r, 10);
@@ -185,26 +188,6 @@ function SetRow(props: {
           />
         </>
       )}
-      <button
-        type="button"
-        disabled={props.disabled}
-        aria-pressed={props.on}
-        aria-label={`${props.name} set ${props.k + 1} done`}
-        onClick={() => {
-          const typed = Boolean(reps.trim() || weight.trim());
-          if (!props.on && !typed) {
-            setReps(String(props.target.reps));
-            if (props.weighted && props.target.weight) setWeight(String(props.target.weight));
-          }
-          props.onToggle(!props.on, typed);
-        }}
-        className={cx(
-          "grid h-8 w-8 shrink-0 place-items-center rounded-full border-2 transition-colors",
-          props.on ? "border-sage bg-sage text-white" : "border-line-strong bg-card text-transparent hover:border-sage hover:text-sage/50",
-        )}
-      >
-        <Check width={14} height={14} />
-      </button>
     </li>
   );
 }
