@@ -23,8 +23,8 @@ export function AppHeader() {
     <header className="sticky top-0 z-50 border-b border-line bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5 sm:px-8">
         <Link href="/" aria-label="Pivot home" className="flex items-center gap-2.5 text-ink">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-mint sm:h-9 sm:w-9">
-            <PivotMark width={20} height={20} className="text-ink" />
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-coral-soft sm:h-9 sm:w-9">
+            <PivotMark width={20} height={20} className="text-coral" />
           </span>
           <span className="hidden font-display text-2xl font-semibold uppercase tracking-wide sm:inline">Pivot</span>
         </Link>
@@ -35,7 +35,7 @@ export function AppHeader() {
               href={n.href}
               className={cx(
                 "whitespace-nowrap rounded-full px-2.5 py-2 text-[13px] font-medium transition-colors sm:px-3.5 sm:text-sm",
-                pathname === n.href ? "bg-mint text-ink" : "text-ink-soft hover:bg-mint/40 hover:text-ink",
+                pathname === n.href ? "bg-coral-soft text-coral-ink" : "text-ink-soft hover:bg-paper-deep hover:text-ink",
               )}
             >
               {n.label}
