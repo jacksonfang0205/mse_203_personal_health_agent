@@ -123,10 +123,10 @@ export const CATEGORY_STYLE: Record<
   WorkoutCategory,
   { label: string; dot: string; soft: string; text: string; border: string }
 > = {
-  strength: { label: "Strength", dot: "bg-coral", soft: "bg-coral-soft", text: "text-coral-ink", border: "border-coral/40" },
-  cardio: { label: "Cardio", dot: "bg-sky", soft: "bg-sky-soft", text: "text-sky-ink", border: "border-sky/40" },
-  hiit: { label: "HIIT", dot: "bg-butter", soft: "bg-butter-soft", text: "text-butter-ink", border: "border-butter/50" },
-  pilates: { label: "Pilates", dot: "bg-lilac", soft: "bg-lilac-soft", text: "text-lilac-ink", border: "border-lilac/40" },
-  yoga: { label: "Yoga", dot: "bg-sage", soft: "bg-sage-soft", text: "text-sage-ink", border: "border-sage/40" },
-  mobility: { label: "Mobility", dot: "bg-sage", soft: "bg-sage-soft", text: "text-sage-ink", border: "border-sage/40" },
+  strength: { label: "Strength", dot: "bg-coral", soft: "bg-card", text: "text-coral-ink", border: "border-line-strong" },
+  cardio: { label: "Cardio", dot: "bg-sky", soft: "bg-card", text: "text-sky-ink", border: "border-line-strong" },
+  hiit: { label: "HIIT", dot: "bg-butter", soft: "bg-card", text: "text-butter-ink", border: "border-line-strong" },
+  pilates: { label: "Pilates", dot: "bg-lilac", soft: "bg-card", text: "text-lilac-ink", border: "border-line-strong" },
+  yoga: { label: "Yoga", dot: "bg-sage", soft: "bg-card", text: "text-sage-ink", border: "border-line-strong" },
+  mobility: { label: "Mobility", dot: "bg-sage", soft: "bg-card", text: "text-sage-ink", border: "border-line-strong" },
 };

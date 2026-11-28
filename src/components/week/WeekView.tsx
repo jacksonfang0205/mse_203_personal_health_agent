@@ -169,7 +169,7 @@ export function WeekView() {
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-8 sm:px-8 sm:py-12">
       <header className="relative z-30 flex flex-col gap-5 rounded-[1.75rem] bg-mint p-6 text-ink sm:p-8 lg:flex-row lg:items-end lg:justify-between">
         <div className="relative animate-rise">
-          <Eyebrow className="text-ink/70">
+          <Eyebrow className="text-ink/75">
             {monthDay(today)} – {monthDay(addDays(today, 6))}
           </Eyebrow>
           <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -363,13 +363,13 @@ function DayColumn(props: {
       style={{ animationDelay: `${props.index * 40}ms` }}
       className={cx(
         "animate-rise flex flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:gap-5 sm:p-4",
-        props.isToday ? "bg-mint/35 ring-2 ring-mint" : "border border-line bg-card",
+        props.isToday ? "border-2 border-mint bg-mint/25" : "border border-line bg-card",
         !props.planned && "opacity-70",
       )}
     >
       <div className="flex shrink-0 items-baseline gap-2 sm:w-20 sm:flex-col sm:gap-0 sm:pt-1">
         <span
-          className={cx("text-xs font-semibold uppercase tracking-wider", props.isToday ? "text-ink" : "text-ink-faint")}
+          className={cx("text-xs font-semibold uppercase tracking-wider", props.isToday ? "text-sage-ink" : "text-ink-faint")}
         >
           {props.isToday ? "Today" : dayShort(props.date)}
         </span>
@@ -617,7 +617,7 @@ function Progress({ plan }: { plan: WeeklyPlan }) {
           cy="32"
           r={r}
           fill="none"
-          stroke="var(--color-coral)"
+          stroke="var(--color-sage)"
           strokeWidth="7"
           strokeLinecap="round"
           strokeDasharray={c}

@@ -2,8 +2,8 @@
 
 /*
  * Pivot design tokens, from the style tile.
- * Kept plain: mostly white, with mint (#BAE7D7) as the one color block and navy
- * (#213269) for text. Coral is saved for main actions. Condensed sans headings.
+ * Mostly white with mint (#BAE7D7) as the main accent and navy (#213269) ink.
+ * Sky blue and coral stay for small accents. Condensed sans headings.
  * Light theme only for the prototype.
  */
 @theme {
@@ -17,8 +17,8 @@
   --color-ink: #213269;
   --color-ink-soft: #48557f;
   --color-ink-faint: #7a85a6;
-  --color-line: #dcebe5;
-  --color-line-strong: #c3dcd2;
+  --color-line: #e2ece8;
+  --color-line-strong: #c9ddd5;
 
   --color-coral: #ff7549;
   --color-coral-deep: #d4491c;
