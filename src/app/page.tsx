@@ -43,8 +43,8 @@ export default function Home() {
         </div>
 
         <div className="relative mx-auto w-full max-w-md" aria-hidden>
-          <div className="absolute -top-10 -left-10 h-64 w-64 rounded-full bg-coral-soft blur-3xl" />
-          <div className="absolute -right-8 -bottom-8 h-56 w-56 rounded-full bg-sky-soft blur-3xl" />
+          <div className="absolute -top-10 -left-10 h-64 w-64 rounded-full bg-mint/70 blur-3xl" />
+          <div className="absolute -right-8 -bottom-8 h-56 w-56 rounded-full bg-mint/50 blur-3xl" />
           <div className="relative flex flex-col gap-4">
             {PREVIEW.map((p, i) => {
               const style = CATEGORY_STYLE[p.category];

@@ -2,8 +2,8 @@
 
 /*
  * Pivot design tokens, from the style tile.
- * Navy ink (#213269), sky blue (#4FB5E0), coral (#FF7549) and mint (#BAE7D7)
- * as bold color blocks around rounded white cards. Condensed sans headings.
+ * Kept plain: mostly white, with mint (#BAE7D7) as the one color block and navy
+ * (#213269) for text. Coral is saved for main actions. Condensed sans headings.
  * Light theme only for the prototype.
  */
 @theme {
@@ -11,14 +11,14 @@
   --font-display: var(--font-roboto-condensed), "Roboto Condensed", "Arial Narrow", ui-sans-serif, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  --color-paper: #f2f8fb;
-  --color-paper-deep: #e3f0f6;
+  --color-paper: #ffffff;
+  --color-paper-deep: #eef8f4;
   --color-card: #ffffff;
   --color-ink: #213269;
   --color-ink-soft: #48557f;
   --color-ink-faint: #7a85a6;
-  --color-line: #d9e6ee;
-  --color-line-strong: #bfd3e0;
+  --color-line: #dcebe5;
+  --color-line-strong: #c3dcd2;
 
   --color-coral: #ff7549;
   --color-coral-deep: #d4491c;

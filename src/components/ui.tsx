@@ -109,7 +109,7 @@ export function Card({ className, children }: { className?: string; children: Re
 
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   // The default color applies only when the caller doesn't pass its own text color.
-  const tone = /(^|\s)text-(?!xs|sm|base|lg|xl|\d)/.test(className ?? "") ? "" : "text-sky-ink";
+  const tone = /(^|\s)text-(?!xs|sm|base|lg|xl|\d)/.test(className ?? "") ? "" : "text-ink-soft";
   return <p className={cx("font-display text-xs font-semibold uppercase tracking-[0.14em]", tone, className)}>{children}</p>;
 }
 
