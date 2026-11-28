@@ -56,7 +56,7 @@ export function WorkoutCard({ workout, onOpen }: { workout: Workout; onOpen: () 
       {muscles.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {muscles.map((m) => (
-            <span key={m} className="rounded-full bg-mint/50 px-2 py-0.5 text-[11px] font-medium text-ink-soft">
+            <span key={m} className="rounded-full bg-paper-deep px-2 py-0.5 text-[11px] font-medium text-ink-soft">
               {MUSCLE_LABELS[m]}
             </span>
           ))}

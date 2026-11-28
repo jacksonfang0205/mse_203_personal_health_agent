@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 /*
- * Pivot design tokens, from the style tile.
- * Mostly white with mint (#BAE7D7) as the main accent and navy (#213269) ink.
- * Sky blue and coral stay for small accents. Condensed sans headings.
+ * Pivot design tokens.
+ * Plain white base, warm ink text, and one brand color (coral) used sparingly.
+ * A soft accent per workout category. Condensed sans headings.
  * Light theme only for the prototype.
  */
 @theme {
@@ -12,40 +12,38 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   --color-paper: #ffffff;
-  --color-paper-deep: #eef8f4;
+  --color-paper-deep: #f7f4ef;
   --color-card: #ffffff;
-  --color-ink: #213269;
-  --color-ink-soft: #48557f;
-  --color-ink-faint: #7a85a6;
-  --color-line: #e2ece8;
-  --color-line-strong: #c9ddd5;
+  --color-ink: #1f1a16;
+  --color-ink-soft: #5c544b;
+  --color-ink-faint: #8f857a;
+  --color-line: #ece6dc;
+  --color-line-strong: #d6cbbb;
 
-  --color-coral: #ff7549;
-  --color-coral-deep: #d4491c;
-  --color-coral-soft: #ffe4d9;
-  --color-coral-ink: #a63a15;
+  --color-coral: #ee5d3b;
+  --color-coral-deep: #c9431f;
+  --color-coral-soft: #fde4da;
+  --color-coral-ink: #9c3214;
 
-  --color-sky: #4fb5e0;
-  --color-sky-soft: #dcf1fa;
-  --color-sky-ink: #19698d;
+  --color-sky: #4a8ed4;
+  --color-sky-soft: #dceaf8;
+  --color-sky-ink: #23578e;
 
-  --color-sage: #3fae8a;
-  --color-sage-soft: #daf3ea;
-  --color-sage-ink: #1d6a52;
+  --color-sage: #5f9472;
+  --color-sage-soft: #ddebdf;
+  --color-sage-ink: #2f5e40;
 
-  --color-mint: #bae7d7;
+  --color-butter: #e9b83f;
+  --color-butter-soft: #fbf0cf;
+  --color-butter-ink: #7c5a0b;
 
-  --color-butter: #f5b83d;
-  --color-butter-soft: #fdf1d4;
-  --color-butter-ink: #7a560a;
-
-  --color-lilac: #8b86d6;
-  --color-lilac-soft: #e8e7f8;
-  --color-lilac-ink: #45408e;
+  --color-lilac: #8d7bc4;
+  --color-lilac-soft: #e9e3f6;
+  --color-lilac-ink: #4f3f8a;
 
   --radius-card: 1.25rem;
-  --shadow-card: 0 1px 0 rgb(33 50 105 / 0.04), 0 8px 24px -12px rgb(33 50 105 / 0.16);
-  --shadow-lift: 0 2px 0 rgb(33 50 105 / 0.04), 0 18px 40px -18px rgb(33 50 105 / 0.3);
+  --shadow-card: 0 1px 0 rgb(31 26 22 / 0.04), 0 8px 24px -12px rgb(31 26 22 / 0.14);
+  --shadow-lift: 0 2px 0 rgb(31 26 22 / 0.04), 0 18px 40px -18px rgb(31 26 22 / 0.28);
 
   --animate-rise: rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-fade: fade 300ms ease-out both;
@@ -96,7 +94,7 @@ body {
 }
 
 ::selection {
-  background: var(--color-mint);
+  background: var(--color-coral-soft);
 }
 
 :focus-visible {
@@ -105,7 +103,7 @@ body {
 }
 
 dialog::backdrop {
-  background: rgb(33 50 105 / 0.4);
+  background: rgb(31 26 22 / 0.35);
   backdrop-filter: blur(2px);
 }
 

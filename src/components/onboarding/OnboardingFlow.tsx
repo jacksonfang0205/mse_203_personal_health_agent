@@ -95,13 +95,13 @@ export function OnboardingFlow() {
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[minmax(320px,0.8fr)_1.6fr]">
-      <aside className="relative hidden overflow-hidden bg-mint p-10 text-ink lg:flex lg:flex-col lg:justify-between">
+      <aside className="relative hidden overflow-hidden border-r border-line bg-paper-deep p-10 text-ink lg:flex lg:flex-col lg:justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <PivotMark width={26} height={26} className="text-ink" />
+          <PivotMark width={26} height={26} className="text-coral" />
           <span className="font-display text-2xl font-semibold uppercase tracking-wide">Pivot</span>
         </Link>
         <div key={step.key} className="animate-rise">
-          <p className="mb-4 text-sm font-semibold text-ink-soft">
+          <p className="mb-4 text-sm font-semibold text-coral-deep">
             Step {stepIdx + 1} of {STEPS.length}
           </p>
           <h1 className="font-display text-5xl leading-[1.05] font-medium tracking-tight">{step.title}</h1>
@@ -110,7 +110,7 @@ export function OnboardingFlow() {
         <ol className="flex flex-col gap-2 text-sm">
           {STEPS.map((s, i) => (
             <li key={s.key} className={cx("flex items-center gap-3", i === stepIdx ? "text-ink" : "text-ink/45")}>
-              <span className={cx("h-1.5 rounded-full transition-all", i <= stepIdx ? "w-6 bg-ink" : "w-3 bg-white")} />
+              <span className={cx("h-1.5 rounded-full transition-all", i <= stepIdx ? "w-6 bg-coral" : "w-3 bg-line-strong")} />
               {s.title}
             </li>
           ))}

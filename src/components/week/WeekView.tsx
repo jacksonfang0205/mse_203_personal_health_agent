@@ -167,9 +167,9 @@ export function WeekView() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-8 sm:px-8 sm:py-12">
-      <header className="relative z-30 flex flex-col gap-5 rounded-[1.75rem] bg-mint p-6 text-ink sm:p-8 lg:flex-row lg:items-end lg:justify-between">
+      <header className="relative z-30 flex flex-col gap-5 rounded-[1.75rem] border border-line bg-card p-6 text-ink sm:p-8 lg:flex-row lg:items-end lg:justify-between">
         <div className="relative animate-rise">
-          <Eyebrow className="text-ink/75">
+          <Eyebrow>
             {monthDay(today)} – {monthDay(addDays(today, 6))}
           </Eyebrow>
           <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -363,13 +363,13 @@ function DayColumn(props: {
       style={{ animationDelay: `${props.index * 40}ms` }}
       className={cx(
         "animate-rise flex flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:gap-5 sm:p-4",
-        props.isToday ? "border-2 border-mint bg-mint/25" : "border border-line bg-card",
+        props.isToday ? "border-2 border-coral/60 bg-card" : "border border-line bg-card",
         !props.planned && "opacity-70",
       )}
     >
       <div className="flex shrink-0 items-baseline gap-2 sm:w-20 sm:flex-col sm:gap-0 sm:pt-1">
         <span
-          className={cx("text-xs font-semibold uppercase tracking-wider", props.isToday ? "text-sage-ink" : "text-ink-faint")}
+          className={cx("text-xs font-semibold uppercase tracking-wider", props.isToday ? "text-coral-deep" : "text-ink-faint")}
         >
           {props.isToday ? "Today" : dayShort(props.date)}
         </span>
@@ -607,7 +607,7 @@ function Progress({ plan }: { plan: WeeklyPlan }) {
   const r = 26;
   const c = 2 * Math.PI * r;
   return (
-    <Card className="flex items-center gap-5 border-0 px-5 py-4">
+    <Card className="flex items-center gap-5 px-5 py-4 shadow-none">
       <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90" aria-hidden>
         <circle cx="32" cy="32" r={r} fill="none" stroke="var(--color-paper-deep)" strokeWidth="7" />
         <circle
@@ -615,7 +615,7 @@ function Progress({ plan }: { plan: WeeklyPlan }) {
           cy="32"
           r={r}
           fill="none"
-          stroke="var(--color-sage)"
+          stroke="var(--color-coral)"
           strokeWidth="7"
           strokeLinecap="round"
           strokeDasharray={c}
