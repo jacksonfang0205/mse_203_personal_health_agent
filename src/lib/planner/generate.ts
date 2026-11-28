@@ -56,7 +56,7 @@ const CARDIO_BY_TYPE: Partial<Record<WorkoutType, string[]>> = {
   gym: ["incline_walk", "bike_steady", "row_steady"],
 };
 
-const GOAL_CATEGORIES: Record<Goal, WorkoutCategory[]> = {
+export const GOAL_CATEGORIES: Record<Goal, WorkoutCategory[]> = {
   strength: ["strength"],
   build_muscle: ["strength"],
   endurance: ["cardio", "hiit"],
@@ -67,7 +67,7 @@ const GOAL_CATEGORIES: Record<Goal, WorkoutCategory[]> = {
   fat_loss: ["cardio", "strength", "hiit"],
 };
 
-const STRENGTH_FOCI: { label: string; muscles: MuscleGroup[] }[] = [
+export const STRENGTH_FOCI: { label: string; muscles: MuscleGroup[] }[] = [
   { label: "Lower body", muscles: ["legs", "glutes", "core"] },
   { label: "Upper body", muscles: ["chest", "back", "shoulders", "arms"] },
   { label: "Full body", muscles: ["full_body", "legs", "back", "chest", "core"] },
