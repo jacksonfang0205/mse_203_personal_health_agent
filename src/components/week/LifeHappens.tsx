@@ -1,5 +1,6 @@
 "use client";
 
+import { parseNewDays, profileForAccepted, proposeForNewDays } from "@/lib/coach/newDays";
 import { useEffect, useRef, useState } from "react";
 import type { MemorySuggestions } from "@/lib/agent/lifeHappens";
 import { isAllDay, rememberFromMessage } from "@/lib/memoryRules";
@@ -161,6 +162,28 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
     setUnchecked(new Set());
     const injury = handleInjury(userMessage);
     setInjuryNote(injury);
+    // "I can now do Wednesdays": save the day to Preferences and offer to use it, instead of
+    // treating it as a disruption (which offered skips and moves for unrelated workouts).
+    const newDays = !injury ? parseNewDays(userMessage) : [];
+    if (newDays.length) {
+      const s = pivot.get();
+      const current = s.plan ?? plan;
+      const result = proposeForNewDays({
+        plan: current,
+        profile: s.profile ?? profile,
+        days: newDays,
+        ctx: { busy, knownRange, now, previousPlan: current },
+        today: now.date,
+        message: userMessage,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+      });
+      if (result.added.length) pivot.saveProfile(result.profile);
+      setMemory(null);
+      setProposal(result.proposal);
+      track("coach_new_days", { days: newDays.length, added: result.added.length, alternatives: result.proposal.alternatives.length });
+      return;
+    }
     // Ask before big changes: a few short questions, one at a time; nothing changes until they're answered.
     const flow = !opts.clarified && !injury ? needsClarification(userMessage, pivot.get().plan, now.date) : null;
     if (flow) {
@@ -282,6 +305,9 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
     if (!proposal) return;
     const current = pivot.get().plan ?? plan;
     const next = applyOperations(current, alt.operations);
+    // Adding a workout on a newly free day raises the weekly target by one.
+    const savedProfile = pivot.get().profile ?? profile;
+    const acceptedProfile = profileForAccepted(alt, savedProfile);
     // A preference-level change may only touch the days it was scoped to.
     const outside = scope ? outOfScopeChanges(current, next, scope) : [];
     if (outside.length) {
@@ -291,7 +317,7 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
     // Re-check at save time: nothing reaches storage without passing the gate. Locked preferences
     // only bend where this option said so and the user tapped OK on it.
     const check = validatePlan(next, {
-      profile: pivot.get().profile ?? profile,
+      profile: acceptedProfile,
       busy,
       knownRange,
       now,
@@ -304,6 +330,7 @@ export function LifeHappens({ plan, profile, busy, knownRange, now, ai }: Props)
       setDone(`Couldn't apply that option: ${check.violations[0]?.message}`);
       return;
     }
+    if (acceptedProfile !== savedProfile) pivot.saveProfile({ ...acceptedProfile, updatedAt: new Date().toISOString() });
     pivot.setPlan(next);
     pivot.recordChange({
       id: crypto.randomUUID(),
