@@ -95,27 +95,26 @@ export function OnboardingFlow() {
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[minmax(320px,0.8fr)_1.6fr]">
-      <aside className="relative hidden overflow-hidden bg-ink p-10 text-paper lg:flex lg:flex-col lg:justify-between">
+      <aside className="relative hidden overflow-hidden bg-mint p-10 text-ink lg:flex lg:flex-col lg:justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <PivotMark width={26} height={26} className="text-coral" />
+          <PivotMark width={26} height={26} className="text-ink" />
           <span className="font-display text-2xl font-semibold uppercase tracking-wide">Pivot</span>
         </Link>
         <div key={step.key} className="animate-rise">
-          <p className="mb-4 text-sm font-semibold text-coral">
+          <p className="mb-4 text-sm font-semibold text-ink-soft">
             Step {stepIdx + 1} of {STEPS.length}
           </p>
           <h1 className="font-display text-5xl leading-[1.05] font-medium tracking-tight">{step.title}</h1>
-          <p className="mt-4 max-w-sm text-paper/70">{step.sub}</p>
+          <p className="mt-4 max-w-sm text-ink-soft">{step.sub}</p>
         </div>
         <ol className="flex flex-col gap-2 text-sm">
           {STEPS.map((s, i) => (
-            <li key={s.key} className={cx("flex items-center gap-3", i === stepIdx ? "text-paper" : "text-paper/40")}>
-              <span className={cx("h-1.5 rounded-full transition-all", i <= stepIdx ? "w-6 bg-coral" : "w-3 bg-paper/30")} />
+            <li key={s.key} className={cx("flex items-center gap-3", i === stepIdx ? "text-ink" : "text-ink/45")}>
+              <span className={cx("h-1.5 rounded-full transition-all", i <= stepIdx ? "w-6 bg-ink" : "w-3 bg-white")} />
               {s.title}
             </li>
           ))}
         </ol>
-        <div aria-hidden className="pointer-events-none absolute -right-24 -bottom-24 h-72 w-72 rounded-full bg-coral/20 blur-3xl" />
       </aside>
 
       <section className="flex flex-col">
