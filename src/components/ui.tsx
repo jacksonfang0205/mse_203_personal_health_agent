@@ -8,7 +8,7 @@ export function cx(...classes: (string | false | null | undefined)[]) {
 type Variant = "primary" | "secondary" | "ghost" | "dark";
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-coral text-white hover:bg-coral-deep shadow-[0_6px_16px_-8px_rgb(238_93_59/0.7)]",
+  primary: "bg-coral text-white hover:bg-coral-deep shadow-[0_6px_16px_-8px_rgb(255_117_73/0.7)]",
   dark: "bg-ink text-paper hover:bg-ink/85",
   secondary: "bg-card text-ink border border-line-strong hover:border-ink/40",
   ghost: "text-ink-soft hover:text-ink hover:bg-ink/5",
@@ -108,7 +108,9 @@ export function Card({ className, children }: { className?: string; children: Re
 }
 
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cx("text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint", className)}>{children}</p>;
+  // The default color applies only when the caller doesn't pass its own text color.
+  const tone = /(^|\s)text-(?!xs|sm|base|lg|xl|\d)/.test(className ?? "") ? "" : "text-sky-ink";
+  return <p className={cx("font-display text-xs font-semibold uppercase tracking-[0.14em]", tone, className)}>{children}</p>;
 }
 
 /** Makes clear that content is sample data, not AI output. */

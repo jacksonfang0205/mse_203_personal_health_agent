@@ -98,7 +98,7 @@ export function OnboardingFlow() {
       <aside className="relative hidden overflow-hidden bg-ink p-10 text-paper lg:flex lg:flex-col lg:justify-between">
         <Link href="/" className="flex items-center gap-2">
           <PivotMark width={26} height={26} className="text-coral" />
-          <span className="font-display text-2xl font-semibold italic">Pivot</span>
+          <span className="font-display text-2xl font-semibold uppercase tracking-wide">Pivot</span>
         </Link>
         <div key={step.key} className="animate-rise">
           <p className="mb-4 text-sm font-semibold text-coral">

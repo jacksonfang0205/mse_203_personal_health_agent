@@ -1,48 +1,51 @@
 @import "tailwindcss";
 
 /*
- * Pivot design tokens.
- * Warm paper background, ink text, one confident brand color (coral), and a
- * soft accent per workout category. Light theme only for the prototype.
+ * Pivot design tokens, from the style tile.
+ * Navy ink (#213269), sky blue (#4FB5E0), coral (#FF7549) and mint (#BAE7D7)
+ * as bold color blocks around rounded white cards. Condensed sans headings.
+ * Light theme only for the prototype.
  */
 @theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-sans: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-roboto-condensed), "Roboto Condensed", "Arial Narrow", ui-sans-serif, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  --color-paper: #faf6ef;
-  --color-paper-deep: #f3ede2;
-  --color-card: #fffdf9;
-  --color-ink: #1f1a16;
-  --color-ink-soft: #5c544b;
-  --color-ink-faint: #8f857a;
-  --color-line: #e8e0d3;
-  --color-line-strong: #d6cbbb;
+  --color-paper: #f2f8fb;
+  --color-paper-deep: #e3f0f6;
+  --color-card: #ffffff;
+  --color-ink: #213269;
+  --color-ink-soft: #48557f;
+  --color-ink-faint: #7a85a6;
+  --color-line: #d9e6ee;
+  --color-line-strong: #bfd3e0;
 
-  --color-coral: #ee5d3b;
-  --color-coral-deep: #c9431f;
-  --color-coral-soft: #fde4da;
-  --color-coral-ink: #9c3214;
+  --color-coral: #ff7549;
+  --color-coral-deep: #d4491c;
+  --color-coral-soft: #ffe4d9;
+  --color-coral-ink: #a63a15;
 
-  --color-sky: #4a8ed4;
-  --color-sky-soft: #dceaf8;
-  --color-sky-ink: #23578e;
+  --color-sky: #4fb5e0;
+  --color-sky-soft: #dcf1fa;
+  --color-sky-ink: #19698d;
 
-  --color-sage: #5f9472;
-  --color-sage-soft: #ddebdf;
-  --color-sage-ink: #2f5e40;
+  --color-sage: #3fae8a;
+  --color-sage-soft: #daf3ea;
+  --color-sage-ink: #1d6a52;
 
-  --color-butter: #e9b83f;
-  --color-butter-soft: #fbf0cf;
-  --color-butter-ink: #7c5a0b;
+  --color-mint: #bae7d7;
 
-  --color-lilac: #8d7bc4;
-  --color-lilac-soft: #e9e3f6;
-  --color-lilac-ink: #4f3f8a;
+  --color-butter: #f5b83d;
+  --color-butter-soft: #fdf1d4;
+  --color-butter-ink: #7a560a;
+
+  --color-lilac: #8b86d6;
+  --color-lilac-soft: #e8e7f8;
+  --color-lilac-ink: #45408e;
 
   --radius-card: 1.25rem;
-  --shadow-card: 0 1px 0 rgb(31 26 22 / 0.04), 0 8px 24px -12px rgb(31 26 22 / 0.14);
-  --shadow-lift: 0 2px 0 rgb(31 26 22 / 0.04), 0 18px 40px -18px rgb(31 26 22 / 0.28);
+  --shadow-card: 0 1px 0 rgb(33 50 105 / 0.04), 0 8px 24px -12px rgb(33 50 105 / 0.16);
+  --shadow-lift: 0 2px 0 rgb(33 50 105 / 0.04), 0 18px 40px -18px rgb(33 50 105 / 0.3);
 
   --animate-rise: rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-fade: fade 300ms ease-out both;
@@ -93,7 +96,7 @@ body {
 }
 
 ::selection {
-  background: var(--color-coral-soft);
+  background: var(--color-mint);
 }
 
 :focus-visible {
@@ -102,7 +105,7 @@ body {
 }
 
 dialog::backdrop {
-  background: rgb(31 26 22 / 0.35);
+  background: rgb(33 50 105 / 0.4);
   backdrop-filter: blur(2px);
 }
 

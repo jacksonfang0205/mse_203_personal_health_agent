@@ -167,12 +167,17 @@ export function WeekView() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-8 sm:px-8 sm:py-12">
-      <header className="relative z-30 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div className="animate-rise">
-          <Eyebrow>
+      <header className="relative z-30 flex flex-col gap-5 rounded-[1.75rem] bg-sky p-6 text-ink sm:p-8 lg:flex-row lg:items-end lg:justify-between">
+        {/* Decorative circles from the style tile; clipped here so the checks popover below isn't. */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1.75rem]">
+          <div className="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-white/20" />
+          <div className="absolute -bottom-28 right-48 h-56 w-56 rounded-full bg-mint/40" />
+        </div>
+        <div className="relative animate-rise">
+          <Eyebrow className="text-ink/75">
             {monthDay(today)} – {monthDay(addDays(today, 6))}
           </Eyebrow>
-          <h1 className="mt-2 font-display text-4xl font-medium tracking-tight sm:text-5xl">
+          <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight sm:text-5xl">
             {welcome ? "Here's your week" : greeting(now.time)}
             {profile.name ? `, ${profile.name}` : ""}.
           </h1>
@@ -186,7 +191,9 @@ export function WeekView() {
             </Link>
           </div>
         </div>
-        <Progress plan={plan} />
+        <div className="relative">
+          <Progress plan={plan} />
+        </div>
       </header>
 
       {welcome && (
@@ -258,7 +265,7 @@ export function WeekView() {
 
         <section aria-label="This week" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-2xl font-medium">Your next 7 days</h2>
+            <h2 className="font-display text-2xl font-semibold uppercase tracking-wide">Your next 7 days</h2>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -361,7 +368,7 @@ function DayColumn(props: {
       style={{ animationDelay: `${props.index * 40}ms` }}
       className={cx(
         "animate-rise flex flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:gap-5 sm:p-4",
-        props.isToday ? "bg-card ring-2 ring-coral/60" : "bg-paper-deep/50",
+        props.isToday ? "bg-card shadow-card ring-2 ring-coral" : "border border-line bg-card",
         !props.planned && "opacity-70",
       )}
     >
@@ -371,7 +378,7 @@ function DayColumn(props: {
         >
           {props.isToday ? "Today" : dayShort(props.date)}
         </span>
-        <span className="font-display text-3xl font-medium">{dayOfMonth(props.date)}</span>
+        <span className="font-display text-3xl font-semibold">{dayOfMonth(props.date)}</span>
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         {workouts.length > 0 ? (
@@ -607,7 +614,7 @@ function Progress({ plan }: { plan: WeeklyPlan }) {
   const r = 26;
   const c = 2 * Math.PI * r;
   return (
-    <Card className="flex items-center gap-5 px-5 py-4">
+    <Card className="flex items-center gap-5 border-0 px-5 py-4">
       <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90" aria-hidden>
         <circle cx="32" cy="32" r={r} fill="none" stroke="var(--color-paper-deep)" strokeWidth="7" />
         <circle
