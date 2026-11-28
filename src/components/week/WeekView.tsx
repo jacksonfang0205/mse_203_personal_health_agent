@@ -431,8 +431,8 @@ function DayColumn(props: {
 }
 
 /**
- * Today's workout in the week view: each movement as a card with a check and
- * a tick per set, and a button to finish the whole workout. Only today's
+ * Today's workout in the week view: each movement as a card with one check,
+ * and a button to finish the whole workout. Only today's
  * workouts can be finished; other days are read-only.
  */
 function TodayWorkout({
@@ -452,8 +452,6 @@ function TodayWorkout({
 }) {
   const skipped = workout.status === "skipped";
   const completed = workout.status === "completed";
-  const totalSets = workout.exercises.reduce((s, we) => s + setCount(we), 0);
-  const doneSets = done.reduce((s, n) => s + n, 0);
   const movesDone = workout.exercises.filter((we, i) => done[i] >= setCount(we)).length;
 
   return (
@@ -465,12 +463,12 @@ function TodayWorkout({
         <div className="flex flex-1 flex-col justify-end gap-3">
           <p className="text-sm text-ink-soft tabular-nums">
             <span className="font-display text-xl font-semibold text-ink">{movesDone}</span>/{workout.exercises.length}{" "}
-            movements · {doneSets}/{totalSets} sets
+            movements done
           </p>
           <div className="h-1.5 overflow-hidden rounded-full bg-paper-deep" aria-hidden>
             <div
               className="h-full rounded-full bg-sage transition-[width] duration-500"
-              style={{ width: `${totalSets ? (doneSets / totalSets) * 100 : 0}%` }}
+              style={{ width: `${workout.exercises.length ? (movesDone / workout.exercises.length) * 100 : 0}%` }}
             />
           </div>
           {!skipped && (
