@@ -23,6 +23,7 @@ export type TelemetryEventName =
   | "alternatives_rejected"
   | "injury_saved"
   | "coach_clarify_asked"
+  | "coach_new_days"
   | "coach_clarify_answered";
 
 export interface TelemetryEvent {
