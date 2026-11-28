@@ -20,7 +20,7 @@ export function AppHeader() {
   if (pathname === "/onboarding") return null;
   // z-50: above everything on the page, including the week header (z-30), which sits above the workout cards for its popover.
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-white text-ink">
+    <header className="sticky top-0 z-50 border-b border-line bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5 sm:px-8">
         <Link href="/" aria-label="Pivot home" className="flex items-center gap-2.5 text-ink">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-mint sm:h-9 sm:w-9">
@@ -46,7 +46,7 @@ export function AppHeader() {
               type="button"
               onClick={() => (user ? signOut() : signIn())}
               title={user?.email ?? undefined}
-              className="ml-1 rounded-full border border-line-strong px-3.5 py-2 text-sm font-medium text-ink-soft hover:border-ink/40 hover:text-ink"
+              className="ml-1 rounded-full border border-line-strong px-3.5 py-2 text-sm font-medium text-ink-soft hover:text-ink"
             >
               {user ? "Sign out" : "Sign in"}
             </button>

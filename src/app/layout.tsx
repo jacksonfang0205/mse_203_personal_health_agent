@@ -37,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <AccountGate>{children}</AccountGate>
           </main>
         </AccountProvider>
-        <footer className="bg-mint px-5 py-6 text-xs text-ink-soft sm:px-8">
+        <footer className="border-t border-line px-5 py-6 text-xs text-ink-faint sm:px-8">
           <div className="mx-auto flex max-w-6xl flex-col gap-1 sm:flex-row sm:justify-between">
             <span>Pivot is a student prototype for Stanford MS&amp;E 203.</span>
             <span className="flex flex-wrap gap-x-4">
