@@ -8,7 +8,7 @@ export function cx(...classes: (string | false | null | undefined)[]) {
 type Variant = "primary" | "secondary" | "ghost" | "dark";
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-coral text-white hover:bg-coral-deep shadow-[0_6px_16px_-8px_rgb(255_117_73/0.7)]",
+  primary: "bg-ink text-white hover:bg-ink/85",
   dark: "bg-ink text-paper hover:bg-ink/85",
   secondary: "bg-card text-ink border border-line-strong hover:border-ink/40",
   ghost: "text-ink-soft hover:text-ink hover:bg-ink/5",
